@@ -22,7 +22,7 @@ const I18N={
   helpRules:"Regulations",helpRulesText:"The app imports Ontario's 2026 open regulation data, but current official Ontario rules remain the final verification source.",
   helpTrips:"Trips & catches",helpTripsText:"Trip notes and catch logs are stored on this device. Save a backup below before you reset or change devices.",
   helpWeather:"Weather",helpWeatherText:"Weather alerts come from Environment and Climate Change Canada. Weather information is for trip planning and safety, not a bite prediction.",
-  privacy:"Privacy",privacyText:"Location is requested only when you use a location feature, and is never sent anywhere. Trips and catches stay on this device.",
+  privacy:"Privacy",privacyText:"Location is requested only when you use a location feature, and is never sent anywhere. Your most recent position is kept on this device for two weeks so distances still show next time. Trips and catches stay on this device.",
   dataSources:"Government data sources",disclaimer:"Not an official Government of Ontario app.",
   yourData:"Your data",yourDataText:"Trips, catches and saved lakes stay on this device. Save a backup before you change or reset your device.",
   exportData:"Save a backup",importData:"Restore a backup",
@@ -55,7 +55,7 @@ const I18N={
   helpRules:"Règlements",helpRulesText:"L’application importe les données ouvertes 2026 de l’Ontario, mais les règles officielles actuelles de l’Ontario demeurent la source finale de vérification.",
   helpTrips:"Sorties et prises",helpTripsText:"Les notes de sortie et les prises sont enregistrées sur cet appareil. Enregistrez une copie ci-dessous avant de changer d’appareil.",
   helpWeather:"Météo",helpWeatherText:"Les alertes météo proviennent d’Environnement et Changement climatique Canada. Elles servent à la planification et à la sécurité, pas à prédire les prises.",
-  privacy:"Confidentialité",privacyText:"La position est demandée seulement lorsque vous utilisez une fonction géolocalisée et n’est jamais transmise. Les sorties et les prises restent sur cet appareil.",
+  privacy:"Confidentialité",privacyText:"La position est demandée seulement lorsque vous utilisez une fonction géolocalisée et n’est jamais transmise. Votre position la plus récente est conservée sur cet appareil pendant deux semaines afin que les distances s’affichent à la prochaine ouverture. Les sorties et les prises restent sur cet appareil.",
   dataSources:"Sources de données gouvernementales",disclaimer:"Ceci n’est pas une application officielle du gouvernement de l’Ontario.",
   yourData:"Vos données",yourDataText:"Les sorties, les prises et les lacs enregistrés restent sur cet appareil. Enregistrez une copie avant de changer ou de réinitialiser votre appareil.",
   exportData:"Enregistrer une copie",importData:"Restaurer une copie",
@@ -96,7 +96,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="v1q";
+const APP_VERSION="v1s";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -210,6 +210,50 @@ function fitToResults(){
 }
 
 let userMarker=null;
+
+/* ---------------------------------------------------------------------------
+   Remembering where you are.
+
+   userLoc lived only in memory, so every relaunch dropped it and the distance
+   column silently disappeared until you granted location again. The last fix
+   is now kept on the device and restored at startup, and if permission is
+   already granted a fresh fix is fetched quietly in the background.
+
+   Nothing is transmitted — this is the same coordinate the app already had,
+   stored in the same place as your saved lakes.
+--------------------------------------------------------------------------- */
+const LOC_KEY="osl-lastloc";
+const LOC_MAX_AGE=1000*60*60*24*14;      // a fortnight; beyond that it is a guess
+
+function rememberLocation(lat,lon){
+ try{localStorage.setItem(LOC_KEY,JSON.stringify({lat,lon,at:Date.now()}))}catch(e){}
+}
+
+function restoreLocation(){
+ try{
+  const raw=localStorage.getItem(LOC_KEY);
+  if(!raw)return false;
+  const v=JSON.parse(raw);
+  if(!v||typeof v.lat!=="number"||typeof v.lon!=="number")return false;
+  if(Date.now()-(v.at||0)>LOC_MAX_AGE)return false;
+  userLoc=[v.lat,v.lon];
+  return true;
+ }catch(e){return false}
+}
+
+/* If the browser already holds the permission, refresh silently. No prompt is
+   raised here — a cold launch should never interrogate the user. */
+function refreshLocationQuietly(){
+ if(!navigator.geolocation)return;
+ const go=()=>navigator.geolocation.getCurrentPosition(
+   p=>{userLoc=[p.coords.latitude,p.coords.longitude];rememberLocation(userLoc[0],userLoc[1]);apply()},
+   ()=>{},{maximumAge:1000*60*10,timeout:8000});
+ if(navigator.permissions&&navigator.permissions.query){
+  navigator.permissions.query({name:"geolocation"})
+   .then(st=>{if(st.state==="granted")go()})
+   .catch(()=>{});
+ }
+}
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function name(r){return r.Official_Waterbody_Name||r.Unoffcial_Waterbody_Name||"Unnamed waterbody"}
 function num(v){return Number(v||0).toLocaleString("en-CA",{maximumFractionDigits:0})}
@@ -585,6 +629,54 @@ function ringCentre(geom){
 
 function escSql(v){return String(v).replace(/'/g,"''")}
 
+
+/* ---------------------------------------------------------------------------
+   Species-aware Explore search.
+
+   The Explore box used to hand the query to Ontario as a NAME lookup only, so
+   typing "walleye" asked for lakes *called* Walleye — there are none — and
+   fell back to whatever stocked walleye lakes happened to be loaded. Moira,
+   which holds walleye but has never been stocked, could not appear.
+
+   If the query names a species the app knows, it now also runs the same
+   area-and-species query Find Fish uses.
+--------------------------------------------------------------------------- */
+function knownSpeciesName(q){
+ const t=String(q||"").trim().toLowerCase();
+ if(t.length<3)return null;
+ const all=new Set(SPORT_SPECIES);
+ rows.forEach(r=>{if(r.Species)all.add(r.Species)});
+ lakes.forEach(l=>(l.present||[]).forEach(x=>all.add(x)));
+ for(const sp of all)if(sp.toLowerCase()===t)return sp;              // "walleye"
+ for(const sp of all)if(sp.toLowerCase().startsWith(t)&&t.length>=4)return sp;  // "walle"
+ // "brook trout" typed against "Brook Trout" with odd spacing
+ const norm=x=>x.toLowerCase().replace(/\s+/g," ").trim();
+ for(const sp of all)if(norm(sp)===norm(t))return sp;
+ return null;
+}
+
+/* The radius the Explore box should search when the query is a species.
+   Uses whatever distance is set; falls back to 100 km. */
+function explorerRadius(){
+ return Number($("radius") && $("radius").value)||100;
+}
+
+async function speciesLookupFor(q){
+ const sp=knownSpeciesName(q);
+ if(!sp||!userLoc)return 0;
+ const status=$("count"),previous=status?status.textContent:"";
+ if(status)status.textContent=`Searching Ontario for ${sp}…`;
+ try{
+  const n=await araNearby(userLoc[0],userLoc[1],explorerRadius(),sp);
+  if(n){buildFilters(true);apply()}
+  else if(status)status.textContent=previous;
+  return n;
+ }catch(e){
+  if(status)status.textContent=previous;
+  return 0;
+ }
+}
+
 async function searchProvince(q){
  const term=q.trim();
  if(term.length<3||liveBusy||liveTried.has(term.toLowerCase()))return false;
@@ -610,6 +702,9 @@ async function searchProvince(q){
   const added=mergeLiveResults(j.features||[]);
   // One township request covers the whole result set.
   if(added)loadTownshipsForLakes(lakes).then(()=>{assignTownships();apply()});
+  // A query can be both a place and a fish ("Trout Lake" / "trout"), so the
+  // species lookup runs regardless of what the name search returned.
+  speciesLookupFor(term);
   if(added){buildFilters(true);apply();}
   else if(status)status.textContent=previous;
   return added>0;
@@ -948,6 +1043,8 @@ function emptyMessage(){
   return "Turn on location to see the lakes closest to you, or search for one by name.";
  if(!lakes.length)return "Stocking data hasn't loaded yet.";
  if(liveBusy)return "Searching every lake in Ontario…";
+ if(!userLoc&&knownSpeciesName($("search").value))
+  return "Turn on location to search the whole province for this species — a species search needs somewhere to search from.";
  return "No stocked lakes match these filters. Try widening the distance or clearing the species.";
 }
 function toggleFav(key){favoriteKeys.has(key)?favoriteKeys.delete(key):favoriteKeys.add(key);localStorage.setItem("osl-favorites",JSON.stringify([...favoriteKeys]));apply()}
@@ -1315,7 +1412,7 @@ function locate(after){
  if(nativeLoc){
   window.__nativeLocationResult=r=>{
    window.__nativeLocationResult=null;
-   if(r&&r.ok)return onLocated({coords:{latitude:r.lat,longitude:r.lon}});
+   if(r&&r.ok){rememberLocation(r.lat,r.lon);return onLocated({coords:{latitude:r.lat,longitude:r.lon}})}
    onLocateFailed(r&&r.reason==="denied");
   };
   nativeLoc.postMessage({});
@@ -1325,7 +1422,7 @@ function locate(after){
  navigator.geolocation.getCurrentPosition(onLocated,()=>onLocateFailed(true),{enableHighAccuracy:true,timeout:10000});
 
  function onLocated(p){
-  userLoc=[p.coords.latitude,p.coords.longitude];
+  userLoc=[p.coords.latitude,p.coords.longitude];rememberLocation(userLoc[0],userLoc[1]);
   if(mapAvailable){
    if(userMarker)map.removeLayer(userMarker);
    userMarker=L.marker(userLoc).addTo(map).bindPopup("Your location");
@@ -1557,7 +1654,7 @@ const fs2=$("favSearch");if(fs2)fs2.oninput=()=>{clearTimeout(fs2._t);fs2._t=set
 $("showAccess").onchange=()=>{$("showAccess").checked?loadAccess():renderAccess()};
 $("showFMZ").onchange=()=>{$("showFMZ").checked?loadFMZ(true):renderFMZ()};
 $("showDepth").onchange=renderDepth;
-$("searchBtn").onclick=()=>{apply();const q=$("search").value.trim();if(q.length>=3&&shown.length<5)searchProvince(q)};
+$("searchBtn").onclick=()=>{apply();const q=$("search").value.trim();if(q.length<3)return;if(shown.length<5)searchProvince(q);else if(knownSpeciesName(q))speciesLookupFor(q)};
 $("search").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("search").blur();apply();const q=$("search").value.trim();if(q.length>=3&&shown.length<5)searchProvince(q)}};
 $("search").oninput=()=>{
  clearTimeout($("search")._t);
@@ -1566,8 +1663,9 @@ $("search").oninput=()=>{
   // Few or no local hits and a real word typed: check the whole province.
   const q=$("search").value.trim();
   if(q.length>=3&&shown.length<5)searchProvince(q);
+  else if(q.length>=3&&knownSpeciesName(q))speciesLookupFor(q);
  },320);
-};$("species").onchange=apply;$("year").onchange=apply;
+};$("species").onchange=()=>{apply();const v=$("species").value;if(v)speciesLookupFor(v)};$("year").onchange=apply;
 $("radius").onchange=()=>{if($("radius").value&&!userLoc)locate(apply);else apply()};
 const rf=$("resetFind");
 if(rf)rf.onclick=()=>{
@@ -1808,5 +1906,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  const en=$("langEN"),fr=$("langFR");
  if(en)en.onclick=()=>setLanguage("en");
  if(fr)fr.onclick=()=>setLanguage("fr");
+ restoreLocation();
  setLanguage(appLang);wireShell();
+ refreshLocationQuietly();
 });
