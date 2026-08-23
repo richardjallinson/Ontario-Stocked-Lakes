@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#123f3a">
+<meta name="description" content="Find Ontario stocked lakes by distance, species and stocking year, then check fishing regulations, access points, weather and consumption advice.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stocked Lakes">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Ontario Stocked Lakes</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+</head>
+<body>
+<header>
+  <div class="headerBrand">
+    <div class="eyebrow">ONTARIO</div>
+    <h1>Stocked Lakes</h1>
+    <span id="brandTagline">Find stocked lakes. Know the rules. Plan the trip.</span>
+  </div>
+  <div class="headerActions">
+    <button id="locateBtn" class="round" type="button" aria-label="Use my location">◎</button>
+    <button id="helpBtn" class="round" type="button" aria-label="Help and about">?</button>
+  </div>
+</header>
+<div class="languageBar" aria-label="Language / Langue">
+  <button id="langEN" class="active" type="button">English</button>
+  <button id="langFR" type="button">Français</button>
+</div>
+<main>
+<section class="hero">
+  <h2>Find your next fishing spot</h2>
+  <p>Explore Ontario fish-stocking records by lake, species and year.</p>
+  <div class="searchrow">
+    <input id="search" placeholder="Search lake, township or species">
+    <button id="searchBtn">Search</button>
+  </div>
+</section>
+
+<section class="dashboard" id="dashboard">
+  <div><strong id="statLakes">—</strong><span>Stocked lakes</span></div>
+  <div><strong id="statRecords">—</strong><span>Stocking records</span></div>
+  <div><strong id="statSpecies">—</strong><span>Species</span></div>
+  <div><strong id="statLatest">—</strong><span>Latest year</span></div>
+  <div><strong id="statHistorical">—</strong><span>Historical records</span></div>
+</section>
+
+<section class="quick">
+  <button id="nearBtn"><b>📍 Near Me</b><span>Closest stocking records</span></button>
+  <button id="recentBtn"><b>🐟 Recently Stocked</b><span>Newest records first</span></button>
+  <button id="recentNearBtn"><b>🎯 Recent Near Me</b><span>Newest stocked lakes close to you</span></button>
+  <button id="findFishBtn"><b>🔎 Find Fish</b><span>Distance • species • stocking quantity</span></button>
+  <button id="regsBtn"><b>📖 2026 Regulations</b><span>Official Ontario fishing rules</span></button>
+  <button id="fishOnlineBtn"><b>🎣 Fish ON-Line</b><span>Government lake information</span></button>
+</section>
+
+<section id="findPanel" class="findpanel">
+  <div class="findhead"><div><h3>🔎 Find Fish</h3><p>Search stocked lakes around you.</p></div><button id="closeFind">×</button></div>
+  <div class="findgrid">
+    <label>Distance
+      <select id="findRadius">
+        <option value="25">Within 25 km</option>
+        <option value="50" selected>Within 50 km</option>
+        <option value="100">Within 100 km</option>
+        <option value="200">Within 200 km</option>
+      </select>
+    </label>
+    <label>Species<select id="findSpecies"><option value="">Any species</option></select></label>
+    <label>Stocking year<select id="findYear"><option value="">Any year</option></select></label>
+    <label>Minimum fish stocked<input id="findMinimum" type="number" min="0" step="100" placeholder="e.g. 2000"></label>
+    <label>Lake name<input id="findLake" placeholder="Optional lake name"></label>
+    <label>Sort results
+      <select id="findSort"><option value="best">Best Match</option><option value="closest">Closest</option><option value="recent">Most recently stocked</option><option value="quantity">Most fish stocked</option></select>
+    </label>
+  </div>
+  <label class="checkline"><input id="findAccess" type="checkbox"> Only lakes with a nearby fishing access point</label>
+  <button id="runFind" class="runfind">Find Stocked Lakes</button>
+</section>
+<section class="filters">
+  <select id="species"><option value="">All species</option></select>
+  <select id="year"><option value="">All years</option></select>
+  <select id="radius">
+    <option value="">Any distance</option><option value="25">Within 25 km</option><option value="50">Within 50 km</option><option value="100">Within 100 km</option><option value="200">Within 200 km</option>
+  </select>
+  <button id="clearFilters" class="clearbtn">Clear</button>
+</section>
+<section class="mapcontrols">
+  <div class="accessbar">
+    <label><input type="checkbox" id="showAccess"> <b>🚤 Show fishing access points</b></label>
+    <span id="accessStatus">Boat launches • shore access • docks/piers</span>
+  </div>
+  <div class="accessbar">
+    <label><input type="checkbox" id="showFMZ"> <b>🗺️ Show Fisheries Management Zones</b></label>
+    <span id="fmzStatus">Ontario FMZ 1–20</span>
+  </div>
+  <div class="accessbar">
+    <label><input type="checkbox" id="showDepth"> <b>🌊 Show lake depth contours</b></label>
+    <span id="depthStatus">Government bathymetry • not for navigation</span>
+  </div>
+</section>
+
+<section class="mapcard"><div id="map"></div></section>
+
+<div class="sectiontitle"><h3 id="listTitle">Explore stocked lakes</h3><span id="count">Loading…</span></div>
+<section id="results" class="results"></section>
+</main>
+<nav class="bottomnav">
+  <button data-view="explore" class="active"><span>🗺️</span>Explore</button>
+  <button data-view="near"><span>📍</span>Near Me</button>
+  <button data-view="favorites"><span>⭐</span>My Lakes</button>
+  <button data-view="trips"><span>🎣</span>Trips</button>
+</nav>
+
+<div id="sheet" class="sheet hidden"><div class="sheetbox">
+  <button id="closeSheet" class="close">×</button><div id="detail"></div>
+</div></div>
+<div id="tripSheet" class="sheet hidden"><div class="sheetbox">
+  <button id="closeTrip" class="close">×</button><div id="tripDetail"></div>
+</div></div>
+
+<footer>
+  Fish stocking, regulations and advisory data: Government of Ontario. Weather alerts: Environment and Climate Change Canada.<br>
+  Not an official Government of Ontario application. Always confirm the current regulations before you fish.
+</footer>
+
+<div id="onboarding" class="onboarding hidden" role="dialog" aria-modal="true">
+  <div class="onboardCard">
+    <button id="closeOnboarding" class="modalClose" type="button">×</button>
+    <div class="onboardIcon">🎣</div>
+    <h2 id="onboardTitle">Find your next Ontario fishing lake</h2>
+    <p id="onboardText">Search by distance, species and stocking history, then check regulations, access, weather and eating advice before you go.</p>
+    <div class="onboardSteps">
+      <div><b>1</b><span id="onboardStep1">Choose a distance and species</span></div>
+      <div><b>2</b><span id="onboardStep2">Compare stocked lakes</span></div>
+      <div><b>3</b><span id="onboardStep3">Open a lake and verify the current rules</span></div>
+    </div>
+    <button id="startExploring" class="primaryModalAction" type="button">Start Exploring</button>
+  </div>
+</div>
+<div id="helpSheet" class="sheet hidden"><div class="sheetbox helpSheetBox">
+  <button id="closeHelp" class="close">×</button>
+  <div id="helpContent"></div>
+</div></div>
+
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="app.js"></script>
+</body></html>
