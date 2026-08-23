@@ -498,3 +498,15 @@ body.filtering .sectiontitle{margin-top:14px}
 .inlinecheck{background:#fff;border:1px solid var(--line);border-radius:12px;
  padding:12px 14px;font-size:13.5px;display:flex;align-items:center;gap:10px}
 .inlinecheck input{width:20px;height:20px;accent-color:var(--green);margin:0}
+
+/* Find Fish mode switch: survey data vs stocking records. */
+.modeRow{display:flex;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;margin:12px 0 8px}
+.modeRow button{flex:1;border:0;background:#fff;color:var(--muted);padding:12px 8px;
+ font-size:13px;font-weight:700;cursor:pointer;border-right:1px solid var(--line)}
+.modeRow button:last-child{border-right:0}
+.modeRow button.on{background:var(--green);color:#fff;font-weight:800}
+#modeNote{margin:0 0 4px}
+.disabledField{opacity:.45}
+.findgrid input[list]{width:100%;border:1px solid var(--line);border-radius:11px;
+ padding:11px;font-size:15px;-webkit-appearance:none;appearance:none;background:#fff}
+.heroStock.present b{font-size:15px;line-height:1.2}

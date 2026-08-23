@@ -112,7 +112,11 @@
         <option value="200">Within 200 km</option>
       </select>
     </label>
-    <label>Species<select id="findSpecies"><option value="">Any species</option></select></label>
+    <label>Species
+      <input id="findSpecies" list="speciesList" autocomplete="off" autocorrect="off"
+             spellcheck="false" placeholder="Any species — or type one">
+      <datalist id="speciesList"></datalist>
+    </label>
     <label>Stocking year<select id="findYear"><option value="">Any year</option></select></label>
     <label>Minimum fish stocked<input id="findMinimum" type="number" min="0" step="100" placeholder="e.g. 2000"></label>
     <label>Lake name<input id="findLake" type="search" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Optional lake name"></label>
@@ -120,8 +124,13 @@
       <select id="findSort"><option value="best">Best Match</option><option value="closest">Closest</option><option value="recent">Most recently stocked</option><option value="quantity">Most fish stocked</option></select>
     </label>
   </div>
+  <div class="modeRow" role="group" aria-label="What to search">
+    <button type="button" id="modeAny" class="on">Anywhere the fish are</button>
+    <button type="button" id="modeStocked">Stocked lakes only</button>
+  </div>
+  <p class="panelNote" id="modeNote">Searches provincial fish survey records, not just stocking. Most Ontario fish were never stocked.</p>
   <label class="checkline"><input id="findAccess" type="checkbox"> Only lakes with a nearby fishing access point</label>
-  <button id="runFind" class="runfind">Find Stocked Lakes</button>
+  <button id="runFind" class="runfind">Find Fish Near Me</button>
 </section>
 <section class="filters" data-show="explore favorites">
   <select id="species"><option value="">All species</option></select>
