@@ -1,7 +1,30 @@
 # Changelog
 
-All notable changes to this project are documented here.
-This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Bundles are named sequentially — v1a, v1b, v1c — matching the Estate File
+convention. `APP_VERSION` in `app.js` and `VERSION` in `sw.js` carry the same
+marker and must always match.
+
+## v1a — 2026-08-23
+
+### Fixed
+- **Every tab showed Explore's content underneath it.** Only the resources
+  panel was being hidden, so the hero, stats strip and shortcut cards sat under
+  Trips, My Lakes and Near Me. Sections now declare which views they belong to
+  and the switcher hides everything else.
+- **Search results were below the fold.** Results moved above the map, the map
+  layer toggles moved down beside the map where they belong, and once a search
+  or filter is active the stats strip and shortcut cards collapse. Results now
+  start ~330px down instead of ~1055px.
+- The header title wrapped to two lines because four controls crowded it.
+
+### Added
+- **Settings** (cog replaces the locate circle in the header): text size
+  (Standard / Large / Larger, persisted, with a live preview), language,
+  location, app link with copy and share, backup and restore, and a link
+  through to Help.
+- **Per-view headers.** "Find your next fishing spot" is Explore's alone now.
+  Near Me has its own distance selector and locate button, My Lakes has its own
+  filter field, Trips has its own heading.
 
 ## [1.2.0] — 2026-08-23
 

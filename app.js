@@ -25,7 +25,13 @@ const I18N={
   privacy:"Privacy",privacyText:"Location is requested only when you use a location feature, and is never sent anywhere. Trips and catches stay on this device.",
   dataSources:"Government data sources",disclaimer:"Not an official Government of Ontario app.",
   yourData:"Your data",yourDataText:"Trips, catches and saved lakes stay on this device. Save a backup before you change or reset your device.",
-  exportData:"Save a backup",importData:"Restore a backup"
+  exportData:"Save a backup",importData:"Restore a backup",
+  settings:"Settings",textSize:"Text size",textSizeNote:"Larger text throughout the app. Useful in bright sun or on the water.",
+  sizePreview:"Brook Trout • stocked 2025 • 4,200 fish",
+  location:"Location",locationNote:"Used on this device to sort lakes by distance. Never sent anywhere.",
+  useLocation:"Use my location",
+  appLink:"App link",appLinkNote:"Share Ontario Stocked Lakes with someone.",
+  copyLink:"Copy link",shareApp:"Share",linkCopied:"Link copied."
  },
  fr:{
   findFish:"Trouver du poisson",distance:"Distance",species:"Espèce",stockingYear:"Année d'ensemencement",
@@ -52,7 +58,13 @@ const I18N={
   privacy:"Confidentialité",privacyText:"La position est demandée seulement lorsque vous utilisez une fonction géolocalisée et n’est jamais transmise. Les sorties et les prises restent sur cet appareil.",
   dataSources:"Sources de données gouvernementales",disclaimer:"Ceci n’est pas une application officielle du gouvernement de l’Ontario.",
   yourData:"Vos données",yourDataText:"Les sorties, les prises et les lacs enregistrés restent sur cet appareil. Enregistrez une copie avant de changer ou de réinitialiser votre appareil.",
-  exportData:"Enregistrer une copie",importData:"Restaurer une copie"
+  exportData:"Enregistrer une copie",importData:"Restaurer une copie",
+  settings:"Réglages",textSize:"Taille du texte",textSizeNote:"Agrandit le texte dans toute l'application. Utile au soleil ou sur l'eau.",
+  sizePreview:"Omble de fontaine • ensemencé 2025 • 4 200 poissons",
+  location:"Position",locationNote:"Utilisée sur cet appareil pour trier les lacs par distance. Jamais transmise.",
+  useLocation:"Utiliser ma position",
+  appLink:"Lien de l'application",appLinkNote:"Partagez Ontario Stocked Lakes avec quelqu'un.",
+  copyLink:"Copier le lien",shareApp:"Partager",linkCopied:"Lien copié."
  }
 };
 let appLang=localStorage.getItem("osl-language")||"en";
@@ -84,7 +96,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="1.2.0";
+const APP_VERSION="v1a";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -379,7 +391,7 @@ function buildFilters(){
 }
 function apply(){
  if(currentView==="trips"){renderTrips();return}
- const q=$("search").value.trim().toLowerCase(),sp=$("species").value,yr=$("year").value,radius=Number($("radius").value)||0;
+ const q=(currentView==="favorites"&&$("favSearch")?$("favSearch").value:$("search").value).trim().toLowerCase(),sp=$("species").value,yr=$("year").value,radius=Number($("radius").value)||0;
  shown=lakes.filter(l=>{
   if(currentView==="favorites"&&!favoriteKeys.has(l.key))return false;
   const matching=l.records.filter(r=>(!sp||r.Species===sp)&&(!yr||String(r.Stocking_Year)===yr));if(!matching.length)return false;
@@ -393,6 +405,8 @@ function apply(){
 }
 function render(){
  $("count").textContent=lakeCount(shown.length);
+ const filtering=!!(($("search").value||"").trim()||$("species").value||$("year").value||$("radius").value);
+ document.body.classList.toggle("filtering",filtering&&currentView==="explore");
  const mc=$("mapCount");if(mc)mc.textContent=lakeCount(Math.min(shown.length,400))+" on the map";
  $("listTitle").textContent=currentView==="favorites"?"My Lakes":currentView==="near"?"Stocked lakes near me":currentView==="recentnear"?"Recently stocked within 100 km":currentView==="findfish"?$("listTitle").textContent:"Explore stocked lakes";
  $("results").innerHTML=shown.slice(0,250).map((l,i)=>{
@@ -713,7 +727,7 @@ function runFindFish(){
   const radius=Number($("findRadius").value)||50,sp=$("findSpecies").value,yr=$("findYear").value,min=Number($("findMinimum").value)||0,
     lname=$("findLake").value.trim().toLowerCase(),sort=$("findSort").value,needAccess=$("findAccess").checked;
   const execute=()=>{
-   currentView="findfish";syncTabs();
+   currentView="findfish";
    shown=lakes.filter(l=>{
     const km=distance(userLoc[0],userLoc[1],l.lat,l.lon);if(km>radius)return false;
     if(lname&&!l.name.toLowerCase().includes(lname))return false;
@@ -752,7 +766,7 @@ function renderFindResults(sp,yr){
 }
 function recentNearMe(){
  const run=()=>{
-  currentView="recentnear";syncTabs();$("search").value="";$("species").value="";$("year").value="";$("radius").value="100";
+  currentView="recentnear";$("search").value="";$("species").value="";$("year").value="";$("radius").value="100";
   shown=[...lakes].filter(l=>distance(userLoc[0],userLoc[1],l.lat,l.lon)<=100)
     .sort((a,b)=>b.latestYear-a.latestYear || distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon));
   $("listTitle").textContent="Recently stocked within 100 km";
@@ -760,41 +774,42 @@ function recentNearMe(){
  };
  if(!userLoc)locate(run);else run();
 }
-function syncTabs(){
- const map={recentnear:"near",findfish:"findfish"};
- const target=map[currentView]||currentView;
- document.querySelectorAll(".tabs button").forEach(b=>{
-  const on=b.dataset.view===target;
-  b.classList.toggle("active",on);b.setAttribute("aria-selected",String(on));
- });
-}
 function setView(v){
  currentView=v;
  document.querySelectorAll(".tabs button").forEach(b=>{
   const on=b.dataset.view===v;
-  b.classList.toggle("active",on);
-  b.setAttribute("aria-selected",String(on));
+  b.classList.toggle("active",on);b.setAttribute("aria-selected",String(on));
  });
  const active=document.querySelector(".tabs button.active");
  if(active&&active.scrollIntoView)active.scrollIntoView({block:"nearest",inline:"nearest",behavior:"smooth"});
 
- // Panels that are not the results list.
- const res=$("resourcesPanel");if(res)res.hidden=v!=="resources";
- const find=$("findPanel");if(find&&v!=="findfish")find.classList.remove("open");
- const browse=document.querySelectorAll(".hero,.dashboard,.quick,.filters,.mapcontrols,.mapcard,.sectiontitle,#results");
- browse.forEach(el=>{el.hidden=v==="resources"});
+ // Every section declares which views it belongs to. Before this, only the
+ // resources panel was hidden, so Explore's hero, stats and shortcuts sat
+ // underneath whichever tab you picked.
+ document.querySelectorAll("[data-show]").forEach(el=>{
+  el.hidden=!el.dataset.show.split(" ").includes(v);
+ });
+
+ const find=$("findPanel");
+ if(find)find.classList.toggle("open",v==="findfish");
+ window.scrollTo({top:0,behavior:"smooth"});
 
  if(v==="resources")return;
- if(v==="findfish"){
-  if(find){find.classList.add("open");find.scrollIntoView({behavior:"smooth",block:"start"})}
-  apply();return;
- }
  if(v==="trips")return renderTrips();
- // Near Me needs a location, but a refusal must not leave a blank screen:
- // apply() runs either way so the full list is still there to fall back on.
- if(v==="near"&&!userLoc)locate(apply);
+ if(v==="near"){
+  const r=$("nearRadius");if(r)$("radius").value=r.value;
+  if(!userLoc)locate(apply);
+ }
  apply();
 }
+
+function syncTabs(){
+ const map={recentnear:"near",findfish:"findfish"};
+ setView(map[currentView]||currentView);
+}
+const nr=$("nearRadius");if(nr)nr.onchange=()=>{$("radius").value=nr.value;if(!userLoc)locate(apply);else apply()};
+const nl=$("nearLocate");if(nl)nl.onclick=()=>locate(apply);
+const fs2=$("favSearch");if(fs2)fs2.oninput=()=>{clearTimeout(fs2._t);fs2._t=setTimeout(apply,200)};
 $("showAccess").onchange=()=>{$("showAccess").checked?loadAccess():renderAccess()};
 $("showFMZ").onchange=()=>{$("showFMZ").checked?loadFMZ(true):renderFMZ()};
 $("showDepth").onchange=renderDepth;
@@ -803,7 +818,7 @@ $("search").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("search").blu
 $("search").oninput=()=>{clearTimeout($("search")._t);$("search")._t=setTimeout(apply,240)};$("species").onchange=apply;$("year").onchange=apply;
 $("radius").onchange=()=>{if($("radius").value&&!userLoc)locate(apply);else apply()};
 $("clearFilters").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";apply()};
-$("locateBtn").onclick=()=>locate(apply);
+
 
 $("closeFind").onclick=()=>{$("findPanel").classList.remove("open");setView("explore")};
 $("runFind").onclick=runFindFish;
@@ -890,14 +905,106 @@ function helpMarkup(){
  </div>
  <div class="versionStamp">Ontario Stocked Lakes • v${APP_VERSION}</div>`;
 }
+
+const APP_URL="https://github.com/YOUR-USERNAME/ontario-stocked-lakes";
+const TEXT_SIZES=["standard","large","larger"];
+function applyTextSize(size){
+ document.body.classList.remove("text-large","text-larger");
+ if(size==="large")document.body.classList.add("text-large");
+ if(size==="larger")document.body.classList.add("text-larger");
+ localStorage.setItem("osl-textsize",size);
+}
+function currentTextSize(){return localStorage.getItem("osl-textsize")||"standard"}
+
+function settingsMarkup(){
+ const size=currentTextSize();
+ const label={standard:appLang==="fr"?"Standard":"Standard",large:appLang==="fr"?"Grand":"Large",larger:appLang==="fr"?"Très grand":"Larger"};
+ return `<h2 class="sheetTitle">${t("settings")}</h2>
+
+ <section class="setBlock">
+  <h3>${t("textSize")}</h3>
+  <p class="setNote">${t("textSizeNote")}</p>
+  <div class="segmented" role="group" aria-label="${t("textSize")}">
+   ${TEXT_SIZES.map(v=>`<button type="button" data-size="${v}" class="${v===size?"on":""}">${label[v]}</button>`).join("")}
+  </div>
+  <p class="sizePreview">${t("sizePreview")}</p>
+ </section>
+
+ <section class="setBlock">
+  <h3>${t("language")}</h3>
+  <div class="segmented" role="group" aria-label="${t("language")}">
+   <button type="button" data-lang="en" class="${appLang==="en"?"on":""}">English</button>
+   <button type="button" data-lang="fr" class="${appLang==="fr"?"on":""}">Français</button>
+  </div>
+ </section>
+
+ <section class="setBlock">
+  <h3>${t("location")}</h3>
+  <p class="setNote">${t("locationNote")}</p>
+  <button id="setLocate" class="ghostbtn wide" type="button">${t("useLocation")}</button>
+ </section>
+
+ <section class="setBlock">
+  <h3>${t("appLink")}</h3>
+  <p class="setNote">${t("appLinkNote")}</p>
+  <div class="linkRow"><code id="appUrl">${esc(APP_URL)}</code></div>
+  <div class="dataActions">
+   <button id="copyLink" type="button">${t("copyLink")}</button>
+   <button id="shareLink" type="button">${t("shareApp")}</button>
+  </div>
+ </section>
+
+ <section class="setBlock">
+  <h3>${t("yourData")}</h3>
+  <p class="setNote">${t("yourDataText")}</p>
+  <div class="dataActions">
+   <button id="exportData" type="button">${t("exportData")}</button>
+   <label class="importBtn">${t("importData")}<input id="importData" type="file" accept="application/json,.json" hidden></label>
+  </div>
+ </section>
+
+ <section class="setBlock">
+  <button id="openHelpFromSettings" class="ghostbtn wide" type="button">${t("helpTitle")}</button>
+ </section>
+
+ <div class="versionStamp">Ontario Stocked Lakes • v${APP_VERSION}</div>`;
+}
+
+function openSettings(){
+ const c=$("settingsContent");if(!c)return;
+ c.innerHTML=settingsMarkup();
+ c.querySelectorAll("[data-size]").forEach(b=>b.onclick=()=>{applyTextSize(b.dataset.size);openSettings()});
+ c.querySelectorAll("[data-lang]").forEach(b=>b.onclick=()=>{setLanguage(b.dataset.lang);openSettings()});
+ const sl=$("setLocate");if(sl)sl.onclick=()=>{$("settingsSheet").classList.add("hidden");locate(apply)};
+ const cl=$("copyLink");if(cl)cl.onclick=()=>{
+  const done=()=>toast(t("linkCopied"));
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(APP_URL).then(done).catch(()=>toast(APP_URL));
+  else toast(APP_URL);
+ };
+ const sh=$("shareLink");if(sh)sh.onclick=()=>{
+  if(navigator.share)navigator.share({title:"Ontario Stocked Lakes",url:APP_URL}).catch(()=>{});
+  else if(cl)cl.click();
+ };
+ const ex=$("exportData");if(ex)ex.onclick=exportMyData;
+ const im=$("importData");if(im)im.onchange=e=>{if(e.target.files[0])importMyData(e.target.files[0])};
+ const oh=$("openHelpFromSettings");if(oh)oh.onclick=()=>{$("settingsSheet").classList.add("hidden");openHelp()};
+ $("settingsSheet").classList.remove("hidden");
+}
+
 function openHelp(){
  const c=$("helpContent");if(c)c.innerHTML=helpMarkup();
+ // Backup lives in Settings now; Help just points at it.
  const ex=$("exportData");if(ex)ex.onclick=exportMyData;
  const im=$("importData");if(im)im.onchange=e=>{if(e.target.files[0])importMyData(e.target.files[0])};
  $("helpSheet").classList.remove("hidden");
 }
 function wireShell(){
  const hb=$("helpBtn"),ch=$("closeHelp"),hs=$("helpSheet"),ob=$("onboarding"),co=$("closeOnboarding"),se=$("startExploring");
+ const sb=$("settingsBtn"),cs=$("closeSettings"),ss=$("settingsSheet");
+ if(sb)sb.onclick=openSettings;
+ if(cs)cs.onclick=()=>ss.classList.add("hidden");
+ if(ss)ss.onclick=e=>{if(e.target===ss)ss.classList.add("hidden")};
+ applyTextSize(currentTextSize());
  if(hb)hb.onclick=openHelp;if(ch)ch.onclick=()=>hs.classList.add("hidden");
  if(hs)hs.onclick=e=>{if(e.target===hs)hs.classList.add("hidden")};
  const closeOnboard=()=>{if(ob)ob.classList.add("hidden");localStorage.setItem("osl-onboarded-v1t","1")};
