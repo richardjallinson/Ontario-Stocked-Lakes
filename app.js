@@ -96,7 +96,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="v1g";
+const APP_VERSION="v1h";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -406,6 +406,136 @@ async function loadWaterbodies(){
  }
 }
 
+
+/* ---------------------------------------------------------------------------
+   Province-wide lake lookup.
+
+   The bundled index (ontario-waterbodies.json) is the offline path, but it has
+   to be generated with tools/build-waterbodies.py and committed. Until that
+   happens — and for anything the index misses — this asks Ontario directly.
+
+   It runs only when a typed search finds little or nothing locally, so the
+   normal case still costs no network at all. Failure is silent: offline is the
+   expected state for this app, not an error.
+--------------------------------------------------------------------------- */
+const ARA_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/2/query";
+const liveTried=new Set();
+let liveBusy=false;
+
+function ringCentre(geom){
+ const rings=(geom&&geom.rings)||[];
+ if(!rings.length)return null;
+ const ring=rings.reduce((a,b)=>b.length>a.length?b:a,rings[0]);
+ if(ring.length<3){
+  const n=ring.length||1;
+  return [ring.reduce((t,p)=>t+p[1],0)/n, ring.reduce((t,p)=>t+p[0],0)/n];
+ }
+ let a=0,cx=0,cy=0;
+ for(let i=0;i<ring.length-1;i++){
+  const x0=ring[i][0],y0=ring[i][1],x1=ring[i+1][0],y1=ring[i+1][1];
+  const cr=x0*y1-x1*y0; a+=cr; cx+=(x0+x1)*cr; cy+=(y0+y1)*cr;
+ }
+ if(Math.abs(a)<1e-12){
+  const n=ring.length;
+  return [ring.reduce((t,p)=>t+p[1],0)/n, ring.reduce((t,p)=>t+p[0],0)/n];
+ }
+ a*=0.5;
+ return [cy/(6*a), cx/(6*a)];
+}
+
+function escSql(v){return String(v).replace(/'/g,"''")}
+
+async function searchProvince(q){
+ const term=q.trim();
+ if(term.length<3||liveBusy||liveTried.has(term.toLowerCase()))return false;
+ liveBusy=true;liveTried.add(term.toLowerCase());
+ const status=$("count");
+ const previous=status?status.textContent:"";
+ if(status)status.textContent="Searching all Ontario lakes…";
+ try{
+  const p=new URLSearchParams({
+   where:`WATERBODY_TYPE = 'Lake or Pond' AND UPPER(OFFICIAL_WATERBODY_NAME) LIKE UPPER('%${escSql(term)}%')`,
+   outFields:"OFFICIAL_WATERBODY_NAME,WATERBODY_LID,FISH_SPECIES_SUMMARY,SURFACE_AREA,MAXIMUM_DEPTH,MEAN_DEPTH,SECCHI_DEPTH,THERMAL_REGIME,FISHERIES_MANAGEMENT_ZONE_ID",
+   returnGeometry:"true",
+   // The shoreline detail is irrelevant — we only need somewhere to put a
+   // marker — and generalising keeps this a small request on a slow connection.
+   maxAllowableOffset:"0.02",
+   geometryPrecision:"4",
+   outSR:"4326",
+   f:"json",
+   resultRecordCount:"60"
+  });
+  const j=await fetch(ARA_API+"?"+p).then(r=>r.json());
+  if(j.error)throw Error(j.error.message);
+  const added=mergeLiveResults(j.features||[]);
+  if(added){buildFilters(true);apply();}
+  else if(status)status.textContent=previous;
+  return added>0;
+ }catch(e){
+  if(status)status.textContent=previous;
+  return false;
+ }finally{liveBusy=false}
+}
+
+function mergeLiveResults(features){
+ const byLid=new Map();
+ lakes.forEach(l=>{const k=String(l.waterbodyId||"").trim();if(k)byLid.set(k,l)});
+ const byName=new Set(lakes.map(l=>(l.name||"").toLowerCase()+"|"+l.lat.toFixed(2)));
+
+ const grouped=new Map();
+ features.forEach(f=>{
+  const a=f.attributes||{},name=(a.OFFICIAL_WATERBODY_NAME||"").trim();
+  if(!name)return;
+  const pt=ringCentre(f.geometry);
+  if(!pt)return;
+  const lid=String(a.WATERBODY_LID||"").trim();
+  const key=lid||name.toLowerCase()+"|"+pt[0].toFixed(2);
+  const spp=(a.FISH_SPECIES_SUMMARY||"").split(",").map(x=>x.trim()).filter(Boolean);
+  const area=a.SURFACE_AREA||0;
+  const cur=grouped.get(key);
+  if(!cur){
+   grouped.set(key,{name,lid,lat:pt[0],lon:pt[1],sp:spp,area:area||null,
+    max:a.MAXIMUM_DEPTH,mean:a.MEAN_DEPTH,clar:a.SECCHI_DEPTH,
+    th:a.THERMAL_REGIME||null,fmz:a.FISHERIES_MANAGEMENT_ZONE_ID||null,_a:area||0});
+  }else{
+   // One lake is often several ARA segments. Union the species, keep the
+   // deepest reading, and take the centre of the biggest piece — averaging two
+   // arms of a lake can put the marker on dry land.
+   spp.forEach(x=>{if(!cur.sp.includes(x))cur.sp.push(x)});
+   if((a.MAXIMUM_DEPTH||0)>(cur.max||0))cur.max=a.MAXIMUM_DEPTH;
+   if(area>cur._a){cur._a=area;cur.lat=pt[0];cur.lon=pt[1];cur.area=area}
+  }
+ });
+
+ let added=0;
+ grouped.forEach(w=>{
+  w.sp.sort();
+  const existing=w.lid?byLid.get(w.lid):null;
+  if(existing){
+   if(!existing.present||!existing.present.length)existing.present=w.sp;
+   existing.depthMax=existing.depthMax||w.max;
+   existing.depthMean=existing.depthMean||w.mean;
+   existing.clarity=existing.clarity||w.clar;
+   existing.areaHa=existing.areaHa||w.area;
+   existing.thermal=existing.thermal||w.th;
+   if(!existing.fmz&&w.fmz)existing.fmz=w.fmz;
+   return;
+  }
+  if(byName.has(w.name.toLowerCase()+"|"+w.lat.toFixed(2)))return;
+  lakes.push({
+   key:"wb:"+(w.lid||w.name+w.lat),
+   records:[],name:w.name,lat:w.lat,lon:w.lon,
+   township:"",district:"",waterbodyId:w.lid,
+   latestYear:0,species:[],present:w.sp,
+   depthMax:w.max,depthMean:w.mean,clarity:w.clar,areaHa:w.area,thermal:w.th,
+   fmz:w.fmz,historical:[],observedSpecies:[],advisoryMatches:[],
+   stocked:false
+  });
+  added++;
+ });
+ return added;
+}
+
 function mergeWaterbodies(){
  if(!waterbodies.length)return;
  const byLid=new Map();
@@ -535,6 +665,7 @@ function emptyMessage(){
  if((currentView==="near"||currentView==="recentnear")&&!userLoc)
   return "Turn on location to see the lakes closest to you, or search for one by name.";
  if(!lakes.length)return "Stocking data hasn't loaded yet.";
+ if(liveBusy)return "Searching every lake in Ontario…";
  return "No stocked lakes match these filters. Try widening the distance or clearing the species.";
 }
 function toggleFav(key){favoriteKeys.has(key)?favoriteKeys.delete(key):favoriteKeys.add(key);localStorage.setItem("osl-favorites",JSON.stringify([...favoriteKeys]));apply()}
@@ -694,7 +825,7 @@ function detail(l){
  recentLakes=[l.key,...recentLakes.filter(k=>k!==l.key)].slice(0,10);localStorage.setItem("osl-recent",JSON.stringify(recentLakes));
  const fav=favoriteKeys.has(l.key),history=l.records.map(r=>`<div class="historyrow"><div><b>${esc(r.Stocking_Year||"—")}</b><span>${esc(r.Species||"Species unavailable")}</span></div><div class="historyright"><b>${num(r.Number_of_Fish_Stocked)}</b><span>${esc(r.Developmental_Stage||"")}</span></div></div>`).join("");
  $("detail").innerHTML=`<div class="detailhead"><div><h2>${esc(l.name)}</h2><div class="species">${esc(l.species.join(" • "))}</div></div><button class="bigstar ${fav?"saved":""}" id="detailFav">${fav?"★":"☆"}</button></div>
- <div class="detailgrid"><div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div><div><small>Township</small><b>${esc(l.township||"—")}</b></div><div><small>MNRF district</small><b>${esc(l.district||"—")}</b></div>
+ <div class="detailgrid">${l.stocked?`<div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div>`:`<div><small>Stocking</small><b>Not stocked</b></div>`}${l.township?`<div><small>Township</small><b>${esc(l.township)}</b></div>`:""}${l.district?`<div><small>MNRF district</small><b>${esc(l.district)}</b></div>`:""}
  <div><small>Fisheries Management Zone</small><b>${l.fmz?`FMZ ${l.fmz}`:"Loading / unavailable"}</b></div><div><small>Waterbody ID</small><b>${esc(l.waterbodyId||"—")}</b></div></div>
  ${l.fmz?`<a class="zoneAction" target="_blank" rel="noopener" href="${REGS_BASE}${l.fmz}">View Current FMZ ${l.fmz} Regulations</a>`:""}
 ${presentBlock(l)}
@@ -951,9 +1082,17 @@ const fs2=$("favSearch");if(fs2)fs2.oninput=()=>{clearTimeout(fs2._t);fs2._t=set
 $("showAccess").onchange=()=>{$("showAccess").checked?loadAccess():renderAccess()};
 $("showFMZ").onchange=()=>{$("showFMZ").checked?loadFMZ(true):renderFMZ()};
 $("showDepth").onchange=renderDepth;
-$("searchBtn").onclick=apply;
-$("search").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("search").blur();apply()}};
-$("search").oninput=()=>{clearTimeout($("search")._t);$("search")._t=setTimeout(apply,240)};$("species").onchange=apply;$("year").onchange=apply;
+$("searchBtn").onclick=()=>{apply();const q=$("search").value.trim();if(q.length>=3&&shown.length<5)searchProvince(q)};
+$("search").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("search").blur();apply();const q=$("search").value.trim();if(q.length>=3&&shown.length<5)searchProvince(q)}};
+$("search").oninput=()=>{
+ clearTimeout($("search")._t);
+ $("search")._t=setTimeout(()=>{
+  apply();
+  // Few or no local hits and a real word typed: check the whole province.
+  const q=$("search").value.trim();
+  if(q.length>=3&&shown.length<5)searchProvince(q);
+ },320);
+};$("species").onchange=apply;$("year").onchange=apply;
 $("radius").onchange=()=>{if($("radius").value&&!userLoc)locate(apply);else apply()};
 const su=$("showUnstocked");if(su)su.onchange=apply;
 $("clearFilters").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";const u=$("showUnstocked");if(u)u.checked=true;apply()};
