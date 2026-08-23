@@ -96,17 +96,16 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="v1p";
+const APP_VERSION="v1q";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
-const HIST_API="https://services1.arcgis.com/TJH5KDher0W13Kgo/arcgis/rest/services/Historical_Fish_Stocking_Data/FeatureServer/0/query";
 const SURVEY_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open10/MapServer/18/query";
 const CAUGHT_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open10/MapServer/16/query";
 const BATHY_URL="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open01/MapServer";
 const BATHY_LAYER=30;
-let rows=[],historicalRows=[],lakes=[],shown=[],accessPoints=[],accessLoaded=false,fmzFeatures=[],fmzLoaded=false,historicalLoaded=false,speciesLoaded=false,userLoc=null,currentView="explore";
+let rows=[],lakes=[],shown=[],accessPoints=[],accessLoaded=false,fmzFeatures=[],fmzLoaded=false,speciesLoaded=false,userLoc=null,currentView="explore";
 let trips=JSON.parse(localStorage.getItem("osl-trips")||"[]"),recentLakes=JSON.parse(localStorage.getItem("osl-recent")||"[]");
 let advisoryLocations=[],advisoriesLoaded=false,favoriteKeys=new Set(JSON.parse(localStorage.getItem("osl-favorites")||"[]"));
 const $=id=>document.getElementById(id);
@@ -335,23 +334,6 @@ function pick(a,names){
  for(const n of names) if(a[n]!==undefined&&a[n]!==null&&String(a[n]).trim()!=="") return a[n];
  return null;
 }
-function normalizeHistorical(a){
- const id=pick(a,["Waterbody_Location_Identifier","WATERBODY_LOCATION_IDENTIFIER","Waterbody_Location_ID","WATERBODY_IDENT","Waterbody_Identifier","WATERBODY_IDENTIFIER"]);
- const yr=pick(a,["Stocking_Year","STOCKING_YEAR","StockingYear","Year","YEAR"]);
- const date=pick(a,["Stocking_Date","STOCKING_DATE","StockingDate"]);
- let year=Number(yr)||0;
- if(!year&&date){const d=new Date(Number(date)||date);if(!isNaN(d))year=d.getFullYear()}
- return {
-  raw:a, waterbodyId:id?String(id).trim():"",
-  year, species:pick(a,["Species","SPECIES","Species_Name","SPECIES_NAME"])||"Species unavailable",
-  number:Number(pick(a,["Number_of_Fish_Stocked","NUMBER_OF_FISH_STOCKED","Number_Stocked","NUMBER_STOCKED","Quantity","QUANTITY"]))||0,
-  stage:pick(a,["Developmental_Stage","DEVELOPMENTAL_STAGE","Development_Stage","DEVELOPMENT_STAGE"])||"",
-  strain:pick(a,["Stock_Strain","STOCK_STRAIN","Strain","STRAIN"])||"",
-  rearing:pick(a,["Rearing_Location","REARING_LOCATION","RearingLocation"])||"",
-  spawning:pick(a,["Spawning_Year","SPAWNING_YEAR","SpawningYear"])||"",
-  date:date||""
- };
-}
 async function queryAll(url,fields="*"){
  let all=[],offset=0,guard=0;
  while(true){
@@ -385,28 +367,6 @@ async function loadObservedSpecies(){
   });
   speciesLoaded=true;apply();
  }catch(e){console.warn("Fish ON-Line species observations unavailable",e)}
-}
-async function loadHistorical(){
- try{
-  let all=[],offset=0,guard=0;
-  while(true){
-   const p=new URLSearchParams({where:"1=1",outFields:"*",returnGeometry:"false",f:"json",resultOffset:String(offset),resultRecordCount:"1000"});
-   const j=await fetch(HIST_API+"?"+p).then(r=>r.json());
-   if(j.error)throw Error(j.error.message);
-   const batch=(j.features||[]).map(x=>normalizeHistorical(x.attributes||{}));all.push(...batch);
-   if(batch.length<1000||!j.exceededTransferLimit)break;
-   offset+=batch.length;if(++guard>150)break;
-  }
-  historicalRows=all;historicalLoaded=true;
-  const byId=new Map();
-  all.filter(r=>r.waterbodyId).forEach(r=>{if(!byId.has(r.waterbodyId))byId.set(r.waterbodyId,[]);byId.get(r.waterbodyId).push(r)});
-  lakes.forEach(l=>{l.historical=l.waterbodyId&&byId.has(String(l.waterbodyId).trim())?byId.get(String(l.waterbodyId).trim()).sort((a,b)=>b.year-a.year):[]});
-  $("statHistorical").textContent=num(all.length);
-  apply();
- }catch(e){
-  historicalLoaded=false;$("statHistorical").textContent="N/A";
-  console.warn("Historical stocking data unavailable:",e);
- }
 }
 function normName(s){return String(s||"").toLowerCase().replace(/\([^)]*\)/g," ").replace(/\b(lake|lac|river|rivière|reservoir|réservoir)\b/g," ").replace(/[^a-z0-9]+/g," ").trim().replace(/\s+/g," ")}
 async function loadAdvisories(){
@@ -442,15 +402,15 @@ function wireAdvisory(l){
 }
 async function load(){
  $("count").textContent="Loading Ontario data…";
- ["statLakes","statRecords","statSpecies","statLatest","statHistorical"].forEach(id=>{const el=$(id);if(el)el.textContent="…"});
+ ["statLakes","statRecords","statSpecies","statLatest"].forEach(id=>{const el=$(id);if(el)el.textContent="…"});
  try{
   let all=[],offset=0,page=0;
   while(true){const j=await fetchPage(offset),batch=(j.features||[]).map(x=>x.attributes);all.push(...batch);$("count").textContent=`Loading… ${num(all.length)} records`;page++;if(batch.length<1000||!j.exceededTransferLimit)break;offset+=batch.length;if(page>100)break}
-  rows=all.filter(x=>x.Latitude&&x.Longitude);buildLakes();updateDashboard();buildFilters();apply();loadFMZ(false).then(()=>apply());loadHistorical();loadObservedSpecies();loadAdvisories();loadFullRegulations();loadWaterbodies();
+  rows=all.filter(x=>x.Latitude&&x.Longitude);buildLakes();updateDashboard();buildFilters();apply();loadFMZ(false).then(()=>apply());loadObservedSpecies();loadAdvisories();loadFullRegulations();loadWaterbodies();
  }catch(e){
   $("results").innerHTML=`<div class="error"><b>Ontario stocking data didn't load.</b><br>Check your connection and pull to reload. If you were offline, saved lakes and regulations are still available.<br><small>${esc(e.message)}</small></div>`;
   $("count").textContent="Unavailable";
-  ["statLakes","statRecords","statSpecies","statLatest","statHistorical"].forEach(id=>{const el=$(id);if(el)el.textContent="—"});
+  ["statLakes","statRecords","statSpecies","statLatest"].forEach(id=>{const el=$(id);if(el)el.textContent="—"});
   toast("Ontario stocking data didn't load. Check your connection.");
  }
 }
@@ -710,7 +670,7 @@ function mergeLiveResults(features){
    township:"",district:"",waterbodyId:w.lid,
    latestYear:0,species:[],present:w.sp,
    depthMax:w.max,depthMean:w.mean,clarity:w.clar,areaHa:w.area,thermal:w.th,
-   fmz:w.fmz,historical:[],observedSpecies:[],advisoryMatches:[],
+   fmz:w.fmz,observedSpecies:[],advisoryMatches:[],
    stocked:false
   });
   added++;
@@ -793,7 +753,7 @@ function mergeWaterbodies(){
    present:w.sp||[],
    depthMax:w.max,depthMean:w.mean,clarity:w.clar,areaHa:w.area,thermal:w.th,
    fmz:w.fmz||null,
-   historical:[],observedSpecies:[],advisoryMatches:[],
+   observedSpecies:[],advisoryMatches:[],
    stocked:false
   });
  });
@@ -804,7 +764,7 @@ function mergeWaterbodies(){
 function buildLakes(){
  const groups=new Map();
  rows.forEach(r=>{const k=lakeKey(r);if(!groups.has(k))groups.set(k,{key:k,records:[],name:name(r),lat:Number(r.Latitude),lon:Number(r.Longitude),township:r.Geographic_Township||"",district:r.MNRF_District||"",waterbodyId:r.Waterbody_Location_Identifier||""});groups.get(k).records.push(r)});
- lakes=[...groups.values()].map(l=>{l.records.sort((a,b)=>(b.Stocking_Year||0)-(a.Stocking_Year||0));l.latestYear=Math.max(...l.records.map(r=>Number(r.Stocking_Year)||0));l.species=[...new Set(l.records.map(r=>r.Species).filter(Boolean))].sort();l.historical=[];l.observedSpecies=[];l.advisoryMatches=[];l.present=l.present||[];l.stocked=true;return l}).sort((a,b)=>b.latestYear-a.latestYear||a.name.localeCompare(b.name));
+ lakes=[...groups.values()].map(l=>{l.records.sort((a,b)=>(b.Stocking_Year||0)-(a.Stocking_Year||0));l.latestYear=Math.max(...l.records.map(r=>Number(r.Stocking_Year)||0));l.species=[...new Set(l.records.map(r=>r.Species).filter(Boolean))].sort();l.observedSpecies=[];l.advisoryMatches=[];l.present=l.present||[];l.stocked=true;return l}).sort((a,b)=>b.latestYear-a.latestYear||a.name.localeCompare(b.name));
 }
 function updateDashboard(){
  const speciesCount=new Set(rows.map(r=>r.Species).filter(Boolean)).size;
@@ -812,7 +772,7 @@ function updateDashboard(){
  $("statLakes").textContent=num(lakes.length);
  $("statRecords").textContent=num(rows.length);
  $("statSpecies").textContent=num(speciesCount);
- $("statLatest").textContent=latestYear||"—";$("statHistorical").textContent=historicalLoaded?num(historicalRows.length):"Loading…";
+ $("statLatest").textContent=latestYear||"—";
 }
 function buildFilters(rebuild){
  const sel=$("species"),find=$("findSpecies");
@@ -1298,7 +1258,6 @@ ${presentBlock(l)}
  </div>
  <div id="lake-depth" class="tabAnchor"></div><div class="infoCard"><h3>🌊 Lake depth</h3><p>Ontario publishes bathymetry contour lines for many lakes. Turn on the depth-contour map layer to view available contours. These data vary in age and accuracy and must never be used for navigation.</p><button class="inlineBtn" id="detailDepth">Show Depth Contours</button></div>
  <div id="lake-stocking" class="tabAnchor"></div><h3>Recent Stocking History</h3><div class="history">${history}</div>
- ${historicalLoaded?`<h3>Historical Stocking</h3>${l.historical&&l.historical.length?`<div class="history historical">${l.historical.map(r=>`<div class="historyrow"><div><b>${esc(r.year||"—")}</b><span>${esc(r.species)}</span>${r.strain?`<span>Strain: ${esc(r.strain)}</span>`:""}</div><div class="historyright"><b>${r.number?num(r.number):"Recorded"}</b><span>${esc(r.stage)}</span>${r.rearing?`<span>${esc(r.rearing)}</span>`:""}</div></div>`).join("")}</div>`:`<div class="historynote">No historical records were matched to this lake by Ontario Waterbody Location Identifier.</div>`}`:`<div class="historynote">Historical stocking data is still loading or temporarily unavailable.</div>`}
  <div id="lake-access" class="tabAnchor"></div><div class="infoCard"><h3>🚤 Nearest fishing access</h3><div id="nearestAccess">${accessLoaded?nearestAccess(l).map(a=>`<div class="accessrow"><div><b>${accessIcon(a)} ${esc(a.AccessName||a.WaterBody||"Fishing access")}</b><span>${esc(a.AccessType||"Access point")} • ${a.km.toFixed(1)} km from lake point</span></div><a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lon}">Directions</a></div>`).join(""):"<p>Turn on “Show fishing access points” on the map to load Ontario access data.</p>"}</div></div>
  <div class="infoCard"><h3>Fishing information</h3><p>Stocking records are useful planning information, but fishing seasons, limits and exceptions can change. Check Ontario's current regulations before fishing.</p>
  <div class="actionstack">
