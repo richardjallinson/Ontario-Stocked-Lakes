@@ -96,7 +96,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="v1n";
+const APP_VERSION="v1p";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -141,7 +141,7 @@ if (!mapAvailable) {
 }
 
 const map=L.map("map").setView([46.2,-81.0],5);
-L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{subdomains:"abcd",maxZoom:19,attribution:"&copy; OpenStreetMap contributors &copy; CARTO"}).addTo(map);
+
 const markerLayer=L.layerGroup().addTo(map);
 const accessLayer=L.layerGroup().addTo(map);
 const bathyLayer=L.tileLayer(`${BATHY_URL}/export?bbox={bbox-epsg-3857}&bboxSR=3857&layers=show:${BATHY_LAYER}&size=256,256&imageSR=3857&format=png32&transparent=true&f=image`,{opacity:.72,attribution:"Government of Ontario bathymetry"});
@@ -149,6 +149,67 @@ const fmzLayer=L.geoJSON(null,{
  style:()=>({weight:2,fillOpacity:.06}),
  onEachFeature:(f,l)=>{const z=f.properties&&f.properties.FISHERIES_MANAGEMENT_ZONE_ID;l.bindPopup(`<b>Fisheries Management Zone ${z}</b><br><a target="_blank" rel="noopener" href="${REGS_BASE}${z}">View current Zone ${z} regulations</a>`)}
 }).addTo(map);
+
+/* ---------------------------------------------------------------------------
+   Basemaps.
+
+   A road basemap is the wrong basemap for finding water — lakes render as pale
+   shapes and small ones vanish. Ontario publishes its own topographic tile
+   cache, which draws lakes, rivers, wetlands and bush properly, under the same
+   Open Government Licence the rest of the app's data uses.
+
+   Deliberately NOT included: Esri World Imagery. Its terms require an ArcGIS
+   licence and exclude commercial use, so it cannot ship in an App Store build
+   however good the satellite view would look.
+--------------------------------------------------------------------------- */
+const BASEMAPS={
+ map:{
+  label:"Map",
+  url:"https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+  opts:{subdomains:"abcd",maxZoom:19,
+        attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'}
+ },
+ topo:{
+  label:"Ontario topo",
+  // ArcGIS tile caches are {z}/{y}/{x} — row before column, unlike XYZ.
+  url:"https://ws.lioservices.lrc.gov.on.ca/arcgis1/rest/services/LIO_Cartographic/LIO_Topographic/MapServer/tile/{z}/{y}/{x}",
+  opts:{maxZoom:17,attribution:'Topographic data &copy; Government of Ontario'}
+ },
+ plain:{
+  label:"Plain",
+  url:"https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+  opts:{subdomains:"abcd",maxZoom:19,
+        attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'}
+ }
+};
+let baseLayer=null,baseKey=localStorage.getItem("osl-basemap")||"map";
+
+function setBasemap(key){
+ if(!BASEMAPS[key])key="map";
+ baseKey=key;localStorage.setItem("osl-basemap",key);
+ // Reflect the choice in the UI first: bailing out early when the map is
+ // unavailable used to leave the buttons showing the wrong one.
+ document.querySelectorAll(".baseSwitch button").forEach(x=>x.classList.toggle("on",x.dataset.base===key));
+ if(!mapAvailable)return;
+ if(baseLayer)map.removeLayer(baseLayer);
+ const b=BASEMAPS[key];
+ baseLayer=L.tileLayer(b.url,b.opts).addTo(map);
+ baseLayer.bringToBack&&baseLayer.bringToBack();
+}
+
+/* The map used to sit wherever it was last dragged while the list below it
+   showed something else entirely. It now frames whatever is in the results. */
+function fitToResults(){
+ if(!mapAvailable||!shown.length)return;
+ const pts=shown.slice(0,400).filter(l=>l.lat&&l.lon).map(l=>[l.lat,l.lon]);
+ if(!pts.length)return;
+ if(userLoc&&(currentView==="near"||currentView==="findfish"||currentView==="recentnear"))pts.push(userLoc);
+ try{
+  if(pts.length===1)map.setView(pts[0],11);
+  else map.fitBounds(L.latLngBounds(pts),{padding:[28,28],maxZoom:12});
+ }catch(e){}
+}
+
 let userMarker=null;
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function name(r){return r.Official_Waterbody_Name||r.Unoffcial_Waterbody_Name||"Unnamed waterbody"}
@@ -790,14 +851,18 @@ function apply(){
   if(!showUnstocked()&&!l.stocked)return false;
   if(sp&&!(l.species.includes(sp)||(l.present||[]).includes(sp)))return false;
   if(yr&&!l.records.some(r=>String(r.Stocking_Year)===yr))return false;
-  if(q){
-   const hay=[l.name,l.township,l.district,...l.species,...(l.present||[])].join(" ").toLowerCase();
-   if(!hay.includes(q))return false;
-  }
+  if(q&&!matchesQuery(l,q))return false;
   if(radius&&userLoc&&distance(userLoc[0],userLoc[1],l.lat,l.lon)>radius)return false;
   return true;
  });
- if((currentView==="near"||currentView==="recentnear"||radius)&&userLoc)shown.sort((a,b)=>distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon));
+ if(q){
+  // With a query typed, closeness of the NAME match beats everything else —
+  // "Rice Lake" should not sit below "Big Rice Lake" alphabetically.
+  shown.forEach(l=>l._nameScore=nameScore(l,q));
+  const byDist=(a,b)=>userLoc?distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon):0;
+  shown.sort((a,b)=>b._nameScore-a._nameScore||byDist(a,b)||a.name.localeCompare(b.name));
+ }
+ else if((currentView==="near"||currentView==="recentnear"||radius)&&userLoc)shown.sort((a,b)=>distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon));
  else shown.sort((a,b)=>b.latestYear-a.latestYear||a.name.localeCompare(b.name));
  render();
 }
@@ -834,9 +899,78 @@ function render(){
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=e=>{if(e.target.closest(".star"))return;const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
  document.querySelectorAll(".star").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFav(b.dataset.fav)});
  markerLayer.clearLayers();
+ fitToResults();
  shown.slice(0,400).forEach(l=>{const m=L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${esc((l.stocked?l.species:(l.present||[])).slice(0,4).join(", "))}<br>${l.stocked?("Latest stocking: "+esc(l.latestYear||"—")):"Not stocked"}`);m.on("click",()=>detail(l))});
 }
 function lakeCount(n){return num(n)+" "+(n===1?"lake":"lakes")}
+
+/* ---------------------------------------------------------------------------
+   Search matching.
+
+   The old filter did a plain substring test, so "rice lake" matched
+   "Maurice Lake" and "Price Lake" — the query sits inside both of those words.
+   Matching is now anchored to word starts: a token must begin a word.
+
+     "rice lake"  -> Rice Lake, Big Rice Lake, Little Rice Lake
+                     NOT Maurice Lake, NOT Price Lake
+     "walle"      -> Walleye        (still forgiving while you type)
+     "brook tr"   -> Brook Trout
+
+   Every token has to match somewhere, in any order, across the lake's name,
+   township, district and species.
+--------------------------------------------------------------------------- */
+function searchWords(v){
+ return String(v||"").toLowerCase()
+  .replace(/[^a-z0-9\s]+/g," ")
+  .split(/\s+/).filter(Boolean);
+}
+
+/* Does `toks` appear as a run of consecutive words in `words`?
+
+   Only the LAST token is a prefix match — that is the word still being typed.
+   Every earlier token must match a whole word. Without that, "pine lake"
+   matched "Pineapple Lake", which is the same class of wrong answer as
+   "Maurice Lake". */
+function phraseIn(words,toks){
+ if(!toks.length)return true;
+ const last=toks.length-1;
+ for(let i=0;i+toks.length<=words.length;i++){
+  let ok=true;
+  for(let j=0;j<toks.length;j++){
+   const w=words[i+j],t=toks[j];
+   if(j===last?!w.startsWith(t):w!==t){ok=false;break}
+  }
+  if(ok)return true;
+ }
+ return false;
+}
+
+/* Fields are matched separately so a phrase cannot straddle two of them —
+   otherwise "trout township" could match a Trout in one field and a Township
+   in another and look like a hit. */
+function searchFields(l){
+ return [l.name,l.township,l.district,...(l.species||[]),...(l.present||[])]
+  .filter(Boolean).map(searchWords);
+}
+
+function matchesQuery(l,q){
+ const toks=searchWords(q);
+ if(!toks.length)return true;
+ return searchFields(l).some(f=>phraseIn(f,toks));
+}
+
+/* Rank so an exact name lands above a lake that merely contains the phrase. */
+function nameScore(l,q){
+ const toks=searchWords(q);
+ if(!toks.length)return 0;
+ const name=searchWords(l.name);
+ const joined=name.join(" "),query=toks.join(" ");
+ if(joined===query)return 4;                       // Pine Lake
+ if(joined.startsWith(query+" "))return 3;         // Pine Lake (Unofficial Name)
+ if(phraseIn(name,toks))return 2;                  // Big Pine Lake
+ return 1;                                         // matched on species or township
+}
+
 function showUnstocked(){
  const el=$("showUnstocked");
  return el?el.checked:true;
@@ -1354,7 +1488,7 @@ function runFindFish(){
    shown=lakes.filter(l=>{
     const km=distance(userLoc[0],userLoc[1],l.lat,l.lon);
     if(km>radius)return false;                       // the box was square; this is the circle
-    if(lname&&!l.name.toLowerCase().includes(lname))return false;
+    if(lname&&!matchesQuery({name:l.name,species:[],present:[]},lname))return false;
     if(needAccess&&!hasNearbyAccess(l))return false;
 
     const relevant=l.records.filter(r=>(!sp||r.Species===sp)&&(!yr||String(r.Stocking_Year)===yr));
@@ -1413,7 +1547,7 @@ function renderFindResults(sp,yr){
  }).join("")||"";
  $("results").insertAdjacentHTML("afterbegin",locationPrompt());
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=()=>{const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
- markerLayer.clearLayers();shown.slice(0,400).forEach(l=>L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${l._findKm.toFixed(1)} km away<br>${l._findPresent?"Recorded here (not stocked)":num(l._findQty)+" fish stocked"}`));
+ markerLayer.clearLayers();fitToResults();shown.slice(0,400).forEach(l=>L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${l._findKm.toFixed(1)} km away<br>${l._findPresent?"Recorded here (not stocked)":num(l._findQty)+" fish stocked"}`));
 }
 function recentNearMe(){
  const run=()=>{
@@ -1487,6 +1621,8 @@ if(rf)rf.onclick=()=>{
 document.addEventListener("click",e=>{
  if(e.target.closest("#distancePrompt"))locate(apply);
 });
+document.querySelectorAll(".baseSwitch button").forEach(b=>b.onclick=()=>setBasemap(b.dataset.base));
+setBasemap(baseKey);
 const su=$("showUnstocked");if(su)su.onchange=apply;
 {
  const any=$("modeAny"),stk=$("modeStocked"),note=$("modeNote"),minRow=$("findMinimum");

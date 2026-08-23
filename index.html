@@ -163,7 +163,15 @@
 </section>
 
 <section class="mapcard" data-show="explore findfish near favorites">
-  <div class="maphead"><b>Lake map</b><span id="mapCount">Tap a marker for details</span></div>
+  <div class="maphead">
+    <b>Lake map</b>
+    <div class="baseSwitch" role="group" aria-label="Basemap">
+      <button type="button" data-base="map" class="on">Map</button>
+      <button type="button" data-base="topo">Topo</button>
+      <button type="button" data-base="plain">Plain</button>
+    </div>
+  </div>
+  <div class="mapsub"><span id="mapCount">Tap a marker for details</span></div>
   <div id="mapNotice" class="mapNotice hidden"></div>
   <div id="map"></div>
 </section>

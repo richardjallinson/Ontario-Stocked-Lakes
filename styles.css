@@ -566,3 +566,14 @@ body.filtering .sectiontitle{margin-top:14px}
 .distPrompt b{color:var(--green);font-size:14px}
 .distPrompt span{color:var(--muted);font-size:12.5px}
 .distPrompt:active{background:#F6FAFD}
+
+/* Basemap switcher in the map header. */
+.maphead{gap:8px}
+.baseSwitch{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex:0 0 auto}
+/* 32px tall: these sit in a header but are still fingers-on-a-boat controls. */
+.baseSwitch button{border:0;background:#fff;color:var(--muted);padding:0 12px;min-height:32px;
+ font-size:12px;font-weight:700;cursor:pointer;border-right:1px solid var(--line);font-family:inherit}
+.baseSwitch button:last-child{border-right:0}
+.baseSwitch button.on{background:var(--green);color:#fff;font-weight:800}
+.mapsub{padding:7px 14px;border-bottom:1px solid var(--line);background:#fff}
+.mapsub span{font-size:11.5px;color:var(--muted)}
