@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#123f3a">
+<meta name="theme-color" content="#13263C">
 <meta name="description" content="Find Ontario stocked lakes by distance, species and stocking year, then check fishing regulations, access points, weather and consumption advice.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -113,7 +113,11 @@
   </div>
 </section>
 
-<section class="mapcard"><div id="mapNotice" class="mapNotice hidden"></div><div id="map"></div></section>
+<section class="mapcard">
+  <div class="maphead"><b>Lake map</b><span id="mapCount">Tap a marker for details</span></div>
+  <div id="mapNotice" class="mapNotice hidden"></div>
+  <div id="map"></div>
+</section>
 
 <div class="sectiontitle"><h3 id="listTitle">Explore stocked lakes</h3><span id="count">Loading…</span></div>
 <section id="results" class="results"></section>

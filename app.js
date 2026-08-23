@@ -84,7 +84,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="1.1.0";
+const APP_VERSION="1.2.0";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -129,7 +129,7 @@ if (!mapAvailable) {
 }
 
 const map=L.map("map").setView([46.2,-81.0],5);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{subdomains:"abcd",maxZoom:19,attribution:"&copy; OpenStreetMap contributors &copy; CARTO"}).addTo(map);
 const markerLayer=L.layerGroup().addTo(map);
 const accessLayer=L.layerGroup().addTo(map);
 const bathyLayer=L.tileLayer(`${BATHY_URL}/export?bbox={bbox-epsg-3857}&bboxSR=3857&layers=show:${BATHY_LAYER}&size=256,256&imageSR=3857&format=png32&transparent=true&f=image`,{opacity:.72,attribution:"Government of Ontario bathymetry"});
@@ -228,7 +228,7 @@ function renderAccess(){
  accessPoints.forEach(a=>{
   const title=a.AccessName||a.WaterBody||"Fishing access point",icon=accessIcon(a);
   const popup=`<b>${icon} ${esc(title)}</b><br>${esc(a.AccessType||"Fishing access")}<br>${a.WaterBody?esc(a.WaterBody)+"<br>":""}${a.Parking?`Parking: ${esc(a.Parking)}<br>`:""}<a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lon}">Directions</a>`;
-  L.circleMarker([a.lat,a.lon],{radius:6,weight:2,fillOpacity:.75}).addTo(accessLayer).bindPopup(popup);
+  L.circleMarker([a.lat,a.lon],{radius:6,color:"#2E6E9E",weight:2,fillColor:"#fff",fillOpacity:.95}).addTo(accessLayer).bindPopup(popup);
  });
 }
 function nearestAccess(l,limit=3){
@@ -393,6 +393,7 @@ function apply(){
 }
 function render(){
  $("count").textContent=lakeCount(shown.length);
+ const mc=$("mapCount");if(mc)mc.textContent=lakeCount(Math.min(shown.length,400))+" on the map";
  $("listTitle").textContent=currentView==="favorites"?"My Lakes":currentView==="near"?"Stocked lakes near me":currentView==="recentnear"?"Recently stocked within 100 km":currentView==="findfish"?$("listTitle").textContent:"Explore stocked lakes";
  $("results").innerHTML=shown.slice(0,250).map((l,i)=>{
   const d=userLoc?`${distance(userLoc[0],userLoc[1],l.lat,l.lon).toFixed(1)} km away`:"";
@@ -402,7 +403,7 @@ function render(){
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=e=>{if(e.target.closest(".star"))return;const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
  document.querySelectorAll(".star").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFav(b.dataset.fav)});
  markerLayer.clearLayers();
- shown.slice(0,400).forEach(l=>{const m=L.circleMarker([l.lat,l.lon],{radius:7}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${esc(l.species.join(", "))}<br>Latest: ${esc(l.latestYear||"—")}`);m.on("click",()=>detail(l))});
+ shown.slice(0,400).forEach(l=>{const m=L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:"#C4941F",fillOpacity:.92}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${esc(l.species.join(", "))}<br>Latest: ${esc(l.latestYear||"—")}`);m.on("click",()=>detail(l))});
 }
 function lakeCount(n){return num(n)+" "+(n===1?"lake":"lakes")}
 function emptyMessage(){
@@ -747,7 +748,7 @@ function renderFindResults(sp,yr){
   </article>`;
  }).join("")||`<div class="record empty">No stocked lakes match this search. Try increasing the distance or removing a filter.</div>`;
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=()=>{const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
- markerLayer.clearLayers();shown.slice(0,400).forEach(l=>L.circleMarker([l.lat,l.lon],{radius:7}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${l._findKm.toFixed(1)} km away<br>${num(l._findQty)} fish stocked`));
+ markerLayer.clearLayers();shown.slice(0,400).forEach(l=>L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:"#C4941F",fillOpacity:.92}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${l._findKm.toFixed(1)} km away<br>${num(l._findQty)} fish stocked`));
 }
 function recentNearMe(){
  const run=()=>{
@@ -797,12 +798,14 @@ function setView(v){
 $("showAccess").onchange=()=>{$("showAccess").checked?loadAccess():renderAccess()};
 $("showFMZ").onchange=()=>{$("showFMZ").checked?loadFMZ(true):renderFMZ()};
 $("showDepth").onchange=renderDepth;
-$("searchBtn").onclick=apply;$("search").onkeydown=e=>{if(e.key==="Enter")apply()};$("species").onchange=apply;$("year").onchange=apply;
+$("searchBtn").onclick=apply;
+$("search").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("search").blur();apply()}};
+$("search").oninput=()=>{clearTimeout($("search")._t);$("search")._t=setTimeout(apply,240)};$("species").onchange=apply;$("year").onchange=apply;
 $("radius").onchange=()=>{if($("radius").value&&!userLoc)locate(apply);else apply()};
 $("clearFilters").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";apply()};
 $("locateBtn").onclick=()=>locate(apply);
 
-$("closeFind").onclick=()=>$("findPanel").classList.remove("open");
+$("closeFind").onclick=()=>{$("findPanel").classList.remove("open");setView("explore")};
 $("runFind").onclick=runFindFish;
 $("recentNearBtn").onclick=recentNearMe;
 $("recentBtn").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";currentView="explore";shown=[...lakes].sort((a,b)=>b.latestYear-a.latestYear);render()};

@@ -66,7 +66,10 @@ The app calls these at runtime; nothing is proxied and no API keys are needed.
 - **Fishing access points** — Protected fishing access FeatureServer
 - **Fisheries Management Zones, lake surveys, bathymetry** — Ontario LIO Open Data services
 - **Weather alerts** — [Environment and Climate Change Canada GeoMet API](https://api.weather.gc.ca)
-- **Map tiles** — OpenStreetMap
+- **Map tiles** — CARTO Voyager basemap (OpenStreetMap data). CARTO's free
+  basemap tier requires the "© OpenStreetMap contributors © CARTO" attribution
+  the app already displays; review https://carto.com/basemaps before heavy
+  commercial use
 
 ## Features
 

@@ -3,6 +3,37 @@
 All notable changes to this project are documented here.
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] — 2026-08-23
+
+Full visual redesign: deep lake navy, light-blue page, gold accent, serif
+display type — the same design family as Estate File, benchmarked against
+Fishbrain / Navionics / onWater conventions (water-blue chrome, pale calm
+basemap, data as the hero).
+
+### Changed
+- **Palette**: header and dark surfaces #13263C navy, page background #EEF4F9
+  light blue, accent gold #C4941F. App icons, iOS launch colour, manifest theme
+  colour and the privacy page all repainted to match.
+- **Type**: serif display face (Iowan Old Style / Palatino / Georgia) for
+  headings, lake names and the hero — matching Estate File's voice. Numbers set
+  tabular throughout.
+- **Map basemap switched from default OpenStreetMap to CARTO Voyager**: pale
+  land, clearly blue water, quiet labels — small lakes stop disappearing under
+  road colour at province zoom. Attribution updated ("© OpenStreetMap
+  contributors © CARTO").
+- **Markers redrawn**: stocked lakes are gold dots with a navy ring; access
+  points are white dots with a water-blue ring; both larger. Styled popups.
+- Map card gains a header with a live "N lakes on the map" count; map height
+  increased to 380px.
+- Signature motif: bathymetry contour lines (from the app icon) behind the hero.
+
+### Fixed
+- **Search runs as you type** (240 ms debounce). Requiring a button tap read
+  as "search is broken"; the button and the Enter key still work, and Enter now
+  dismisses the iOS keyboard.
+- Closing the Find Fish panel returns the tab strip to Explore instead of
+  leaving Find Fish highlighted over the wrong screen.
+
 ## [1.1.0] — 2026-08-23
 
 Navigation moved to the top, matching the Estate File pattern, plus three
