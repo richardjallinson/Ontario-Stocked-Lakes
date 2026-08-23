@@ -96,7 +96,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="v1k";
+const APP_VERSION="v1m";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -186,19 +186,42 @@ function fmzForLake(l){
  return f&&f.properties?Number(f.properties.FISHERIES_MANAGEMENT_ZONE_ID):null;
 }
 function assignFMZ(){
- if(!fmzLoaded)return;
- lakes.forEach(l=>l.fmz=fmzForLake(l));
+ lakes.forEach(l=>{
+  if(l.fmz)return;
+  if(fmzLoaded){const z=fmzForLake(l);if(z){l.fmz=z;return}}
+  // The regulation package records a zone against every waterbody that has an
+  // exception or an additional opportunity. Free, offline, and exact.
+  const wli=String(l.waterbodyId||"").trim();
+  if(wli){
+   const hit=(exceptionIndex.get(wli)||[]).concat(additionalIndex.get(wli)||[])[0];
+   if(hit&&hit.zone){l.fmz=Number(hit.zone);return}
+  }
+ });
 }
 async function loadFMZ(show=true){
  if(fmzLoaded){if(show)renderFMZ();return}
  $("fmzStatus").textContent="Loading Ontario FMZ boundaries…";
  try{
-  const p=new URLSearchParams({where:"1=1",outFields:"FISHERIES_MANAGEMENT_ZONE_ID,LOCATION_DESCR",returnGeometry:"true",outSR:"4326",f:"geojson",resultRecordCount:"2000"});
+  const p=new URLSearchParams({
+   where:"1=1",outFields:"FISHERIES_MANAGEMENT_ZONE_ID,LOCATION_DESCR",
+   returnGeometry:"true",outSR:"4326",f:"geojson",resultRecordCount:"2000",
+   // Zone outlines follow every bay and island of the Great Lakes. At full
+   // detail this is tens of megabytes and simply never arrived, which is why
+   // no lake was showing a zone. ~200 m is far finer than needed to decide
+   // which zone a lake sits in.
+   maxAllowableOffset:"0.002",geometryPrecision:"4"
+  });
   const j=await fetch(FMZ_API+"?"+p).then(r=>r.json());
-  fmzFeatures=j.features||[];fmzLoaded=true;assignFMZ();
+  if(j.error)throw Error(j.error.message);
+  fmzFeatures=j.features||[];fmzLoaded=true;assignFMZ();apply();
   $("fmzStatus").textContent=`20 Ontario Fisheries Management Zones loaded`;
   if(show)renderFMZ();
- }catch(e){$("fmzStatus").textContent="FMZ service unavailable";$("showFMZ").checked=false}
+ }catch(e){
+  $("fmzStatus").textContent="Zone boundaries unavailable — retrying";
+  $("showFMZ").checked=false;
+  if(!loadFMZ._retried){loadFMZ._retried=true;setTimeout(()=>loadFMZ(show),4000)}
+  else $("fmzStatus").textContent="Zone boundaries unavailable";
+ }
 }
 function renderDepth(){
  if($("showDepth").checked){
@@ -398,6 +421,7 @@ async function loadWaterbodies(){
   mergeWaterbodies();
   buildFilters(true);
   apply();
+  if(userLoc)loadTownshipsFor(userLoc[0],userLoc[1],200).then(()=>{assignTownships();apply()});
  }catch(e){
   // Not built yet, or offline before it was ever cached. The stocking data
   // still works on its own; say nothing rather than raising an error about a
@@ -421,6 +445,83 @@ async function loadWaterbodies(){
 const ARA_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/2/query";
 const liveTried=new Set();
 let liveBusy=false;
+
+
+/* ---------------------------------------------------------------------------
+   Townships.
+
+   Ontario has several Rice Lakes, several Trout Lakes and a great many Long
+   Lakes. A name on its own is not an answer, so every result carries the
+   township it sits in and how far away it is.
+
+   Stocked lakes already have a township from the stocking table. Survey
+   waterbodies do not — the ARA dataset has no township field — so those are
+   resolved against Geographic Township Improved: one envelope query for the
+   area being searched, then point-in-polygon locally using the same helper
+   the FMZ assignment uses. One request covers every lake in the search.
+--------------------------------------------------------------------------- */
+const TOWNSHIP_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open06/MapServer/1/query";
+let townshipFeatures=[];
+const townshipAreasTried=new Set();
+
+async function loadTownshipsFor(lat,lon,km){
+ const tag=`${km}|${lat.toFixed(1)},${lon.toFixed(1)}`;
+ if(townshipAreasTried.has(tag))return;
+ townshipAreasTried.add(tag);
+ const dLat=km/111.32, dLon=km/(111.32*Math.cos(lat*Math.PI/180));
+ const env={xmin:lon-dLon,ymin:lat-dLat,xmax:lon+dLon,ymax:lat+dLat,spatialReference:{wkid:4326}};
+ try{
+  const p=new URLSearchParams({
+   where:"1=1",
+   geometry:JSON.stringify(env),geometryType:"esriGeometryEnvelope",
+   spatialRel:"esriSpatialRelIntersects",inSR:"4326",outSR:"4326",
+   outFields:"OFFICIAL_NAME",returnGeometry:"true",
+   // Township outlines only need to be accurate enough to say which one a
+   // point falls in, so they are heavily generalised.
+   maxAllowableOffset:"0.005",geometryPrecision:"4",
+   f:"geojson",resultRecordCount:"600"
+  });
+  const j=await fetch(TOWNSHIP_API+"?"+p).then(r=>r.json());
+  townshipFeatures=townshipFeatures.concat(j.features||[]);
+  assignTownships();
+ }catch(e){ /* township names are a nicety; distance still disambiguates */ }
+}
+
+function assignTownships(){
+ if(!townshipFeatures.length)return;
+ lakes.forEach(l=>{
+  if(l.township)return;
+  const f=townshipFeatures.find(f=>pointInGeometry(l.lon,l.lat,f.geometry));
+  if(f&&f.properties&&f.properties.OFFICIAL_NAME)l.township=f.properties.OFFICIAL_NAME;
+ });
+}
+
+/* "42 km NE" says more than "42 km" when two lakes share a name. */
+function bearingLabel(fromLat,fromLon,toLat,toLon){
+ const rad=x=>x*Math.PI/180;
+ const dLon=rad(toLon-fromLon);
+ const y=Math.sin(dLon)*Math.cos(rad(toLat));
+ const x=Math.cos(rad(fromLat))*Math.sin(rad(toLat))-Math.sin(rad(fromLat))*Math.cos(rad(toLat))*Math.cos(dLon);
+ const deg=(Math.atan2(y,x)*180/Math.PI+360)%360;
+ return ["N","NE","E","SE","S","SW","W","NW"][Math.round(deg/45)%8];
+}
+
+/* Stocking data stores townships shouting: "ADRIAN", "TRAFALGAR". */
+function townshipLabel(t){
+ const raw=String(t||"").trim();
+ if(!raw)return "";
+ const nice=raw.toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase())
+   .replace(/\bMc([a-z])/g,(m,c)=>"Mc"+c.toUpperCase())
+   .replace(/\bO'([a-z])/g,(m,c)=>"O'"+c.toUpperCase());
+ return /twp|township/i.test(nice)?nice:nice+" Twp";
+}
+
+function distanceLabel(l){
+ if(!userLoc)return "";
+ const km=distance(userLoc[0],userLoc[1],l.lat,l.lon);
+ const n=km<10?km.toFixed(1):Math.round(km);
+ return `${n} km ${bearingLabel(userLoc[0],userLoc[1],l.lat,l.lon)}`;
+}
 
 function ringCentre(geom){
  const rings=(geom&&geom.rings)||[];
@@ -468,6 +569,8 @@ async function searchProvince(q){
   const j=await fetch(ARA_API+"?"+p).then(r=>r.json());
   if(j.error)throw Error(j.error.message);
   const added=mergeLiveResults(j.features||[]);
+  // One township request covers the whole result set.
+  if(added&&userLoc)loadTownshipsFor(userLoc[0],userLoc[1],150).then(()=>{assignTownships();apply()});
   if(added){buildFilters(true);apply();}
   else if(status)status.textContent=previous;
   return added>0;
@@ -577,7 +680,9 @@ async function araNearby(lat,lon,km,species){
  });
  const j=await fetch(ARA_API+"?"+p).then(r=>r.json());
  if(j.error)throw Error(j.error.message);
- return mergeLiveResults(j.features||[]);
+ const n=mergeLiveResults(j.features||[]);
+ if(n)await loadTownshipsFor(lat,lon,km);
+ return n;
 }
 
 
@@ -685,7 +790,6 @@ function render(){
  const mc=$("mapCount");if(mc)mc.textContent=lakeCount(Math.min(shown.length,400))+" on the map";
  $("listTitle").textContent=currentView==="favorites"?"My Lakes":currentView==="near"?"Stocked lakes near me":currentView==="recentnear"?"Recently stocked within 100 km":currentView==="findfish"?$("listTitle").textContent:"Explore stocked lakes";
  $("results").innerHTML=shown.slice(0,250).map((l,i)=>{
-  const d=userLoc?`${distance(userLoc[0],userLoc[1],l.lat,l.lon).toFixed(1)} km away`:"";
   const latest=l.records.filter(r=>Number(r.Stocking_Year)===l.latestYear),latestFish=latest.reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0),fav=favoriteKeys.has(l.key);
   // An unstocked lake has no year and no stocking totals, so it gets its own
   // pill and its own meta line instead of a row of dashes.
@@ -694,10 +798,19 @@ function render(){
    :`<span class="nospecies">No species recorded</span>`;
   const pill=l.stocked?`<span class="pill">${esc(l.latestYear||"—")}</span>`
    :`<span class="pill wild">Not stocked</span>`;
-  const meta=l.stocked
-   ?`<span>${num(latestFish)} stocked</span><span>${l.records.length} record${l.records.length===1?"":"s"}</span>${l.township?`<span>${esc(l.township)}</span>`:""}`
-   :`<span>${(l.present||[]).length?(l.present.length+" species recorded"):"No survey data"}</span>${l.depthMax?`<span>${l.depthMax} m deep</span>`:""}${l.areaHa?`<span>${num(l.areaHa)} ha</span>`:""}`;
-  return `<article class="record" data-i="${i}"><div class="topline"><div><h4>${esc(l.name)}</h4><div class="species">${head}</div></div><div class="cardactions">${pill}<button class="star ${fav?"saved":""}" data-fav="${esc(l.key)}" aria-label="Favourite">${fav?"★":"☆"}</button></div></div><div class="meta">${meta}${l.fmz?`<span>FMZ ${l.fmz}</span>`:""}${d?`<span>${d}</span>`:""}</div></article>`;
+  // Township and distance come first: with three Rice Lakes on screen they
+  // are the only things that tell them apart.
+  // Township, zone and distance identify the lake. Everything after them is
+  // detail — with three Rice Lakes on screen these three are the answer.
+  const where=[
+   l.township?`<span class="place">${esc(townshipLabel(l.township))}</span>`:"",
+   l.fmz?`<span class="zone">FMZ ${esc(l.fmz)}</span>`:"",
+   userLoc?`<span class="dist">${esc(distanceLabel(l))}</span>`:""
+  ].join("");
+  const meta=where+(l.stocked
+   ?`<span>${num(latestFish)} stocked</span><span>${l.records.length} record${l.records.length===1?"":"s"}</span>`
+   :`<span>${(l.present||[]).length?(l.present.length+" species recorded"):"No survey data"}</span>${l.depthMax?`<span>${l.depthMax} m deep</span>`:""}`);
+  return `<article class="record" data-i="${i}"><div class="topline"><div><h4>${esc(l.name)}</h4><div class="species">${head}</div></div><div class="cardactions">${pill}<button class="star ${fav?"saved":""}" data-fav="${esc(l.key)}" aria-label="Favourite">${fav?"★":"☆"}</button></div></div><div class="meta">${meta}</div></article>`;
  }).join("")||`<div class="record empty">${emptyMessage()}</div>`;
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=e=>{if(e.target.closest(".star"))return;const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
  document.querySelectorAll(".star").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFav(b.dataset.fav)});
@@ -782,7 +895,7 @@ async function loadFullRegulations(){
   const add=(map,k,v)=>{if(!map.has(k))map.set(k,[]);map.get(k).push(v)};
   fullRegs.exceptions.forEach(r=>{if(r.wli)add(exceptionIndex,String(r.wli),r)});
   fullRegs.additional.forEach(r=>{if(r.wli)add(additionalIndex,String(r.wli),r)});
-  fullRegsLoaded=true;apply();
+  fullRegsLoaded=true;assignFMZ();apply();
  }catch(e){console.warn("Full 2026 regulations unavailable",e)}
 }
 function fullRuleFor(l,species){
@@ -1012,7 +1125,7 @@ function detail(l){
  recentLakes=[l.key,...recentLakes.filter(k=>k!==l.key)].slice(0,10);localStorage.setItem("osl-recent",JSON.stringify(recentLakes));
  const fav=favoriteKeys.has(l.key),history=l.records.map(r=>`<div class="historyrow"><div><b>${esc(r.Stocking_Year||"—")}</b><span>${esc(r.Species||"Species unavailable")}</span></div><div class="historyright"><b>${num(r.Number_of_Fish_Stocked)}</b><span>${esc(r.Developmental_Stage||"")}</span></div></div>`).join("");
  $("detail").innerHTML=`<div class="detailhead"><div><h2>${esc(l.name)}</h2><div class="species">${esc(l.species.join(" • "))}</div></div><button class="bigstar ${fav?"saved":""}" id="detailFav">${fav?"★":"☆"}</button></div>
- <div class="detailgrid">${l.stocked?`<div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div>`:`<div><small>Stocking</small><b>Not stocked</b></div>`}${l.township?`<div><small>Township</small><b>${esc(l.township)}</b></div>`:""}${l.district?`<div><small>MNRF district</small><b>${esc(l.district)}</b></div>`:""}
+ <div class="detailgrid">${l.stocked?`<div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div>`:`<div><small>Stocking</small><b>Not stocked</b></div>`}${l.township?`<div><small>Township</small><b>${esc(townshipLabel(l.township))}</b></div>`:""}${userLoc?`<div><small>Distance from you</small><b>${esc(distanceLabel(l))}</b></div>`:""}${l.district?`<div><small>MNRF district</small><b>${esc(l.district)}</b></div>`:""}
  <div><small>Fisheries Management Zone</small><b>${l.fmz?`FMZ ${l.fmz}`:"Loading / unavailable"}</b></div><div><small>Waterbody ID</small><b>${esc(l.waterbodyId||"—")}</b></div></div>
  ${l.fmz?`<a class="zoneAction" target="_blank" rel="noopener" href="${REGS_BASE}${l.fmz}">View Current FMZ ${l.fmz} Regulations</a>`:""}
 ${presentBlock(l)}
@@ -1263,12 +1376,12 @@ function renderFindResults(sp,yr){
   const rs=ruleSummaryForResult(l,sp);
   const access=hasNearbyAccess(l);
   return `<article class="record finder2" data-i="${i}">
-   <div class="finderTop"><div><div class="matchBadge">★ ${Number.isFinite(l._bestScore)?l._bestScore:0} Best Match</div><h4>${esc(l.name)}</h4><div class="species">${esc(sp||(l.stocked?l.species:(l.present||[])).slice(0,3).join(" • "))}</div></div><span class="distancebadge">${l._findKm.toFixed(1)} km</span></div>
+   <div class="finderTop"><div><div class="matchBadge">★ ${Number.isFinite(l._bestScore)?l._bestScore:0} Best Match</div><h4>${esc(l.name)}</h4><div class="species">${esc(sp||(l.stocked?l.species:(l.present||[])).slice(0,3).join(" • "))}</div></div><span class="distancebadge">${l._findKm<10?l._findKm.toFixed(1):Math.round(l._findKm)} km<small>${esc(bearingLabel(userLoc[0],userLoc[1],l.lat,l.lon))}</small></span></div>
    ${l._findPresent
      ?`<div class="heroStock present"><div><small>Recorded in this lake</small><b>${esc(sp||"Surveyed")}</b></div><div><small>Stocking</small><b>Not stocked</b></div></div>`
      :`<div class="heroStock"><div><small>${t("matchingStocked")}</small><b>${num(l._findQty)}</b></div><div><small>${t("mostRecent")}</small><b>${l._findYear||"—"}</b></div></div>`}
    <div class="rulePreview ${rs.kind}"><b>${esc(rs.label)}</b><span>${esc(rs.detail)}</span></div>
-   <div class="featureRow"><span>FMZ ${l.fmz||"—"}</span>${access?`<span>🚤 Access ≤5 km</span>`:""}${l.observedSpecies&&l.observedSpecies.length?`<span>Species data</span>`:""}<span>🌊 Depth layer</span><span>🌤️ Weather</span></div>
+   <div class="featureRow">${l.township?`<span class="place">${esc(townshipLabel(l.township))}</span>`:""}<span class="zone">FMZ ${l.fmz||"—"}</span>${access?`<span>🚤 Access ≤5 km</span>`:""}${l.observedSpecies&&l.observedSpecies.length?`<span>Species data</span>`:""}<span>🌊 Depth layer</span><span>🌤️ Weather</span></div>
    <button class="viewLakeBtn">${t("viewLake")}</button>
   </article>`;
  }).join("")||"";

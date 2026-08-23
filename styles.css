@@ -545,3 +545,15 @@ body.filtering .sectiontitle{margin-top:14px}
 .findActions .runfind{margin-top:0}
 .findActions .ghostbtn{white-space:nowrap}
 .modeRow{margin:2px 0 8px}
+
+/* Township and distance lead the meta line — with three Rice Lakes on screen
+   they are the only things that distinguish them. */
+.meta .place{color:var(--green);font-weight:700}
+.meta .dist{color:var(--green);font-weight:700;font-variant-numeric:tabular-nums}
+.distancebadge small{display:block;font-size:9.5px;font-weight:700;opacity:.75;letter-spacing:.4px}
+.featureRow .place{background:#E7EFF7;color:#1D3A57;font-weight:700}
+
+/* Zone chip sits with township and distance as the identifying trio. */
+.meta .zone{color:#7A5B10;font-weight:800;background:#F6EDD8;border-radius:6px;padding:1px 7px}
+.meta .zone::after,.meta .place::after,.meta .dist::after{color:#BECBD8}
+.featureRow .zone{background:#F6EDD8;color:#7A5B10;font-weight:800}
