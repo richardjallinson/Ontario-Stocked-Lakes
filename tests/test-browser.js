@@ -118,9 +118,32 @@ const features = [];
   await page.click('#langFR');
   await page.waitForTimeout(400);
   ok((await page.innerText('#brandTagline')).includes('lacs'), 'French switches the interface');
-  ok((await page.innerText('#findFishBtn')).includes('Trouver'), 'French reaches the shortcut cards');
+  ok((await page.innerText('.tabs button[data-view="findfish"]')).includes('Trouver'),
+     'French reaches the top tab strip');
   await page.click('#langEN');
   await page.waitForTimeout(300);
+
+  // Top tabs. These replaced the bottom bar; each must switch the view and
+  // none may dead-end, which is what the shortcut buttons used to do when
+  // location was refused.
+  for (const v of ['findfish', 'near', 'favorites', 'trips', 'resources', 'explore']) {
+    await page.click('.tabs button[data-view="' + v + '"]');
+    await page.waitForTimeout(400);
+    const active = await page.$eval('.tabs button.active', (e) => e.dataset.view);
+    ok(active === v, 'the ' + v + ' tab activates');
+  }
+  await page.click('.tabs button[data-view="resources"]');
+  await page.waitForTimeout(300);
+  ok(await page.isVisible('#resourcesPanel'), 'the Regulations tab shows the official sources');
+  const links = await page.$$eval('#resourcesPanel a[href^="https://"]', (e) => e.length);
+  ok(links >= 5, 'the Regulations tab lists the official links (' + links + ')');
+  await page.click('.tabs button[data-view="explore"]');
+  await page.waitForTimeout(300);
+
+  // window.open is blocked in an iOS standalone app, so these must be anchors.
+  const openCalls = await page.evaluate(
+    () => document.querySelectorAll('#regsBtn[href], #fishOnlineBtn[href]').length);
+  ok(openCalls === 2, 'the government shortcuts are real links, not window.open');
 
   // Help, backup controls, disclaimer
   await page.click('#helpBtn');

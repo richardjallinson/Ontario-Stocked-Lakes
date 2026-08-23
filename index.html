@@ -17,24 +17,36 @@
 </head>
 <body>
 <header>
-  <div class="headerBrand">
-    <div class="eyebrow">ONTARIO</div>
-    <h1>Stocked Lakes</h1>
-    <span id="brandTagline">Find stocked lakes. Know the rules.</span>
+  <div class="headerTop">
+    <div class="headerBrand">
+      <div class="eyebrow">ONTARIO</div>
+      <h1>Stocked Lakes</h1>
+    </div>
+    <div class="headerActions">
+      <button id="locateBtn" class="round" type="button" aria-label="Use my location">◎</button>
+      <div class="langSwitch" role="group" aria-label="Language / Langue">
+        <button id="langEN" class="active" type="button">EN</button>
+        <button id="langFR" type="button">FR</button>
+      </div>
+      <button id="helpBtn" class="round" type="button" aria-label="Help and about">?</button>
+    </div>
   </div>
-  <div class="headerActions">
-    <button id="locateBtn" class="round" type="button" aria-label="Use my location">◎</button>
-    <button id="helpBtn" class="round" type="button" aria-label="Help and about">?</button>
+  <div class="tabstrip">
+    <div class="tabs hscroll" role="tablist" aria-label="Sections">
+      <button data-view="explore" type="button" role="tab">Explore</button>
+      <button data-view="findfish" type="button" role="tab">Find Fish</button>
+      <button data-view="near" type="button" role="tab">Near Me</button>
+      <button data-view="favorites" type="button" role="tab">My Lakes</button>
+      <button data-view="trips" type="button" role="tab">Trips</button>
+      <button data-view="resources" type="button" role="tab">Regulations</button>
+    </div>
+    <div class="tabfade" aria-hidden="true"></div>
   </div>
 </header>
-<div class="languageBar" aria-label="Language / Langue">
-  <button id="langEN" class="active" type="button">English</button>
-  <button id="langFR" type="button">Français</button>
-</div>
 <main>
 <section class="hero">
   <h2>Find your next fishing spot</h2>
-  <p>Explore Ontario fish-stocking records by lake, species and year.</p>
+  <p id="brandTagline">Find stocked lakes. Know the rules. Plan the trip.</p>
   <div class="searchrow">
     <input id="search" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="Search a lake, township or species">
     <button id="searchBtn">Search</button>
@@ -50,12 +62,10 @@
 </section>
 
 <section class="quick">
-  <button id="nearBtn" type="button"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-5.7 7-11a7 7 0 1 0-14 0c0 5.3 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/></svg></i><b>Near Me</b><span>Closest stocking records</span></button>
   <button id="recentBtn" type="button"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.2 12c0 2.8-3 5.1-6.3 5.1-2.4 0-4.7-1.3-5.9-2.8a.6.6 0 0 1 0-.8c1.2-1.5 3.5-2.8 5.9-2.8 3.3 0 6.3 2.4 6.3 5.1Z" transform="translate(0 -2.4)"/><path d="m15.1 10.9 5-3.1v9.4l-5-3.1"/><circle cx="6.7" cy="10.4" r=".95" stroke="none" fill="currentColor"/></svg></i><b>Recently Stocked</b><span>Newest records first</span></button>
   <button id="recentNearBtn" type="button"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></i><b>Recent Near Me</b><span>Newest stocked lakes close to you</span></button>
-  <button id="findFishBtn" type="button"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.4"/><path d="m16 16 4.5 4.5"/></svg></i><b>Find Fish</b><span>Distance • species • stocking quantity</span></button>
-  <button id="regsBtn" type="button"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.2A1.6 1.6 0 0 1 5.6 3.6H19a.8.8 0 0 1 .8.8v13.8a.8.8 0 0 1-.8.8H5.6A1.6 1.6 0 0 0 4 20.6V5.2Z"/><path d="M4 18.9a1.6 1.6 0 0 1 1.6-1.6h14.2"/><path d="M8.2 8h7.4M8.2 11.4h5.2"/></svg></i><b>2026 Regulations</b><span>Official Ontario fishing rules</span></button>
-  <button id="fishOnlineBtn" type="button"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20.5h17"/><path d="M5.5 20.5V10M18.5 20.5V10M9.8 20.5V10M14.2 20.5V10"/><path d="m12 3.2 8.5 4.6h-17L12 3.2Z"/></svg></i><b>Fish ON-Line</b><span>Government lake information</span></button>
+  <a id="regsBtn" href="https://www.ontario.ca/document/ontario-fishing-regulations-summary" target="_blank" rel="noopener"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.2A1.6 1.6 0 0 1 5.6 3.6H19a.8.8 0 0 1 .8.8v13.8a.8.8 0 0 1-.8.8H5.6A1.6 1.6 0 0 0 4 20.6V5.2Z"/><path d="M4 18.9a1.6 1.6 0 0 1 1.6-1.6h14.2"/><path d="M8.2 8h7.4M8.2 11.4h5.2"/></svg></i><b>2026 Regulations</b><span>Official Ontario fishing rules</span></a>
+  <a id="fishOnlineBtn" href="https://www.ontario.ca/fishonline" target="_blank" rel="noopener"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20.5h17"/><path d="M5.5 20.5V10M18.5 20.5V10M9.8 20.5V10M14.2 20.5V10"/><path d="m12 3.2 8.5 4.6h-17L12 3.2Z"/></svg></i><b>Fish ON-Line</b><span>Government lake information</span></a>
 </section>
 
 <section id="findPanel" class="findpanel">
@@ -107,13 +117,24 @@
 
 <div class="sectiontitle"><h3 id="listTitle">Explore stocked lakes</h3><span id="count">Loading…</span></div>
 <section id="results" class="results"></section>
+
+<section id="resourcesPanel" class="resourcesPanel" hidden>
+  <h3>Official Ontario sources</h3>
+  <p class="panelNote">Regulations in this app are a summary. These are the authoritative sources — open them before you fish.</p>
+  <a class="resourceLink" href="https://www.ontario.ca/document/ontario-fishing-regulations-summary" target="_blank" rel="noopener">
+    <b>2026 Fishing Regulations Summary</b><span>Seasons, limits and slot sizes by zone</span></a>
+  <a class="resourceLink" href="https://www.ontario.ca/fishonline" target="_blank" rel="noopener">
+    <b>Fish ON-Line</b><span>Government lake information and maps</span></a>
+  <a class="resourceLink" href="https://www.ontario.ca/page/fishing-licence" target="_blank" rel="noopener">
+    <b>Fishing licences</b><span>Buy or renew an Outdoors Card and licence</span></a>
+  <a class="resourceLink" href="https://www.ontario.ca/page/fish-consumption-report" target="_blank" rel="noopener">
+    <b>Guide to Eating Ontario Fish</b><span>Consumption advisories by waterbody</span></a>
+  <a class="resourceLink" href="https://weather.gc.ca/" target="_blank" rel="noopener">
+    <b>Environment Canada weather</b><span>Forecasts and marine warnings</span></a>
+  <a class="resourceLink" href="https://data.ontario.ca/en/dataset/recreational-fishing-regulations-data" target="_blank" rel="noopener">
+    <b>Ontario Open Data</b><span>The datasets behind this app</span></a>
+</section>
 </main>
-<nav class="bottomnav" aria-label="Main">
-  <button data-view="explore" class="active" type="button"><span class="navicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3.5 3.8 5.6a1 1 0 0 0-.6.9v13a.6.6 0 0 0 .85.55L9 18l6 2.5 5.2-2.1a1 1 0 0 0 .6-.9v-13a.6.6 0 0 0-.85-.55L15 6 9 3.5Z"/><path d="M9 3.5V18M15 6v14.5"/></svg></span>Explore</button>
-  <button data-view="near" type="button"><span class="navicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-5.7 7-11a7 7 0 1 0-14 0c0 5.3 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/></svg></span>Near Me</button>
-  <button data-view="favorites" type="button"><span class="navicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.8 2.5 5.1 5.6.8-4 4 .9 5.6-5-2.6-5 2.6.9-5.6-4-4 5.6-.8L12 3.8Z"/></svg></span>My Lakes</button>
-  <button data-view="trips" type="button"><span class="navicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 12c0 2.7-3 5-6.2 5-2.4 0-4.6-1.3-5.8-2.7a.6.6 0 0 1 0-.8C4.7 12 6.9 10.7 9.3 10.7c3.2 0 6.2 2.3 6.2 5Z" transform="translate(0 -.6)"/><path d="m15.4 11.4 4.8-3v9l-4.8-3"/><circle cx="7" cy="11" r=".9" fill="currentColor" stroke="none"/></svg></span>Trips</button>
-</nav>
 
 <div id="sheet" class="sheet hidden"><div class="sheetbox">
   <button id="closeSheet" class="close">×</button><div id="detail"></div>

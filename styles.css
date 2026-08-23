@@ -238,3 +238,103 @@ img.onboardIcon{width:60px;height:60px;border-radius:17px;display:block;
    a control people use one-handed in a boat. */
 .languageBar{padding:8px 12px}
 .languageBar button{padding:9px 14px;min-height:36px}
+
+/* ===========================================================================
+   Top navigation and layout rebuild
+   Tab strip follows the Estate File pattern: it lives inside the dark header,
+   scrolls horizontally, and marks the active section with a gold underline.
+   =========================================================================== */
+
+header{display:block;padding:calc(12px + env(safe-area-inset-top)) 0 0;box-shadow:0 2px 14px #0b2b2733}
+.headerTop{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px 12px}
+.headerBrand h1{font-size:23px;margin:0;letter-spacing:-.5px;line-height:1.05}
+.eyebrow{font-size:10px;letter-spacing:2.4px;color:#8fb3ab;font-weight:800;margin-bottom:2px}
+.headerActions{display:flex;gap:8px;flex:0 0 auto}
+.round{width:38px;height:38px;font-size:19px;border-color:#3d6f67;background:#ffffff14}
+
+.tabstrip{position:relative;border-top:1px solid #ffffff14}
+.tabs{display:flex;gap:0;padding:0 16px;overflow-x:auto;overflow-y:hidden;
+ scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none;height:0}
+.tabs button{flex:0 0 auto;border:0;background:transparent;cursor:pointer;
+ padding:14px 13px 11px;font-size:13px;letter-spacing:.2px;font-weight:600;
+ color:#9dbdb6;border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button.active{color:var(--gold);font-weight:800;border-bottom-color:var(--gold)}
+.tabfade{position:absolute;top:0;right:0;width:26px;bottom:0;pointer-events:none;
+ background:linear-gradient(to right,transparent,var(--green))}
+
+/* No bottom bar any more, so the page doesn't need to reserve room for it. */
+body{padding-bottom:0}
+main{padding:14px 16px 40px}
+
+/* Hero: quieter. It was competing with the header for attention. */
+.hero{padding:18px;border-radius:18px}
+.hero h2{font-size:21px;margin:0 0 5px;letter-spacing:-.3px}
+.hero p{font-size:13px;margin:0 0 14px;color:#c9ded9}
+
+/* Stats: one compact strip. Five large cards pushed everything below the fold. */
+.dashboard{grid-template-columns:repeat(5,1fr);gap:5px;margin:12px 0}
+.dashboard div{padding:9px 4px;border-radius:10px}
+.dashboard strong{font-size:15px;font-variant-numeric:tabular-nums}
+.dashboard span{font-size:9px;letter-spacing:0}
+@media(max-width:520px){
+  .dashboard{grid-template-columns:repeat(5,1fr)}
+  .dashboard div:last-child,.dashboard div:nth-child(4){grid-column:auto}
+  .dashboard strong{font-size:14px}
+  .dashboard span{font-size:8.5px}
+}
+
+/* Shortcut cards, including the two that are now links. */
+.quick{gap:9px;margin:12px 0}
+.quick button,.quick a{background:#fff;border:1px solid var(--line);border-radius:15px;
+ text-align:left;padding:13px 14px 15px;display:block;text-decoration:none;color:var(--ink)}
+.quick a b{color:var(--green);display:block;font-size:15.5px;line-height:1.2}
+.quick a span{display:block;font-size:12px;color:var(--muted);margin-top:5px;line-height:1.35}
+.quick a::after{content:"↗";position:absolute;top:12px;right:13px;color:#a9bdb7;font-size:13px}
+.quick a{position:relative}
+
+/* The Regulations tab. */
+.resourcesPanel{margin:4px 0 10px}
+.resourcesPanel h3{margin:6px 0 4px;font-size:19px;color:var(--green)}
+.panelNote{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 14px}
+.resourceLink{display:block;position:relative;background:#fff;border:1px solid var(--line);
+ border-radius:14px;padding:14px 40px 14px 15px;margin-bottom:9px;text-decoration:none;color:var(--ink)}
+.resourceLink b{display:block;color:var(--green);font-size:15px}
+.resourceLink span{display:block;font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.35}
+.resourceLink::after{content:"↗";position:absolute;top:50%;right:15px;transform:translateY(-50%);
+ color:#a9bdb7;font-size:15px}
+.resourceLink:active{border-color:#b9cbc5;background:#fbfdfc}
+
+[hidden]{display:none!important}
+
+/* Language switch inside the header. */
+.langSwitch{display:flex;gap:4px;flex:0 0 auto}
+.langSwitch button{border:1px solid #3d6f67;background:#ffffff14;color:#cfe2dd;
+ padding:0 11px;height:38px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer}
+.langSwitch button.active{background:#fff;color:var(--green);border-color:#fff}
+
+/* Shortcut cards read horizontally now: icon, then label. Half the height. */
+.quick{grid-template-columns:1fr 1fr;gap:9px}
+.quick button,.quick a{display:grid;grid-template-columns:auto 1fr;gap:11px;
+ align-items:start;padding:13px 14px}
+.qi{margin-bottom:0;width:32px;height:32px;border-radius:9px}
+.qi svg{width:17px;height:17px}
+.quick b{font-size:14.5px;line-height:1.2;align-self:center}
+.quick span,.quick a span{grid-column:2;font-size:11.5px;margin-top:3px;line-height:1.3}
+.quick b{grid-column:2}
+.qi{grid-row:1/3;grid-column:1}
+.quick a::after{top:11px;right:11px;font-size:12px}
+
+/* Six tabs should very nearly fit a 390pt screen before scrolling. */
+.tabs button{padding:14px 10px 11px;font-size:12.5px}
+
+/* Shortcut rows: one column, icon left, title on a single line. The 2×2 grid
+   forced every title to wrap and left a gap under it. */
+.quick{grid-template-columns:1fr;gap:8px}
+.quick button,.quick a{grid-template-columns:auto 1fr;grid-template-rows:auto auto;
+ align-content:start;padding:12px 38px 12px 13px;border-radius:14px}
+.quick .qi{grid-row:1/3;grid-column:1;align-self:center;margin:0}
+.quick b{grid-column:2;grid-row:1;align-self:end;font-size:15px;line-height:1.15}
+.quick span,.quick a span{grid-column:2;grid-row:2;align-self:start;margin-top:2px;
+ font-size:12px;line-height:1.3}
+.quick a::after{top:50%;transform:translateY(-50%);right:14px;font-size:14px}

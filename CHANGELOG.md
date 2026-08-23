@@ -3,6 +3,41 @@
 All notable changes to this project are documented here.
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] — 2026-08-23
+
+Navigation moved to the top, matching the Estate File pattern, plus three
+link/search bugs found by clicking every control in a browser harness.
+
+### Fixed
+- **The two government shortcuts did nothing on a home-screen install.**
+  "2026 Regulations" and "Fish ON-Line" called `window.open(url, "_blank",
+  "noopener")`. A features string makes that a popup, and iOS blocks popups in
+  a standalone PWA — the button was dead. Both are real `<a target="_blank">`
+  links now, which work in the browser, in a home-screen install and in the
+  native wrapper.
+- **Refusing location left three controls dead.** Near Me, Recent Near Me and
+  Find Fish each called `locate()` and then did nothing when it failed: the
+  count read "Location unavailable" and the screen never changed. Every view
+  now renders regardless, and the empty state says what to do.
+- **Find Fish required a location just to open its filters.** It opens now,
+  with or without one.
+- "1 lakes" → "1 lake".
+- Verified the live ArcGIS stocking endpoint and field schema against the
+  published service definition: layer, field names and types all still match.
+
+### Changed
+- **Bottom tab bar replaced with a scrolling top tab strip in the header**,
+  gold underline on the active section — the Estate File layout. Six sections:
+  Explore, Find Fish, Near Me, My Lakes, Trips, Regulations.
+- New Regulations tab collecting the six official Ontario sources in one place,
+  including fishing licences, which the app never linked to before.
+- Language switch moved into the header; it was costing a full row above the
+  fold.
+- Shortcut cards are single-column rows with the icon inline. The 2×2 grid
+  forced every title to wrap.
+- Stats compressed to one strip; hero tightened. The first screen previously
+  showed almost nothing but chrome.
+
 ## [1.0.2] — 2026-08-23
 
 Adopts the native-wrapper architecture from the Estate File project, replacing

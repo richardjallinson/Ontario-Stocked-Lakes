@@ -64,13 +64,15 @@ function setLanguage(lang){
  translateStaticUI();apply();
 }
 function translateStaticUI(){
- const fp=$("findFishBtn");
- if(fp){
-  const b=fp.querySelector("b"),sp=fp.querySelector("span");
-  if(b)b.textContent=t("findFish");
-  if(sp)sp.textContent=appLang==="fr"?"Distance • espèce • quantité ensemencée":"Distance • species • stocking quantity";
- }
+ const ff=document.querySelector('.tabs button[data-view="findfish"]');
+ if(ff)ff.textContent=t("findFish");
  const run=$("runFind");if(run)run.textContent=t("findStocked");
+ const tabText={explore:appLang==="fr"?"Explorer":"Explore",near:appLang==="fr"?"Près de moi":"Near Me",
+  favorites:t("myLakes"),trips:t("trips"),resources:t("regulations")};
+ Object.keys(tabText).forEach(k=>{
+  const b=document.querySelector('.tabs button[data-view="'+k+'"]');
+  if(b)b.textContent=tabText[k];
+ });
  const tag=$("brandTagline");if(tag)tag.textContent=t("tagline");
  const hb=$("helpBtn");if(hb)hb.setAttribute("aria-label",t("help"));
  const ot=$("onboardTitle");if(ot)ot.textContent=t("onboardTitle");
@@ -82,7 +84,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="1.0.2";
+const APP_VERSION="1.1.0";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -390,17 +392,25 @@ function apply(){
  render();
 }
 function render(){
- $("count").textContent=`${num(shown.length)} lakes`;
+ $("count").textContent=lakeCount(shown.length);
  $("listTitle").textContent=currentView==="favorites"?"My Lakes":currentView==="near"?"Stocked lakes near me":currentView==="recentnear"?"Recently stocked within 100 km":currentView==="findfish"?$("listTitle").textContent:"Explore stocked lakes";
  $("results").innerHTML=shown.slice(0,250).map((l,i)=>{
   const d=userLoc?`${distance(userLoc[0],userLoc[1],l.lat,l.lon).toFixed(1)} km away`:"";
   const latest=l.records.filter(r=>Number(r.Stocking_Year)===l.latestYear),latestFish=latest.reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0),fav=favoriteKeys.has(l.key);
   return `<article class="record" data-i="${i}"><div class="topline"><div><h4>${esc(l.name)}</h4><div class="species">${esc(l.species.join(" • "))}</div></div><div class="cardactions"><span class="pill">${esc(l.latestYear||"—")}</span><button class="star ${fav?"saved":""}" data-fav="${esc(l.key)}" aria-label="Favourite">${fav?"★":"☆"}</button></div></div><div class="meta"><span>${num(latestFish)} stocked</span><span>${l.records.length} record${l.records.length===1?"":"s"}</span>${l.fmz?`<span>🗺️ FMZ ${l.fmz}</span>`:""}${l.township?`<span>${esc(l.township)}</span>`:""}${d?`<span>${d}</span>`:""}</div></article>`;
- }).join("")||`<div class="record empty">${currentView==="favorites"?"No favourite lakes yet. Tap ☆ on a lake to save it.":"No stocked lakes match these filters."}</div>`;
+ }).join("")||`<div class="record empty">${emptyMessage()}</div>`;
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=e=>{if(e.target.closest(".star"))return;const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
  document.querySelectorAll(".star").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFav(b.dataset.fav)});
  markerLayer.clearLayers();
  shown.slice(0,400).forEach(l=>{const m=L.circleMarker([l.lat,l.lon],{radius:7}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${esc(l.species.join(", "))}<br>Latest: ${esc(l.latestYear||"—")}`);m.on("click",()=>detail(l))});
+}
+function lakeCount(n){return num(n)+" "+(n===1?"lake":"lakes")}
+function emptyMessage(){
+ if(currentView==="favorites")return "No saved lakes yet. Tap ☆ on any lake to keep it here.";
+ if((currentView==="near"||currentView==="recentnear")&&!userLoc)
+  return "Turn on location to see the lakes closest to you, or search for one by name.";
+ if(!lakes.length)return "Stocking data hasn't loaded yet.";
+ return "No stocked lakes match these filters. Try widening the distance or clearing the species.";
 }
 function toggleFav(key){favoriteKeys.has(key)?favoriteKeys.delete(key):favoriteKeys.add(key);localStorage.setItem("osl-favorites",JSON.stringify([...favoriteKeys]));apply()}
 
@@ -702,7 +712,7 @@ function runFindFish(){
   const radius=Number($("findRadius").value)||50,sp=$("findSpecies").value,yr=$("findYear").value,min=Number($("findMinimum").value)||0,
     lname=$("findLake").value.trim().toLowerCase(),sort=$("findSort").value,needAccess=$("findAccess").checked;
   const execute=()=>{
-   currentView="findfish";
+   currentView="findfish";syncTabs();
    shown=lakes.filter(l=>{
     const km=distance(userLoc[0],userLoc[1],l.lat,l.lon);if(km>radius)return false;
     if(lname&&!l.name.toLowerCase().includes(lname))return false;
@@ -716,7 +726,7 @@ function runFindFish(){
    if(sort==="closest")shown.sort((a,b)=>a._findKm-b._findKm);
    if(sort==="recent")shown.sort((a,b)=>b._findYear-a._findYear||a._findKm-b._findKm);
    if(sort==="quantity")shown.sort((a,b)=>b._findQty-a._findQty||a._findKm-b._findKm);
-   $("listTitle").textContent=`Find Fish • within ${radius} km`;$("count").textContent=`${num(shown.length)} lakes`;
+   $("listTitle").textContent=`Find Fish • within ${radius} km`;$("count").textContent=lakeCount(shown.length);
    renderFindResults(sp,yr);$("findPanel").classList.remove("open");
   };
   if(needAccess&&!accessLoaded)loadAccess().then(execute);else execute();
@@ -724,7 +734,7 @@ function runFindFish(){
  if(!userLoc)locate(go);else go();
 }
 function renderFindResults(sp,yr){
- $("count").textContent=`${num(shown.length)} lakes`;
+ $("count").textContent=lakeCount(shown.length);
  $("results").innerHTML=shown.slice(0,250).map((l,i)=>{
   const rs=ruleSummaryForResult(l,sp);
   const access=hasNearbyAccess(l);
@@ -741,7 +751,7 @@ function renderFindResults(sp,yr){
 }
 function recentNearMe(){
  const run=()=>{
-  currentView="recentnear";$("search").value="";$("species").value="";$("year").value="";$("radius").value="100";
+  currentView="recentnear";syncTabs();$("search").value="";$("species").value="";$("year").value="";$("radius").value="100";
   shown=[...lakes].filter(l=>distance(userLoc[0],userLoc[1],l.lat,l.lon)<=100)
     .sort((a,b)=>b.latestYear-a.latestYear || distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon));
   $("listTitle").textContent="Recently stocked within 100 km";
@@ -749,9 +759,40 @@ function recentNearMe(){
  };
  if(!userLoc)locate(run);else run();
 }
+function syncTabs(){
+ const map={recentnear:"near",findfish:"findfish"};
+ const target=map[currentView]||currentView;
+ document.querySelectorAll(".tabs button").forEach(b=>{
+  const on=b.dataset.view===target;
+  b.classList.toggle("active",on);b.setAttribute("aria-selected",String(on));
+ });
+}
 function setView(v){
- currentView=v;document.querySelectorAll(".bottomnav button").forEach(b=>b.classList.toggle("active",b.dataset.view===v));
- if(v==="near"&&!userLoc)locate(apply);else if(v==="trips")renderTrips();else apply();
+ currentView=v;
+ document.querySelectorAll(".tabs button").forEach(b=>{
+  const on=b.dataset.view===v;
+  b.classList.toggle("active",on);
+  b.setAttribute("aria-selected",String(on));
+ });
+ const active=document.querySelector(".tabs button.active");
+ if(active&&active.scrollIntoView)active.scrollIntoView({block:"nearest",inline:"nearest",behavior:"smooth"});
+
+ // Panels that are not the results list.
+ const res=$("resourcesPanel");if(res)res.hidden=v!=="resources";
+ const find=$("findPanel");if(find&&v!=="findfish")find.classList.remove("open");
+ const browse=document.querySelectorAll(".hero,.dashboard,.quick,.filters,.mapcontrols,.mapcard,.sectiontitle,#results");
+ browse.forEach(el=>{el.hidden=v==="resources"});
+
+ if(v==="resources")return;
+ if(v==="findfish"){
+  if(find){find.classList.add("open");find.scrollIntoView({behavior:"smooth",block:"start"})}
+  apply();return;
+ }
+ if(v==="trips")return renderTrips();
+ // Near Me needs a location, but a refusal must not leave a blank screen:
+ // apply() runs either way so the full list is still there to fall back on.
+ if(v==="near"&&!userLoc)locate(apply);
+ apply();
 }
 $("showAccess").onchange=()=>{$("showAccess").checked?loadAccess():renderAccess()};
 $("showFMZ").onchange=()=>{$("showFMZ").checked?loadFMZ(true):renderFMZ()};
@@ -759,15 +800,13 @@ $("showDepth").onchange=renderDepth;
 $("searchBtn").onclick=apply;$("search").onkeydown=e=>{if(e.key==="Enter")apply()};$("species").onchange=apply;$("year").onchange=apply;
 $("radius").onchange=()=>{if($("radius").value&&!userLoc)locate(apply);else apply()};
 $("clearFilters").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";apply()};
-$("nearBtn").onclick=()=>setView("near");$("locateBtn").onclick=()=>locate(apply);
-$("regsBtn").onclick=()=>window.open("https://www.ontario.ca/document/ontario-fishing-regulations-summary","_blank","noopener");
-$("fishOnlineBtn").onclick=()=>window.open("https://www.ontario.ca/fishonline","_blank","noopener");
-$("findFishBtn").onclick=()=>{$("findPanel").classList.add("open");$("findPanel").scrollIntoView({behavior:"smooth",block:"start"})};
+$("locateBtn").onclick=()=>locate(apply);
+
 $("closeFind").onclick=()=>$("findPanel").classList.remove("open");
 $("runFind").onclick=runFindFish;
 $("recentNearBtn").onclick=recentNearMe;
 $("recentBtn").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";currentView="explore";shown=[...lakes].sort((a,b)=>b.latestYear-a.latestYear);render()};
-document.querySelectorAll(".bottomnav button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
 $("closeSheet").onclick=()=>$("sheet").classList.add("hidden");
 $("closeTrip").onclick=()=>$("tripSheet").classList.add("hidden");$("tripSheet").onclick=e=>{if(e.target===$("tripSheet"))$("tripSheet").classList.add("hidden")};$("sheet").onclick=e=>{if(e.target===$("sheet"))$("sheet").classList.add("hidden")};
 load();if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
@@ -859,7 +898,7 @@ function wireShell(){
  if(hb)hb.onclick=openHelp;if(ch)ch.onclick=()=>hs.classList.add("hidden");
  if(hs)hs.onclick=e=>{if(e.target===hs)hs.classList.add("hidden")};
  const closeOnboard=()=>{if(ob)ob.classList.add("hidden");localStorage.setItem("osl-onboarded-v1t","1")};
- if(co)co.onclick=closeOnboard;if(se)se.onclick=()=>{closeOnboard();const f=$("findFishBtn");if(f)f.click()};
+ if(co)co.onclick=closeOnboard;if(se)se.onclick=()=>{closeOnboard();setView("findfish")};
  if(ob&&!localStorage.getItem("osl-onboarded-v1t"))ob.classList.remove("hidden");
 }
 
