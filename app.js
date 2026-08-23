@@ -4,7 +4,7 @@ const I18N={
   findFish:"Find Fish",distance:"Distance",species:"Species",stockingYear:"Stocking year",
   minimumStocked:"Minimum fish stocked",lakeName:"Lake name",sortResults:"Sort results",
   bestMatch:"Best Match",closest:"Closest",recent:"Most recently stocked",quantity:"Most fish stocked",
-  findStocked:"Find Stocked Lakes",myLakes:"My Lakes",trips:"Trips",overview:"Overview",
+  findStocked:"Find Fish Near Me",myLakes:"My Lakes",trips:"Trips",overview:"Overview",
   stocking:"Stocking",regulations:"Regulations",access:"Access",fishSpecies:"Fish Species",
   depth:"Depth",eatingAdvice:"Eating Advice",weather:"Weather",sportLimit:"Sport limit",
   conservationLimit:"Conservation limit",season:"Season",verify:"Verify Current Ontario Rule",
@@ -37,7 +37,7 @@ const I18N={
   findFish:"Trouver du poisson",distance:"Distance",species:"Espèce",stockingYear:"Année d'ensemencement",
   minimumStocked:"Nombre minimal de poissons ensemencés",lakeName:"Nom du lac",sortResults:"Trier les résultats",
   bestMatch:"Meilleure correspondance",closest:"Les plus proches",recent:"Ensemencement le plus récent",quantity:"Plus grand nombre ensemencé",
-  findStocked:"Trouver des lacs ensemencés",myLakes:"Mes lacs",trips:"Sorties",overview:"Aperçu",
+  findStocked:"Trouver du poisson près de moi",myLakes:"Mes lacs",trips:"Sorties",overview:"Aperçu",
   stocking:"Ensemencement",regulations:"Règlements",access:"Accès",fishSpecies:"Espèces de poissons",
   depth:"Profondeur",eatingAdvice:"Conseils de consommation",weather:"Météo",sportLimit:"Limite sportive",
   conservationLimit:"Limite de conservation",season:"Saison",verify:"Vérifier le règlement actuel de l’Ontario",
@@ -96,7 +96,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="v1j";
+const APP_VERSION="v1k";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -580,13 +580,6 @@ async function araNearby(lat,lon,km,species){
  return mergeLiveResults(j.features||[]);
 }
 
-/* Every species this app currently knows about, for the combobox. */
-function refreshSpeciesList(){
- const dl=$("speciesList");if(!dl)return;
- const set=new Set(rows.map(r=>r.Species).filter(Boolean));
- lakes.forEach(l=>(l.present||[]).forEach(x=>set.add(x)));
- dl.innerHTML=[...set].sort().map(v=>`<option value="${esc(v)}"></option>`).join("");
-}
 
 function mergeWaterbodies(){
  if(!waterbodies.length)return;
@@ -639,11 +632,13 @@ function updateDashboard(){
 }
 function buildFilters(rebuild){
  const sel=$("species"),find=$("findSpecies");
- if(rebuild&&sel){
-  const keep=sel.value,keepFind=find?find.value:"";
-  sel.length=1;if(find)find.length=1;
+ if(rebuild){
+  const keep=sel?sel.value:"",keepFind=find?find.value:"";
+  if(sel)sel.length=1;
+  if(find)find.length=1;
   fillSpecies();
-  sel.value=keep;if(find)find.value=keepFind;
+  if(sel)sel.value=keep;
+  if(find)find.value=keepFind;
   return;
  }
  fillSpecies();
@@ -652,15 +647,16 @@ function buildFilters(rebuild){
 }
 
 function fillSpecies(){
- // Union of stocked species and species recorded as present, so choosing
- // "Walleye" finds a walleye lake whether or not anyone stocked it.
- const set=new Set(rows.map(x=>x.Species).filter(Boolean));
+ // The wheel has to offer the fish people actually go looking for, not only
+ // the ones somebody happened to stock.
+ const set=new Set(SPORT_SPECIES);
+ rows.forEach(r=>{if(r.Species)set.add(r.Species)});
  lakes.forEach(l=>(l.present||[]).forEach(x=>set.add(x)));
- refreshSpeciesList();
- [...set].sort().forEach(v=>{
-  $("species").insertAdjacentHTML("beforeend",`<option>${esc(v)}</option>`);
-  $("findSpecies").insertAdjacentHTML("beforeend",`<option>${esc(v)}</option>`);
- });
+ const all=[...set].sort((a,b)=>a.localeCompare(b));
+ const opts=all.map(v=>`<option>${esc(v)}</option>`).join("");
+ const sel=$("species"),find=$("findSpecies");
+ if(sel)sel.insertAdjacentHTML("beforeend",opts);
+ if(find)find.insertAdjacentHTML("beforeend",opts);
 }
 
 function apply(){
@@ -863,6 +859,15 @@ function regulationCard(l,species){
    does not list a limit for it rather than guessing one. A wrong limit shown
    confidently is the worst thing this app can do: somebody keeps a fish on it.
 --------------------------------------------------------------------------- */
+
+/* Ontario sport fish, for the species wheel. Every one of these resolves to a
+   regulation category, so picking any of them can show a limit. Species the
+   app discovers in stocking or survey data are merged in on top. */
+const SPORT_SPECIES=["Atlantic Salmon","Black Crappie","Bluegill","Brook Trout","Brown Trout",
+ "Channel Catfish","Chinook Salmon","Coho Salmon","Lake Herring (Cisco)","Lake Sturgeon",
+ "Lake Trout","Lake Whitefish","Largemouth Bass","Muskellunge","Northern Pike","Pumpkinseed",
+ "Rainbow Trout","Sauger","Smallmouth Bass","Splake","Walleye","White Crappie","Yellow Perch"];
+
 const REG_CATEGORY={
  "black crappie":"Crappie",
  "white crappie":"Crappie",
@@ -1112,13 +1117,27 @@ function hasNearbyAccess(l,maxKm=5){
 
 function bestMatchScore(l){
  const km=Number(l._findKm)||999, qty=Number(l._findQty)||0, yr=Number(l._findYear)||0;
- const latest=Math.max(...rows.map(r=>Number(r.Stocking_Year)||0));
+ // Math.max() of an empty array is -Infinity, which propagated all the way
+ // through and rendered as "★ Infinity Best Match" whenever stocking data
+ // hadn't loaded.
+ const years=rows.map(r=>Number(r.Stocking_Year)||0).filter(Boolean);
+ const latest=years.length?Math.max(...years):(new Date()).getFullYear();
+
  let score=Math.max(0,40-(km/5));                       // distance, max ~40
- score+=Math.max(0,30-((latest-yr)*7));                 // recency, max 30
- score+=Math.min(20,Math.log10(Math.max(1,qty))*5);     // stocking volume, max 20
+ if(l.stocked){
+  score+=Math.max(0,30-((latest-yr)*7));                // recency, max 30
+  score+=Math.min(20,Math.log10(Math.max(1,qty))*5);    // stocking volume, max 20
+ }else{
+  // Stocking recency and volume mean nothing for a lake nobody stocked.
+  // Score it on what is actually known: how thoroughly it has been surveyed
+  // and how big it is.
+  const spp=(l.present||[]).length;
+  score+=Math.min(28,spp*3);
+  score+=Math.min(12,Math.log10(Math.max(1,Number(l.areaHa)||0))*6);
+ }
  if(hasNearbyAccess(l))score+=7;
  if(l.fmz)score+=3;
- return Math.round(score);
+ return Math.max(0,Math.min(100,Math.round(score)))||0;
 }
 function ruleSummaryForResult(l,sp){
  if(!fullRegsLoaded)return {label:"Rules loading",detail:"Open lake for current regulations",kind:"normal"};
@@ -1244,7 +1263,7 @@ function renderFindResults(sp,yr){
   const rs=ruleSummaryForResult(l,sp);
   const access=hasNearbyAccess(l);
   return `<article class="record finder2" data-i="${i}">
-   <div class="finderTop"><div><div class="matchBadge">★ ${l._bestScore||0} Best Match</div><h4>${esc(l.name)}</h4><div class="species">${esc(sp||(l.stocked?l.species:(l.present||[])).slice(0,3).join(" • "))}</div></div><span class="distancebadge">${l._findKm.toFixed(1)} km</span></div>
+   <div class="finderTop"><div><div class="matchBadge">★ ${Number.isFinite(l._bestScore)?l._bestScore:0} Best Match</div><h4>${esc(l.name)}</h4><div class="species">${esc(sp||(l.stocked?l.species:(l.present||[])).slice(0,3).join(" • "))}</div></div><span class="distancebadge">${l._findKm.toFixed(1)} km</span></div>
    ${l._findPresent
      ?`<div class="heroStock present"><div><small>Recorded in this lake</small><b>${esc(sp||"Surveyed")}</b></div><div><small>Stocking</small><b>Not stocked</b></div></div>`
      :`<div class="heroStock"><div><small>${t("matchingStocked")}</small><b>${num(l._findQty)}</b></div><div><small>${t("mostRecent")}</small><b>${l._findYear||"—"}</b></div></div>`}
@@ -1317,6 +1336,14 @@ $("search").oninput=()=>{
  },320);
 };$("species").onchange=apply;$("year").onchange=apply;
 $("radius").onchange=()=>{if($("radius").value&&!userLoc)locate(apply);else apply()};
+const rf=$("resetFind");
+if(rf)rf.onclick=()=>{
+ $("findSpecies").value="";$("findYear").value="";$("findMinimum").value="";
+ $("findLake").value="";$("findRadius").value="50";$("findSort").value="closest";
+ $("findAccess").checked=false;
+ const a=$("modeAny");if(a)a.click();
+ toast("Filters reset.");
+};
 const su=$("showUnstocked");if(su)su.onchange=apply;
 {
  const any=$("modeAny"),stk=$("modeStocked"),note=$("modeNote"),minRow=$("findMinimum");
@@ -1328,7 +1355,12 @@ const su=$("showUnstocked");if(su)su.onchange=apply;
    ?"Searches provincial fish survey records, not just stocking. Most Ontario fish were never stocked."
    :"Only lakes with a stocking record for this species.";
   // "Minimum fish stocked" cannot apply to a lake nobody stocked.
-  if(minRow){minRow.disabled=m==="any";minRow.closest("label").classList.toggle("disabledField",m==="any")}
+  // Stocking year and minimum-stocked are meaningless for a lake nobody
+  // stocked, so they are dimmed rather than silently ignored.
+  const off=m==="any";
+  document.querySelectorAll(".stockOnlyField").forEach(el=>el.classList.toggle("disabledField",off));
+  if(minRow)minRow.disabled=off;
+  const yr=$("findYear");if(yr)yr.disabled=off;
  };
  if(any)any.onclick=()=>setMode("any");
  if(stk)stk.onclick=()=>setMode("stocked");

@@ -539,3 +539,9 @@ body.filtering .sectiontitle{margin-top:14px}
 .ruleFine{font-size:11.5px;color:var(--muted);line-height:1.45;margin:11px 0 9px}
 .ruleLink{display:block;text-align:center;background:var(--green);color:#fff;text-decoration:none;
  padding:11px;border-radius:10px;font-size:13px;font-weight:800}
+
+/* Find Fish panel actions. */
+.findActions{display:grid;grid-template-columns:auto 1fr;gap:8px;margin-top:11px;align-items:stretch}
+.findActions .runfind{margin-top:0}
+.findActions .ghostbtn{white-space:nowrap}
+.modeRow{margin:2px 0 8px}
