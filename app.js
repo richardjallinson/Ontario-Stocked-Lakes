@@ -96,7 +96,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="v1i";
+const APP_VERSION="v1j";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -848,6 +848,135 @@ function regulationCard(l,species){
  </div>`;
 }
 
+
+/* ---------------------------------------------------------------------------
+   Per-species limits, from tapping a species.
+
+   Ontario's zone tables list limits under ~20 regulation CATEGORIES, while
+   survey and stocking data name the actual fish. "Black Crappie" has to become
+   "Crappie", "Walleye" has to become "Walleye and Sauger or any combination",
+   and so on, or the lookup silently misses.
+
+   Everything in this map is a grouping Ontario's own summary uses. Where a
+   species is not confidently mappable — rock bass, suckers, shiners, sculpin,
+   most baitfish — it is deliberately LEFT OUT, and the app says the zone table
+   does not list a limit for it rather than guessing one. A wrong limit shown
+   confidently is the worst thing this app can do: somebody keeps a fish on it.
+--------------------------------------------------------------------------- */
+const REG_CATEGORY={
+ "black crappie":"Crappie",
+ "white crappie":"Crappie",
+ "crappie":"Crappie",
+ "walleye":"Walleye and Sauger or any combination",
+ "sauger":"Walleye and Sauger or any combination",
+ "largemouth bass":"Largemouth Bass",
+ "smallmouth bass":"Smallmouth Bass",
+ "northern pike":"Northern Pike",
+ "muskellunge":"Muskellunge",
+ "musky":"Muskellunge",
+ "yellow perch":"Yellow Perch",
+ "lake trout":"Lake Trout",
+ "brook trout":"Brook Trout",
+ "speckled trout":"Brook Trout",
+ "brown trout":"Brown Trout",
+ "rainbow trout":"Rainbow Trout",
+ "steelhead":"Rainbow Trout",
+ "splake":"Splake",
+ "lake whitefish":"Lake Whitefish",
+ "lake sturgeon":"Lake Sturgeon",
+ "channel catfish":"Channel Catfish",
+ "atlantic salmon":"Atlantic Salmon",
+ "chinook salmon":"Pacific Salmon",
+ "coho salmon":"Pacific Salmon",
+ "pink salmon":"Pacific Salmon",
+ "lake herring":"Lake Herring (Cisco)",
+ "cisco":"Lake Herring (Cisco)",
+ "lake herring (cisco)":"Lake Herring (Cisco)",
+ "pumpkinseed":"Sunfish",
+ "bluegill":"Sunfish"
+};
+
+function regCategoryFor(species){
+ const k=String(species||"").trim().toLowerCase();
+ return REG_CATEGORY[k]||null;
+}
+
+/* Everything known about one species on one lake. */
+function speciesRule(l,species){
+ const cat=regCategoryFor(species);
+ const wli=String(l.waterbodyId||"").trim();
+ // A waterbody exception overrides the zone table, so it is looked up first
+ // and reported even when it carries no species of its own.
+ const ex=(exceptionIndex.get(wli)||[]).filter(r=>!r.species||
+   canonicalSpecies(r.species)===cat||String(r.species).toLowerCase()===String(species).toLowerCase());
+ const extra=(additionalIndex.get(wli)||[]).filter(r=>!r.species||
+   canonicalSpecies(r.species)===cat||String(r.species).toLowerCase()===String(species).toLowerCase());
+ const zone=cat&&l.fmz?zoneRuleIndex.get(`${l.fmz}|${cat}`)||null:null;
+ return {species,category:cat,zone,exceptions:ex,additional:extra};
+}
+
+function speciesRuleCard(l,species){
+ if(!fullRegsLoaded)
+  return `<div class="ruleDrawer"><p class="setNote">Regulations are still loading.</p></div>`;
+ if(!l.fmz)
+  return `<div class="ruleDrawer"><p class="setNote">This lake's Fisheries Management Zone could not be determined, so no zone limit can be shown.</p>
+   <a class="ruleLink" target="_blank" rel="noopener" href="${regulationUrl(l)}">Open the official regulations</a></div>`;
+
+ const r=speciesRule(l,species);
+ let body="";
+
+ if(r.zone){
+  body+=`<div class="ruleGrid">
+   <div><small>Sport licence</small><b>${esc(r.zone.sport||"—")}</b></div>
+   <div><small>Conservation licence</small><b>${esc(r.zone.conservation||"—")}</b></div>
+   <div class="wide"><small>Season</small><b>${esc(r.zone.season||"—")}</b></div>
+  </div>`;
+  if(r.zone.aggregate==="Yes")
+   body+=`<p class="setNote">This limit is aggregate — it is shared across the species grouped with it, not counted separately.</p>`;
+  if(r.category&&r.category.toLowerCase()!==String(species).toLowerCase())
+   body+=`<p class="setNote">Listed by Ontario under "${esc(r.category)}".</p>`;
+ }else{
+  body+=`<p class="setNote">Ontario's FMZ ${esc(l.fmz)} table does not list a catch limit under this species' name. That does not mean there is no rule — check the official summary before keeping one.</p>`;
+ }
+
+ if(r.exceptions.length){
+  body+=`<div class="ruleAlert"><b>This waterbody has its own rule</b>
+   <p>A waterbody exception is listed for this lake, and it overrides the zone limit above.</p>
+   ${r.exceptions.slice(0,3).map(e=>`<div class="exRow">
+     ${e.season?`<span><small>Season</small>${esc(e.season)}</span>`:""}
+     ${e.limit?`<span><small>Limit</small>${esc(e.limit)}</span>`:""}
+     ${e.size?`<span><small>Size</small>${esc(e.size)}</span>`:""}
+   </div>`).join("")}</div>`;
+ }
+ if(r.additional.length){
+  body+=`<p class="setNote">An additional fishing opportunity is also listed for this waterbody.</p>`;
+ }
+
+ return `<div class="ruleDrawer">
+  <div class="ruleHead"><b>${esc(species)}</b><span>FMZ ${esc(l.fmz)} • 2026</span></div>
+  ${body}
+  <p class="ruleFine">Summary only. Sanctuaries, bait and gear restrictions and in-season variation orders can all change this.</p>
+  <a class="ruleLink" target="_blank" rel="noopener" href="${officialRuleSource(l)}">Verify on Ontario's official FMZ ${esc(l.fmz)} page</a>
+ </div>`;
+}
+
+/* Delegated so it keeps working for chips rendered after this runs. */
+function wireSpeciesChips(){
+ const sheet=$("detail");if(!sheet)return;
+ sheet.onclick=e=>{
+  const chip=e.target.closest("[data-sprule]");
+  if(!chip)return;
+  const open=chip.classList.contains("open");
+  sheet.querySelectorAll("[data-sprule].open").forEach(c=>c.classList.remove("open"));
+  sheet.querySelectorAll(".ruleDrawer").forEach(d=>d.remove());
+  if(open)return;
+  chip.classList.add("open");
+  const lake=lakes.find(x=>x.key===chip.dataset.lakekey);
+  if(!lake)return;
+  chip.insertAdjacentHTML("afterend",speciesRuleCard(lake,chip.dataset.sprule));
+ };
+}
+
 function presentBlock(l){
  const sp=l.present||[];
  const facts=[
@@ -863,12 +992,12 @@ function presentBlock(l){
  // no fish. Saying "no fish" about a lake somebody is about to drive two hours
  // to would be the worst thing this app could do, so the wording is explicit.
  const list=sp.length
-  ?`<div class="speciesGrid">${sp.map(x=>`<span>${esc(x)}</span>`).join("")}</div>`
+  ?`<div class="speciesGrid">${sp.map(x=>`<button type="button" class="spChip" data-sprule="${esc(x)}" data-lakekey="${esc(l.key)}">${esc(x)}<i aria-hidden="true">›</i></button>`).join("")}</div>`
   :`<p class="setNote">No fish survey has been published for this waterbody. That means no data, not an empty lake.</p>`;
 
  return `<div class="infoCard">
   <h3>Fish species present</h3>
-  <p class="panelNote">Species recorded in Ontario's Aquatic Resource Area surveys${l.stocked?" — separate from the stocking history below":""}.</p>
+  <p class="panelNote">Species recorded in Ontario's Aquatic Resource Area surveys${l.stocked?" — separate from the stocking history below":""}. Tap one for its limits and season.</p>
   ${list}
   ${facts.length?`<div class="detailgrid">${facts.map(f=>`<div><small>${f[0]}</small>${esc(String(f[1]))}</div>`).join("")}</div>`:""}
  </div>`;
@@ -899,6 +1028,7 @@ ${presentBlock(l)}
  <a class="secondaryAction" target="_blank" rel="noopener" href="https://www.ontario.ca/fishonline">Open Ontario Fish ON-Line</a>
  </div></div>
  <a class="directions" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${l.lat},${l.lon}">Get Directions</a>`;
+ wireSpeciesChips();
  $("sheet").classList.remove("hidden");$("detailFav").onclick=()=>{toggleFav(l.key);detail(l)};
  const dd=$("detailDepth");if(dd)dd.onclick=()=>{$("showDepth").checked=true;renderDepth();map.setView([l.lat,l.lon],12);$("sheet").classList.add("hidden")};
  const st=$("startTrip");if(st)st.onclick=()=>startTrip(l);wireAdvisory(l);wireWeather(l);
