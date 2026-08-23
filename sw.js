@@ -3,7 +3,7 @@
    load isn't blocked on ~12 MB. Live government API calls always go to the
    network so regulations and advisories are never served stale. */
 
-const VERSION = "1.0.1";
+const VERSION = "1.0.2";
 const SHELL = `osl-shell-${VERSION}`;
 const DATA  = `osl-data-${VERSION}`;
 
@@ -16,7 +16,9 @@ const SHELL_FILES = [
   "./vendor/leaflet/leaflet.css",
   "./vendor/leaflet/leaflet.js",
   "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icons/icon-512.png",
+  "./privacy.html",
+  "./privacy.js"
 ];
 
 // Big local datasets: cached the first time they're requested, not on install.

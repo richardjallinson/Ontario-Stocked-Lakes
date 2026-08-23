@@ -3,6 +3,53 @@
 All notable changes to this project are documented here.
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] — 2026-08-23
+
+Adopts the native-wrapper architecture from the Estate File project, replacing
+Capacitor.
+
+### Fixed
+- **The backup button would have done nothing on iOS.** The export built a blob
+  and clicked an anchor; WKWebView does not reliably download blob URLs, so on
+  device the user would tap "Save a backup" and get no file and no error.
+  Export now hands the JSON to a native share-sheet bridge when one is present.
+- **Every outbound link would have trapped the user.** The app links out to
+  ontario.ca, Fish ON-Line, weather.gc.ca and Google Maps in 22 places. In a
+  web view those load in place with no way back; the wrapper hands http/https,
+  tel and mail to iOS.
+- Language pills were 26 px tall, under any reasonable tap target.
+- The service worker registered under the native custom scheme, where it is
+  pointless and only logs an error. It now registers over http/https only.
+
+### Added
+- Bilingual `privacy.html` / `privacy.js` — a hosted policy page for the
+  App Store Connect privacy URL field, EN/FR switch, following the Estate File
+  page structure.
+- `tests/test-browser.js` — 18 rendered-app checks including a direct
+  regression for the v1.0.0 blank-app failure.
+
+## [1.0.1] — 2026-08-23
+
+### Fixed
+- **The app was blank on device.** `index.html` pointed at `vendor/leaflet/leaflet.js`,
+  which only exists after running `scripts/fetch-vendor.sh`. When it 404'd, `L` was
+  undefined and the first Leaflet call threw — killing the whole script. No search,
+  no stats, no buttons, no data. Leaflet now falls back to the CDN if the vendored
+  copy is missing, and `app.js` degrades gracefully if Leaflet is unavailable
+  entirely: the map area explains itself and everything else keeps working.
+- Card headings rendered iOS system-blue and looked like broken links.
+- The favourite star sat underneath the detail sheet's close button.
+- The header tagline truncated mid-word.
+- The stats strip showed em-dashes during load and after a failure with no explanation.
+- The help sheet's brand mark painted as a solid green square.
+
+### Changed
+- Emoji in the shortcut cards, layer toggles, list rows and detail sheet replaced
+  with a consistent line-icon set; the bottom navigation too.
+- Stats compressed into a scannable strip instead of five oversized cards.
+- Search fields no longer autocapitalise, autocorrect or spellcheck-underline.
+- Remaining "prototype" wording removed from the help and privacy copy.
+
 ## [1.0.0] — 2026-08-22
 
 First public release. Supersedes the internal V1A–V1T prototype series.

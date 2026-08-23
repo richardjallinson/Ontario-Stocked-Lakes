@@ -20,9 +20,9 @@ const I18N={
   onboard1:"Choose a distance and species",onboard2:"Compare stocked lakes",onboard3:"Open a lake and verify the current rules",
   helpTitle:"Help & About",helpFind:"Find Fish",helpFindText:"Use your location, distance, species, stocking year and quantity filters to find stocked lakes.",
   helpRules:"Regulations",helpRulesText:"The app imports Ontario's 2026 open regulation data, but current official Ontario rules remain the final verification source.",
-  helpTrips:"Trips & catches",helpTripsText:"Trip notes and catch logs are stored locally on this device in the prototype.",
+  helpTrips:"Trips & catches",helpTripsText:"Trip notes and catch logs are stored on this device. Save a backup below before you reset or change devices.",
   helpWeather:"Weather",helpWeatherText:"Weather alerts come from Environment and Climate Change Canada. Weather information is for trip planning and safety, not a bite prediction.",
-  privacy:"Privacy",privacyText:"Location is requested only when you use location-based features. Personal trip and catch data is stored locally in this prototype.",
+  privacy:"Privacy",privacyText:"Location is requested only when you use a location feature, and is never sent anywhere. Trips and catches stay on this device.",
   dataSources:"Government data sources",disclaimer:"Not an official Government of Ontario app.",
   yourData:"Your data",yourDataText:"Trips, catches and saved lakes stay on this device. Save a backup before you change or reset your device.",
   exportData:"Save a backup",importData:"Restore a backup"
@@ -47,9 +47,9 @@ const I18N={
   onboard1:"Choisissez une distance et une espèce",onboard2:"Comparez les lacs ensemencés",onboard3:"Ouvrez un lac et vérifiez les règles actuelles",
   helpTitle:"Aide et à propos",helpFind:"Trouver du poisson",helpFindText:"Utilisez votre position, la distance, l’espèce, l’année et la quantité d’ensemencement pour trouver des lacs.",
   helpRules:"Règlements",helpRulesText:"L’application importe les données ouvertes 2026 de l’Ontario, mais les règles officielles actuelles de l’Ontario demeurent la source finale de vérification.",
-  helpTrips:"Sorties et prises",helpTripsText:"Les notes de sortie et les prises sont enregistrées localement sur cet appareil dans ce prototype.",
+  helpTrips:"Sorties et prises",helpTripsText:"Les notes de sortie et les prises sont enregistrées sur cet appareil. Enregistrez une copie ci-dessous avant de changer d’appareil.",
   helpWeather:"Météo",helpWeatherText:"Les alertes météo proviennent d’Environnement et Changement climatique Canada. Elles servent à la planification et à la sécurité, pas à prédire les prises.",
-  privacy:"Confidentialité",privacyText:"La position est demandée seulement lorsque vous utilisez les fonctions géolocalisées. Les données personnelles de sortie et de prises sont enregistrées localement dans ce prototype.",
+  privacy:"Confidentialité",privacyText:"La position est demandée seulement lorsque vous utilisez une fonction géolocalisée et n’est jamais transmise. Les sorties et les prises restent sur cet appareil.",
   dataSources:"Sources de données gouvernementales",disclaimer:"Ceci n’est pas une application officielle du gouvernement de l’Ontario.",
   yourData:"Vos données",yourDataText:"Les sorties, les prises et les lacs enregistrés restent sur cet appareil. Enregistrez une copie avant de changer ou de réinitialiser votre appareil.",
   exportData:"Enregistrer une copie",importData:"Restaurer une copie"
@@ -64,7 +64,12 @@ function setLanguage(lang){
  translateStaticUI();apply();
 }
 function translateStaticUI(){
- const fp=$("findFishBtn");if(fp)fp.innerHTML=`<b>🔎 ${t("findFish")}</b><span>${appLang==="fr"?"Distance • espèce • quantité ensemencée":"Distance • species • stocking quantity"}</span>`;
+ const fp=$("findFishBtn");
+ if(fp){
+  const b=fp.querySelector("b"),sp=fp.querySelector("span");
+  if(b)b.textContent=t("findFish");
+  if(sp)sp.textContent=appLang==="fr"?"Distance • espèce • quantité ensemencée":"Distance • species • stocking quantity";
+ }
  const run=$("runFind");if(run)run.textContent=t("findStocked");
  const tag=$("brandTagline");if(tag)tag.textContent=t("tagline");
  const hb=$("helpBtn");if(hb)hb.setAttribute("aria-label",t("help"));
@@ -77,7 +82,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="1.0.0";
+const APP_VERSION="1.0.2";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -91,6 +96,36 @@ let rows=[],historicalRows=[],lakes=[],shown=[],accessPoints=[],accessLoaded=fal
 let trips=JSON.parse(localStorage.getItem("osl-trips")||"[]"),recentLakes=JSON.parse(localStorage.getItem("osl-recent")||"[]");
 let advisoryLocations=[],advisoriesLoaded=false,favoriteKeys=new Set(JSON.parse(localStorage.getItem("osl-favorites")||"[]"));
 const $=id=>document.getElementById(id);
+
+/* ---------------------------------------------------------------------------
+   Leaflet guard.
+
+   Everything below this point assumes Leaflet loaded. If it didn't, the very
+   next line used to throw a ReferenceError, which killed the whole script -
+   no search, no stats, no buttons, no data. Nothing on the page worked.
+
+   Now: if L is missing we install an inert stand-in so the rest of the app
+   (search, filters, lists, regulations, trips) keeps working, and we say so
+   in the map card instead of failing silently.
+--------------------------------------------------------------------------- */
+let mapAvailable = typeof L !== "undefined";
+if (!mapAvailable) {
+  const inert = new Proxy(function () {}, {
+    get: (_t, prop) => (prop === "then" ? undefined : () => inert),
+    apply: () => inert
+  });
+  window.L = inert;
+  document.addEventListener("DOMContentLoaded", () => {
+    const n = document.getElementById("mapNotice");
+    if (n) {
+      n.textContent = "The map didn't load. Everything else still works - search for a lake by name below.";
+      n.classList.remove("hidden");
+    }
+    const m = document.getElementById("map");
+    if (m) m.style.display = "none";
+  });
+}
+
 const map=L.map("map").setView([46.2,-81.0],5);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
 const markerLayer=L.layerGroup().addTo(map);
@@ -309,11 +344,17 @@ function wireAdvisory(l){
 }
 async function load(){
  $("count").textContent="Loading Ontario data…";
+ ["statLakes","statRecords","statSpecies","statLatest","statHistorical"].forEach(id=>{const el=$(id);if(el)el.textContent="…"});
  try{
   let all=[],offset=0,page=0;
   while(true){const j=await fetchPage(offset),batch=(j.features||[]).map(x=>x.attributes);all.push(...batch);$("count").textContent=`Loading… ${num(all.length)} records`;page++;if(batch.length<1000||!j.exceededTransferLimit)break;offset+=batch.length;if(page>100)break}
   rows=all.filter(x=>x.Latitude&&x.Longitude);buildLakes();updateDashboard();buildFilters();apply();loadFMZ(false).then(()=>apply());loadHistorical();loadObservedSpecies();loadAdvisories();loadFullRegulations();
- }catch(e){$("results").innerHTML=`<div class="error"><b>Ontario stocking data is temporarily unavailable.</b><br>Please check your connection and try again.<br><small>${esc(e.message)}</small></div>`;$("count").textContent="Unavailable"}
+ }catch(e){
+  $("results").innerHTML=`<div class="error"><b>Ontario stocking data didn't load.</b><br>Check your connection and pull to reload. If you were offline, saved lakes and regulations are still available.<br><small>${esc(e.message)}</small></div>`;
+  $("count").textContent="Unavailable";
+  ["statLakes","statRecords","statSpecies","statLatest","statHistorical"].forEach(id=>{const el=$(id);if(el)el.textContent="—"});
+  toast("Ontario stocking data didn't load. Check your connection.");
+ }
 }
 function buildLakes(){
  const groups=new Map();
@@ -354,7 +395,7 @@ function render(){
  $("results").innerHTML=shown.slice(0,250).map((l,i)=>{
   const d=userLoc?`${distance(userLoc[0],userLoc[1],l.lat,l.lon).toFixed(1)} km away`:"";
   const latest=l.records.filter(r=>Number(r.Stocking_Year)===l.latestYear),latestFish=latest.reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0),fav=favoriteKeys.has(l.key);
-  return `<article class="record" data-i="${i}"><div class="topline"><div><h4>${esc(l.name)}</h4><div class="species">${esc(l.species.join(" • "))}</div></div><div class="cardactions"><span class="pill">${esc(l.latestYear||"—")}</span><button class="star ${fav?"saved":""}" data-fav="${esc(l.key)}" aria-label="Favourite">${fav?"★":"☆"}</button></div></div><div class="meta"><span>🐟 ${num(latestFish)} most recent</span><span>📚 ${l.records.length} record${l.records.length===1?"":"s"}</span>${l.fmz?`<span>🗺️ FMZ ${l.fmz}</span>`:""}${l.township?`<span>${esc(l.township)}</span>`:""}${d?`<span>📍 ${d}</span>`:""}</div></article>`;
+  return `<article class="record" data-i="${i}"><div class="topline"><div><h4>${esc(l.name)}</h4><div class="species">${esc(l.species.join(" • "))}</div></div><div class="cardactions"><span class="pill">${esc(l.latestYear||"—")}</span><button class="star ${fav?"saved":""}" data-fav="${esc(l.key)}" aria-label="Favourite">${fav?"★":"☆"}</button></div></div><div class="meta"><span>${num(latestFish)} stocked</span><span>${l.records.length} record${l.records.length===1?"":"s"}</span>${l.fmz?`<span>🗺️ FMZ ${l.fmz}</span>`:""}${l.township?`<span>${esc(l.township)}</span>`:""}${d?`<span>${d}</span>`:""}</div></article>`;
  }).join("")||`<div class="record empty">${currentView==="favorites"?"No favourite lakes yet. Tap ☆ on a lake to save it.":"No stocked lakes match these filters."}</div>`;
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=e=>{if(e.target.closest(".star"))return;const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
  document.querySelectorAll(".star").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFav(b.dataset.fav)});
@@ -474,7 +515,7 @@ function exactRuleCard(l,species){
 
 function regulationCard(l,species){
  const sp=species||"selected species";
- if(!l.fmz)return `<div class="regCard warning"><b>🎣 Limits & slot sizes</b><p>FMZ could not be determined for this lake. Open Ontario's current regulations before fishing.</p><a target="_blank" rel="noopener" href="${regulationUrl(l)}">Check Official Regulations</a></div>`;
+ if(!l.fmz)return `<div class="regCard warning"><b>Limits &amp; slot sizes</b><p>FMZ could not be determined for this lake. Open Ontario's current regulations before fishing.</p><a target="_blank" rel="noopener" href="${regulationUrl(l)}">Check Official Regulations</a></div>`;
  return `<div class="regCard">
    <div class="regTitle"><b>🎣 ${esc(sp)} — FMZ ${l.fmz}</b><span>2026 rules</span></div>
    <div class="regGrid">
@@ -494,11 +535,11 @@ function detail(l){
  <div class="detailgrid"><div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div><div><small>Township</small><b>${esc(l.township||"—")}</b></div><div><small>MNRF district</small><b>${esc(l.district||"—")}</b></div>
  <div><small>Fisheries Management Zone</small><b>${l.fmz?`FMZ ${l.fmz}`:"Loading / unavailable"}</b></div><div><small>Waterbody ID</small><b>${esc(l.waterbodyId||"—")}</b></div></div>
  ${l.fmz?`<a class="zoneAction" target="_blank" rel="noopener" href="${REGS_BASE}${l.fmz}">View Current FMZ ${l.fmz} Regulations</a>`:""}
- <button class="tripStart" id="startTrip">🎣 Start Fishing Trip</button>
+ <button class="tripStart" id="startTrip">Start a fishing trip</button>
  <div id="lake-rules" class="tabAnchor"></div>${fullRegCard(l,l.species[0]||"Fish")}
  ${fishingConditionsCard(l)}
  <div id="lake-eating" class="tabAnchor"></div><div class="infoCard"><h3>🍽️ Eating Ontario Fish</h3><p>Ontario consumption advice depends on the exact waterbody, fish species and fish length.</p>${advisoryPanel(l)}</div>
- <div id="lake-species" class="tabAnchor"></div><div class="infoCard"><h3>🎣 Fish observed</h3>
+ <div id="lake-species" class="tabAnchor"></div><div class="infoCard"><h3>Fish observed</h3>
  ${speciesLoaded?(l.observedSpecies&&l.observedSpecies.length?`<div class="specieschips">${l.observedSpecies.map(s=>`<span>${esc(s.species)}</span>`).join("")}</div><p class="microcopy">Species shown come from Fish ON-Line survey records and are not a guarantee of current abundance.</p>`:`<p>No Fish ON-Line survey species were matched to this waterbody identifier.</p>`):`<p>Species observations are loading or unavailable.</p>`}
  </div>
  <div id="lake-depth" class="tabAnchor"></div><div class="infoCard"><h3>🌊 Lake depth</h3><p>Ontario publishes bathymetry contour lines for many lakes. Turn on the depth-contour map layer to view available contours. These data vary in age and accuracy and must never be used for navigation.</p><button class="inlineBtn" id="detailDepth">Show Depth Contours</button></div>
@@ -553,9 +594,37 @@ function renderTrips(){
  document.querySelectorAll("[data-trip]").forEach(e=>e.onclick=()=>openTrip(Number(e.dataset.trip)));
 }
 function locate(after){
- if(!navigator.geolocation)return toast("This device cannot share a location. Use the search box to find a lake by name.");
+ const nativeLoc=nativeBridge("requestLocation");
+ if(!nativeLoc&&!navigator.geolocation)return toast("This device cannot share a location. Use the search box to find a lake by name.");
  $("count").textContent="Finding your location…";
- navigator.geolocation.getCurrentPosition(p=>{userLoc=[p.coords.latitude,p.coords.longitude];if(userMarker)map.removeLayer(userMarker);userMarker=L.marker(userLoc).addTo(map).bindPopup("Your location");map.setView(userLoc,8);if(after)after();else apply()},()=>{$("count").textContent="Location unavailable";toast("Location is off. Turn on location access, or search for a lake by name.")},{enableHighAccuracy:true,timeout:10000});
+
+ if(nativeLoc){
+  window.__nativeLocationResult=r=>{
+   window.__nativeLocationResult=null;
+   if(r&&r.ok)return onLocated({coords:{latitude:r.lat,longitude:r.lon}});
+   onLocateFailed(r&&r.reason==="denied");
+  };
+  nativeLoc.postMessage({});
+  return;
+ }
+
+ navigator.geolocation.getCurrentPosition(onLocated,()=>onLocateFailed(true),{enableHighAccuracy:true,timeout:10000});
+
+ function onLocated(p){
+  userLoc=[p.coords.latitude,p.coords.longitude];
+  if(mapAvailable){
+   if(userMarker)map.removeLayer(userMarker);
+   userMarker=L.marker(userLoc).addTo(map).bindPopup("Your location");
+   map.setView(userLoc,8);
+  }
+  if(after)after();else apply();
+ }
+ function onLocateFailed(denied){
+  $("count").textContent="Location unavailable";
+  toast(denied
+   ?"Location is off. Turn it on in Settings, or search for a lake by name."
+   :"Your location could not be found right now. Try again outdoors, or search for a lake by name.");
+ }
 }
 function lakeQuantityFor(l,sp,yr){
  return l.records.filter(r=>(!sp||r.Species===sp)&&(!yr||String(r.Stocking_Year)===String(yr))).reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0);
@@ -583,7 +652,7 @@ function ruleSummaryForResult(l,sp){
  }
  if(r.additional.length){
   const x=r.additional[0];
-  return {label:"🎣 Additional opportunity",detail:[x.limit,x.size,x.season].filter(Boolean).join(" • ")||"Special opportunity applies",kind:"exception"};
+  return {label:"Additional opportunity",detail:[x.limit,x.size,x.season].filter(Boolean).join(" • ")||"Special opportunity applies",kind:"exception"};
  }
  if(r.zone)return {label:`2026 ${r.sp} rules`,detail:`Sport ${r.zone.sport||"—"} • Conservation ${r.zone.conservation||"—"} • ${r.zone.season||"Season unavailable"}`,kind:"verified"};
  return {label:"2026 rules",detail:"Open lake for official current rule",kind:"normal"};
@@ -663,7 +732,7 @@ function renderFindResults(sp,yr){
    <div class="finderTop"><div><div class="matchBadge">★ ${l._bestScore||0} Best Match</div><h4>${esc(l.name)}</h4><div class="species">${esc(sp||l.species.join(" • "))}</div></div><span class="distancebadge">${l._findKm.toFixed(1)} km</span></div>
    <div class="heroStock"><div><small>${t("matchingStocked")}</small><b>${num(l._findQty)}</b></div><div><small>${t("mostRecent")}</small><b>${l._findYear||"—"}</b></div></div>
    <div class="rulePreview ${rs.kind}"><b>${esc(rs.label)}</b><span>${esc(rs.detail)}</span></div>
-   <div class="featureRow"><span>📍 FMZ ${l.fmz||"—"}</span>${access?`<span>🚤 Access ≤5 km</span>`:""}${l.observedSpecies&&l.observedSpecies.length?`<span>🐟 Species data</span>`:""}<span>🌊 Depth layer</span><span>🌤️ Weather</span></div>
+   <div class="featureRow"><span>FMZ ${l.fmz||"—"}</span>${access?`<span>🚤 Access ≤5 km</span>`:""}${l.observedSpecies&&l.observedSpecies.length?`<span>Species data</span>`:""}<span>🌊 Depth layer</span><span>🌤️ Weather</span></div>
    <button class="viewLakeBtn">${t("viewLake")}</button>
   </article>`;
  }).join("")||`<div class="record empty">No stocked lakes match this search. Try increasing the distance or removing a filter.</div>`;
@@ -701,7 +770,7 @@ $("recentBtn").onclick=()=>{$("search").value="";$("species").value="";$("year")
 document.querySelectorAll(".bottomnav button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
 $("closeSheet").onclick=()=>$("sheet").classList.add("hidden");
 $("closeTrip").onclick=()=>$("tripSheet").classList.add("hidden");$("tripSheet").onclick=e=>{if(e.target===$("tripSheet"))$("tripSheet").classList.add("hidden")};$("sheet").onclick=e=>{if(e.target===$("sheet"))$("sheet").classList.add("hidden")};
-load();if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+load();if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
 
 
 
@@ -712,15 +781,30 @@ function toast(msg){
  clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("show"),4200);
 }
 
+const nativeBridge=k=>window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers[k];
+
+window.__nativeBackupFailed=()=>toast("The backup could not be saved. Try again, or free up some space on the device.");
+
 function exportMyData(){
  const payload={app:"Ontario Stocked Lakes",version:APP_VERSION,exported:new Date().toISOString(),
   trips:JSON.parse(localStorage.getItem("osl-trips")||"[]"),
   favorites:JSON.parse(localStorage.getItem("osl-favorites")||"[]"),
   recent:JSON.parse(localStorage.getItem("osl-recent")||"[]")};
- const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+ const json=JSON.stringify(payload,null,2);
+ const filename="ontario-stocked-lakes-backup.json";
+
+ // In the iOS app this goes to the native share sheet. WKWebView will not
+ // download a blob URL, so the anchor path below does nothing there.
+ const native=nativeBridge("saveBackup");
+ if(native){
+  native.postMessage({filename,text:json});
+  return;
+ }
+
+ const blob=new Blob([json],{type:"application/json"});
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
- a.download="ontario-stocked-lakes-backup.json";a.click();
- setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+ a.download=filename;a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),4000);
  toast("Saved a backup of your trips, catches and saved lakes.");
 }
 
@@ -742,13 +826,13 @@ function importMyData(file){
 }
 
 function helpMarkup(){
- return `<div class="helpHero"><div class="brandMark large">🎣</div><div><h2>${t("helpTitle")}</h2><p>${t("disclaimer")}</p></div></div>
+ return `<div class="helpHero"><img class="brandMark large" src="icons/icon-192.png" alt=""><div><h2>${t("helpTitle")}</h2><p>${t("disclaimer")}</p></div></div>
  <div class="helpGrid">
-  <section><h3>🔎 ${t("helpFind")}</h3><p>${t("helpFindText")}</p></section>
-  <section><h3>📏 ${t("helpRules")}</h3><p>${t("helpRulesText")}</p></section>
-  <section><h3>🎣 ${t("helpTrips")}</h3><p>${t("helpTripsText")}</p></section>
-  <section><h3>🌤️ ${t("helpWeather")}</h3><p>${t("helpWeatherText")}</p></section>
-  <section><h3>🔒 ${t("privacy")}</h3><p>${t("privacyText")}</p></section>
+  <section><h3>${t("helpFind")}</h3><p>${t("helpFindText")}</p></section>
+  <section><h3>${t("helpRules")}</h3><p>${t("helpRulesText")}</p></section>
+  <section><h3>${t("helpTrips")}</h3><p>${t("helpTripsText")}</p></section>
+  <section><h3>${t("helpWeather")}</h3><p>${t("helpWeatherText")}</p></section>
+  <section><h3>${t("privacy")}</h3><p>${t("privacyText")}</p></section>
  </div>
  <div class="aboutBlock"><h3>${t("dataSources")}</h3>
   <a target="_blank" rel="noopener" href="https://www.ontario.ca/fishonline">Ontario Fish ON-Line / ON-Pêche</a>
