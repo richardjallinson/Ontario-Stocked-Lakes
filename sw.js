@@ -3,7 +3,7 @@
    load isn't blocked on ~12 MB. Live government API calls always go to the
    network so regulations and advisories are never served stale. */
 
-const VERSION = "v1f";
+const VERSION = "v1g";
 const SHELL = `osl-shell-${VERSION}`;
 const DATA  = `osl-data-${VERSION}`;
 
@@ -22,7 +22,8 @@ const SHELL_FILES = [
 ];
 
 // Big local datasets: cached the first time they're requested, not on install.
-const DATA_FILES = ["fish-advisories-2025.json", "ontario-regulations-2026.json"];
+const DATA_FILES = ["fish-advisories-2025.json", "ontario-regulations-2026.json",
+                    "ontario-waterbodies.json"];
 
 self.addEventListener("install", e => {
   e.waitUntil(

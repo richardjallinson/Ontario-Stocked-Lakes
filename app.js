@@ -96,7 +96,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="v1f";
+const APP_VERSION="v1g";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -362,7 +362,7 @@ async function load(){
  try{
   let all=[],offset=0,page=0;
   while(true){const j=await fetchPage(offset),batch=(j.features||[]).map(x=>x.attributes);all.push(...batch);$("count").textContent=`Loading… ${num(all.length)} records`;page++;if(batch.length<1000||!j.exceededTransferLimit)break;offset+=batch.length;if(page>100)break}
-  rows=all.filter(x=>x.Latitude&&x.Longitude);buildLakes();updateDashboard();buildFilters();apply();loadFMZ(false).then(()=>apply());loadHistorical();loadObservedSpecies();loadAdvisories();loadFullRegulations();
+  rows=all.filter(x=>x.Latitude&&x.Longitude);buildLakes();updateDashboard();buildFilters();apply();loadFMZ(false).then(()=>apply());loadHistorical();loadObservedSpecies();loadAdvisories();loadFullRegulations();loadWaterbodies();
  }catch(e){
   $("results").innerHTML=`<div class="error"><b>Ontario stocking data didn't load.</b><br>Check your connection and pull to reload. If you were offline, saved lakes and regulations are still available.<br><small>${esc(e.message)}</small></div>`;
   $("count").textContent="Unavailable";
@@ -370,10 +370,82 @@ async function load(){
   toast("Ontario stocking data didn't load. Check your connection.");
  }
 }
+
+/* ---------------------------------------------------------------------------
+   Waterbodies that are not stocked.
+
+   The app used to be built purely from the stocking table, so a lake only
+   existed if it had been stocked — Moira, Rice and every other self-sustaining
+   fishery in the province were simply missing.
+
+   ontario-waterbodies.json is Ontario's Aquatic Resource Area data, flattened
+   by tools/build-waterbodies.py: name, centre point, recorded species, depth.
+   WATERBODY_LID joins it to the stocking table, so a stocked lake gains its
+   full species list and everything else arrives as a new, unstocked lake.
+
+   The file is optional. If it has not been built the app behaves exactly as
+   before rather than failing.
+--------------------------------------------------------------------------- */
+let waterbodies=[],waterbodiesLoaded=false;
+
+async function loadWaterbodies(){
+ try{
+  const r=await fetch("ontario-waterbodies.json");
+  if(!r.ok)throw new Error("not built");
+  const j=await r.json();
+  waterbodies=j.waterbodies||[];
+  waterbodiesLoaded=true;
+  mergeWaterbodies();
+  buildFilters(true);
+  apply();
+ }catch(e){
+  // Not built yet, or offline before it was ever cached. The stocking data
+  // still works on its own; say nothing rather than raising an error about a
+  // file most users will never know exists.
+  waterbodiesLoaded=false;
+ }
+}
+
+function mergeWaterbodies(){
+ if(!waterbodies.length)return;
+ const byLid=new Map();
+ lakes.forEach(l=>{const k=String(l.waterbodyId||"").trim();if(k)byLid.set(k,l)});
+
+ const added=[];
+ waterbodies.forEach(w=>{
+  const lid=String(w.lid||"").trim();
+  const existing=lid?byLid.get(lid):null;
+  if(existing){
+   existing.present=w.sp||[];
+   existing.depthMax=w.max;existing.depthMean=w.mean;existing.clarity=w.clar;
+   existing.areaHa=w.area;existing.thermal=w.th;
+   if(!existing.fmz&&w.fmz)existing.fmz=w.fmz;
+   return;
+  }
+  added.push({
+   key:"wb:"+(lid||w.n+w.lat),
+   records:[],            // never stocked, so no stocking history
+   name:w.n,
+   lat:w.lat,lon:w.lon,
+   township:"",district:"",
+   waterbodyId:lid,
+   latestYear:0,
+   species:[],            // "species" means stocked species throughout the app
+   present:w.sp||[],
+   depthMax:w.max,depthMean:w.mean,clarity:w.clar,areaHa:w.area,thermal:w.th,
+   fmz:w.fmz||null,
+   historical:[],observedSpecies:[],advisoryMatches:[],
+   stocked:false
+  });
+ });
+ lakes.forEach(l=>{if(l.stocked===undefined)l.stocked=true});
+ lakes=lakes.concat(added);
+}
+
 function buildLakes(){
  const groups=new Map();
  rows.forEach(r=>{const k=lakeKey(r);if(!groups.has(k))groups.set(k,{key:k,records:[],name:name(r),lat:Number(r.Latitude),lon:Number(r.Longitude),township:r.Geographic_Township||"",district:r.MNRF_District||"",waterbodyId:r.Waterbody_Location_Identifier||""});groups.get(k).records.push(r)});
- lakes=[...groups.values()].map(l=>{l.records.sort((a,b)=>(b.Stocking_Year||0)-(a.Stocking_Year||0));l.latestYear=Math.max(...l.records.map(r=>Number(r.Stocking_Year)||0));l.species=[...new Set(l.records.map(r=>r.Species).filter(Boolean))].sort();l.historical=[];l.observedSpecies=[];l.advisoryMatches=[];return l}).sort((a,b)=>b.latestYear-a.latestYear||a.name.localeCompare(b.name));
+ lakes=[...groups.values()].map(l=>{l.records.sort((a,b)=>(b.Stocking_Year||0)-(a.Stocking_Year||0));l.latestYear=Math.max(...l.records.map(r=>Number(r.Stocking_Year)||0));l.species=[...new Set(l.records.map(r=>r.Species).filter(Boolean))].sort();l.historical=[];l.observedSpecies=[];l.advisoryMatches=[];l.present=l.present||[];l.stocked=true;return l}).sort((a,b)=>b.latestYear-a.latestYear||a.name.localeCompare(b.name));
 }
 function updateDashboard(){
  const speciesCount=new Set(rows.map(r=>r.Species).filter(Boolean)).size;
@@ -383,19 +455,43 @@ function updateDashboard(){
  $("statSpecies").textContent=num(speciesCount);
  $("statLatest").textContent=latestYear||"—";$("statHistorical").textContent=historicalLoaded?num(historicalRows.length):"Loading…";
 }
-function buildFilters(){
- const spp=[...new Set(rows.map(x=>x.Species).filter(Boolean))].sort();
+function buildFilters(rebuild){
+ const sel=$("species"),find=$("findSpecies");
+ if(rebuild&&sel){
+  const keep=sel.value,keepFind=find?find.value:"";
+  sel.length=1;if(find)find.length=1;
+  fillSpecies();
+  sel.value=keep;if(find)find.value=keepFind;
+  return;
+ }
+ fillSpecies();
  const yrs=[...new Set(rows.map(x=>x.Stocking_Year).filter(Boolean))].sort((a,b)=>b-a);
- spp.forEach(v=>{$("species").insertAdjacentHTML("beforeend",`<option>${esc(v)}</option>`);$("findSpecies").insertAdjacentHTML("beforeend",`<option>${esc(v)}</option>`)});
  yrs.forEach(v=>{$("year").insertAdjacentHTML("beforeend",`<option>${v}</option>`);$("findYear").insertAdjacentHTML("beforeend",`<option>${v}</option>`)});
 }
+
+function fillSpecies(){
+ // Union of stocked species and species recorded as present, so choosing
+ // "Walleye" finds a walleye lake whether or not anyone stocked it.
+ const set=new Set(rows.map(x=>x.Species).filter(Boolean));
+ lakes.forEach(l=>(l.present||[]).forEach(x=>set.add(x)));
+ [...set].sort().forEach(v=>{
+  $("species").insertAdjacentHTML("beforeend",`<option>${esc(v)}</option>`);
+  $("findSpecies").insertAdjacentHTML("beforeend",`<option>${esc(v)}</option>`);
+ });
+}
+
 function apply(){
  if(currentView==="trips"){renderTrips();return}
  const q=(currentView==="favorites"&&$("favSearch")?$("favSearch").value:$("search").value).trim().toLowerCase(),sp=$("species").value,yr=$("year").value,radius=Number($("radius").value)||0;
  shown=lakes.filter(l=>{
   if(currentView==="favorites"&&!favoriteKeys.has(l.key))return false;
-  const matching=l.records.filter(r=>(!sp||r.Species===sp)&&(!yr||String(r.Stocking_Year)===yr));if(!matching.length)return false;
-  if(q&&![l.name,l.township,l.district,...l.species].some(v=>String(v||"").toLowerCase().includes(q)))return false;
+  if(!showUnstocked()&&!l.stocked)return false;
+  if(sp&&!(l.species.includes(sp)||(l.present||[]).includes(sp)))return false;
+  if(yr&&!l.records.some(r=>String(r.Stocking_Year)===yr))return false;
+  if(q){
+   const hay=[l.name,l.township,l.district,...l.species,...(l.present||[])].join(" ").toLowerCase();
+   if(!hay.includes(q))return false;
+  }
   if(radius&&userLoc&&distance(userLoc[0],userLoc[1],l.lat,l.lon)>radius)return false;
   return true;
  });
@@ -412,14 +508,28 @@ function render(){
  $("results").innerHTML=shown.slice(0,250).map((l,i)=>{
   const d=userLoc?`${distance(userLoc[0],userLoc[1],l.lat,l.lon).toFixed(1)} km away`:"";
   const latest=l.records.filter(r=>Number(r.Stocking_Year)===l.latestYear),latestFish=latest.reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0),fav=favoriteKeys.has(l.key);
-  return `<article class="record" data-i="${i}"><div class="topline"><div><h4>${esc(l.name)}</h4><div class="species">${esc(l.species.join(" • "))}</div></div><div class="cardactions"><span class="pill">${esc(l.latestYear||"—")}</span><button class="star ${fav?"saved":""}" data-fav="${esc(l.key)}" aria-label="Favourite">${fav?"★":"☆"}</button></div></div><div class="meta"><span>${num(latestFish)} stocked</span><span>${l.records.length} record${l.records.length===1?"":"s"}</span>${l.fmz?`<span>🗺️ FMZ ${l.fmz}</span>`:""}${l.township?`<span>${esc(l.township)}</span>`:""}${d?`<span>${d}</span>`:""}</div></article>`;
+  // An unstocked lake has no year and no stocking totals, so it gets its own
+  // pill and its own meta line instead of a row of dashes.
+  const listSpecies=l.stocked?l.species:(l.present||[]);
+  const head=listSpecies.length?esc(listSpecies.slice(0,3).join(" • "))+(listSpecies.length>3?` <span class="more">+${listSpecies.length-3}</span>`:"")
+   :`<span class="nospecies">No species recorded</span>`;
+  const pill=l.stocked?`<span class="pill">${esc(l.latestYear||"—")}</span>`
+   :`<span class="pill wild">Not stocked</span>`;
+  const meta=l.stocked
+   ?`<span>${num(latestFish)} stocked</span><span>${l.records.length} record${l.records.length===1?"":"s"}</span>${l.township?`<span>${esc(l.township)}</span>`:""}`
+   :`<span>${(l.present||[]).length?(l.present.length+" species recorded"):"No survey data"}</span>${l.depthMax?`<span>${l.depthMax} m deep</span>`:""}${l.areaHa?`<span>${num(l.areaHa)} ha</span>`:""}`;
+  return `<article class="record" data-i="${i}"><div class="topline"><div><h4>${esc(l.name)}</h4><div class="species">${head}</div></div><div class="cardactions">${pill}<button class="star ${fav?"saved":""}" data-fav="${esc(l.key)}" aria-label="Favourite">${fav?"★":"☆"}</button></div></div><div class="meta">${meta}${l.fmz?`<span>FMZ ${l.fmz}</span>`:""}${d?`<span>${d}</span>`:""}</div></article>`;
  }).join("")||`<div class="record empty">${emptyMessage()}</div>`;
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=e=>{if(e.target.closest(".star"))return;const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
  document.querySelectorAll(".star").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFav(b.dataset.fav)});
  markerLayer.clearLayers();
- shown.slice(0,400).forEach(l=>{const m=L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:"#C4941F",fillOpacity:.92}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${esc(l.species.join(", "))}<br>Latest: ${esc(l.latestYear||"—")}`);m.on("click",()=>detail(l))});
+ shown.slice(0,400).forEach(l=>{const m=L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${esc((l.stocked?l.species:(l.present||[])).slice(0,4).join(", "))}<br>${l.stocked?("Latest stocking: "+esc(l.latestYear||"—")):"Not stocked"}`);m.on("click",()=>detail(l))});
 }
 function lakeCount(n){return num(n)+" "+(n===1?"lake":"lakes")}
+function showUnstocked(){
+ const el=$("showUnstocked");
+ return el?el.checked:true;
+}
 function emptyMessage(){
  if(currentView==="favorites")return "No saved lakes yet. Tap ☆ on any lake to keep it here.";
  if((currentView==="near"||currentView==="recentnear")&&!userLoc)
@@ -553,6 +663,33 @@ function regulationCard(l,species){
    <div class="regActions"><a target="_blank" rel="noopener" href="${officialRuleSource(l)}">Open FMZ ${l.fmz} Current Rules</a><a target="_blank" rel="noopener" href="${ONTARIO_REGS_DATASET_URL}">Ontario 2026 Regulation Dataset</a></div>
  </div>`;
 }
+
+function presentBlock(l){
+ const sp=l.present||[];
+ const facts=[
+  l.depthMax?["Maximum depth",l.depthMax+" m"]:null,
+  l.depthMean?["Mean depth",l.depthMean+" m"]:null,
+  l.areaHa?["Surface area",num(l.areaHa)+" ha"]:null,
+  l.clarity?["Water clarity",l.clarity+" m"]:null,
+  l.thermal?["Thermal regime",l.thermal]:null
+ ].filter(Boolean);
+ if(!sp.length&&!facts.length&&l.stocked)return "";
+
+ // A blank species list means nobody has surveyed the lake, NOT that it holds
+ // no fish. Saying "no fish" about a lake somebody is about to drive two hours
+ // to would be the worst thing this app could do, so the wording is explicit.
+ const list=sp.length
+  ?`<div class="speciesGrid">${sp.map(x=>`<span>${esc(x)}</span>`).join("")}</div>`
+  :`<p class="setNote">No fish survey has been published for this waterbody. That means no data, not an empty lake.</p>`;
+
+ return `<div class="infoCard">
+  <h3>Fish species present</h3>
+  <p class="panelNote">Species recorded in Ontario's Aquatic Resource Area surveys${l.stocked?" — separate from the stocking history below":""}.</p>
+  ${list}
+  ${facts.length?`<div class="detailgrid">${facts.map(f=>`<div><small>${f[0]}</small>${esc(String(f[1]))}</div>`).join("")}</div>`:""}
+ </div>`;
+}
+
 function detail(l){
  recentLakes=[l.key,...recentLakes.filter(k=>k!==l.key)].slice(0,10);localStorage.setItem("osl-recent",JSON.stringify(recentLakes));
  const fav=favoriteKeys.has(l.key),history=l.records.map(r=>`<div class="historyrow"><div><b>${esc(r.Stocking_Year||"—")}</b><span>${esc(r.Species||"Species unavailable")}</span></div><div class="historyright"><b>${num(r.Number_of_Fish_Stocked)}</b><span>${esc(r.Developmental_Stage||"")}</span></div></div>`).join("");
@@ -560,6 +697,7 @@ function detail(l){
  <div class="detailgrid"><div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div><div><small>Township</small><b>${esc(l.township||"—")}</b></div><div><small>MNRF district</small><b>${esc(l.district||"—")}</b></div>
  <div><small>Fisheries Management Zone</small><b>${l.fmz?`FMZ ${l.fmz}`:"Loading / unavailable"}</b></div><div><small>Waterbody ID</small><b>${esc(l.waterbodyId||"—")}</b></div></div>
  ${l.fmz?`<a class="zoneAction" target="_blank" rel="noopener" href="${REGS_BASE}${l.fmz}">View Current FMZ ${l.fmz} Regulations</a>`:""}
+${presentBlock(l)}
  <button class="tripStart" id="startTrip">Start a fishing trip</button>
  <div id="lake-rules" class="tabAnchor"></div>${fullRegCard(l,l.species[0]||"Fish")}
  ${fishingConditionsCard(l)}
@@ -817,7 +955,8 @@ $("searchBtn").onclick=apply;
 $("search").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("search").blur();apply()}};
 $("search").oninput=()=>{clearTimeout($("search")._t);$("search")._t=setTimeout(apply,240)};$("species").onchange=apply;$("year").onchange=apply;
 $("radius").onchange=()=>{if($("radius").value&&!userLoc)locate(apply);else apply()};
-$("clearFilters").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";apply()};
+const su=$("showUnstocked");if(su)su.onchange=apply;
+$("clearFilters").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";const u=$("showUnstocked");if(u)u.checked=true;apply()};
 
 
 $("closeFind").onclick=()=>{$("findPanel").classList.remove("open");setView("explore")};

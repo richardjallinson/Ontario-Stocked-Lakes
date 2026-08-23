@@ -485,3 +485,16 @@ body.filtering .hero{padding:14px 16px}
 body.filtering .hero h2,body.filtering .hero p{display:none}
 body.filtering .hero::before{opacity:.5}
 body.filtering .sectiontitle{margin-top:14px}
+
+/* Lakes that have never been stocked. They are the majority of Ontario's
+   fisheries, so they need to look like first-class results, not leftovers. */
+.pill.wild{background:#E7EFF7;color:#1D3A57}
+.species .more{color:var(--muted);font-weight:600;font-size:13px}
+.species .nospecies{color:var(--muted);font-weight:600}
+.speciesGrid{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+.speciesGrid span{background:#E7EFF7;color:#1D3A57;border-radius:8px;
+ padding:6px 10px;font-size:12.5px;font-weight:700}
+.filters.wideline{grid-template-columns:1fr;margin-top:-4px}
+.inlinecheck{background:#fff;border:1px solid var(--line);border-radius:12px;
+ padding:12px 14px;font-size:13.5px;display:flex;align-items:center;gap:10px}
+.inlinecheck input{width:20px;height:20px;accent-color:var(--green);margin:0}
