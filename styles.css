@@ -585,3 +585,14 @@ body.filtering .sectiontitle{margin-top:14px}
 @media(max-width:650px){.dashboard{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:380px){.dashboard{grid-template-columns:repeat(2,1fr)}
  .dashboard div:last-child{grid-column:auto}}
+
+/* Filters are staged: nothing runs until Search is pressed, so the button has
+   to show that there is something waiting. */
+#searchBtn.pending{box-shadow:0 0 0 3px #C4941F55;animation:pendingPulse 1.6s ease-in-out infinite}
+@keyframes pendingPulse{0%,100%{box-shadow:0 0 0 3px #C4941F55}50%{box-shadow:0 0 0 6px #C4941F22}}
+@media(prefers-reduced-motion:reduce){#searchBtn.pending{animation:none}}
+.filterHint{margin:8px 2px 0;font-size:12.5px;font-weight:700;color:#7A5B10}
+
+/* v1u trip data: the "About 12 km N of Apsley" line and the OSM credit. */
+.whereLine{margin:2px 0 12px;color:var(--muted);font-size:13px}
+.osmNote{margin-top:8px}

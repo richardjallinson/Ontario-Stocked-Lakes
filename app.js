@@ -96,7 +96,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="v1s";
+const APP_VERSION="v1u";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -450,7 +450,7 @@ async function load(){
  try{
   let all=[],offset=0,page=0;
   while(true){const j=await fetchPage(offset),batch=(j.features||[]).map(x=>x.attributes);all.push(...batch);$("count").textContent=`Loading… ${num(all.length)} records`;page++;if(batch.length<1000||!j.exceededTransferLimit)break;offset+=batch.length;if(page>100)break}
-  rows=all.filter(x=>x.Latitude&&x.Longitude);buildLakes();updateDashboard();buildFilters();apply();loadFMZ(false).then(()=>apply());loadObservedSpecies();loadAdvisories();loadFullRegulations();loadWaterbodies();
+  rows=all.filter(x=>x.Latitude&&x.Longitude);buildLakes();updateDashboard();buildFilters();apply();loadFMZ(false).then(()=>apply());loadObservedSpecies();loadAdvisories();loadFullRegulations();loadWaterbodies();loadTripData();
  }catch(e){
   $("results").innerHTML=`<div class="error"><b>Ontario stocking data didn't load.</b><br>Check your connection and pull to reload. If you were offline, saved lakes and regulations are still available.<br><small>${esc(e.message)}</small></div>`;
   $("count").textContent="Unavailable";
@@ -493,6 +493,78 @@ async function loadWaterbodies(){
   // file most users will never know exists.
   waterbodiesLoaded=false;
  }
+}
+
+/* ---------------------------------------------------------------------------
+   Trip data: where a lake actually is, and where you could stay near it.
+
+   Two optional files, both built once a year on a machine with a network and
+   committed like the waterbody index:
+
+   ontario-places.json   tools/build-gazetteer.py — Ontario towns from
+                         GeoNames (CC-BY). Lets the sheet say "12 km N of
+                         Apsley" instead of leaving a coordinate to speak for
+                         itself.
+   ontario-nearby.json   tools/build-nearby.py — campgrounds, motels, lodges
+                         and cabins from OpenStreetMap (ODbL). The lake sheet
+                         lists anything within NEARBY_KM.
+
+   Both are optional, and both fail the same way the waterbody index does:
+   silently. Missing files mean the cards simply do not render.
+--------------------------------------------------------------------------- */
+const NEARBY_KM=10;
+let gazetteer=[],nearbyStays=[],nearbyLoaded=false;
+
+async function loadTripData(){
+ try{
+  const r=await fetch("ontario-places.json");
+  if(r.ok){const j=await r.json();gazetteer=j.places||[]}
+ }catch(e){ /* not built; the sheet just has no "where is this" line */ }
+ try{
+  const r=await fetch("ontario-nearby.json");
+  if(r.ok){const j=await r.json();nearbyStays=j.stays||[];nearbyLoaded=true}
+ }catch(e){ /* not built; the lodging card just does not render */ }
+}
+
+/* "About 12 km N of Apsley." Nearest wins, but a town people have heard of
+   beats a hamlet slightly further away, so distance is discounted by
+   population. Nothing within 120 km (far north): say nothing. */
+function whereLine(l){
+ if(!gazetteer.length||!Number.isFinite(l.lat))return "";
+ let best=null,bestScore=Infinity;
+ for(const p of gazetteer){
+  if(Math.abs(p.lat-l.lat)>1.2||Math.abs(p.lon-l.lon)>1.7)continue; // cheap prefilter
+  const km=distance(l.lat,l.lon,p.lat,p.lon);
+  if(km>120)continue;
+  const score=km/Math.log10(Math.max(p.pop||0,10));
+  if(score<bestScore){bestScore=score;best={p,km}}
+ }
+ if(!best)return "";
+ const n=best.km<10?best.km.toFixed(1):Math.round(best.km);
+ const dir=bearingLabel(best.p.lat,best.p.lon,l.lat,l.lon);
+ return `<p class="whereLine">About ${n} km ${dir} of ${esc(best.p.name)}.</p>`;
+}
+
+function stayIcon(kind){
+ return /camp|rv|trailer|caravan|hut/i.test(kind||"")?"🏕️":"🛏️";
+}
+
+/* Camping & lodging near the lake, from the bundled OSM index. OSM coverage
+   in cottage country is genuinely patchy, so — exactly like the fish-survey
+   wording — an empty list must say "no data", never "nothing nearby". */
+function nearbyStaysCard(l){
+ if(!nearbyLoaded)return "";
+ const within=nearbyStays
+  .filter(s=>Math.abs(s.lat-l.lat)<0.15&&Math.abs(s.lon-l.lon)<0.22) // cheap prefilter
+  .map(s=>({...s,km:distance(l.lat,l.lon,s.lat,s.lon)}))
+  .filter(s=>s.km<=NEARBY_KM)
+  .sort((a,b)=>a.km-b.km)
+  .slice(0,8);
+ const rows=within.length
+  ?within.map(s=>`<div class="accessrow"><div><b>${stayIcon(s.kind)} ${esc(s.name)}</b><span>${esc(s.kind)} • ${s.km.toFixed(1)} km ${bearingLabel(l.lat,l.lon,s.lat,s.lon)}</span></div><a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lon}">Directions</a></div>`).join("")
+  :`<p class="setNote">Nothing within ${NEARBY_KM} km appears in the bundled index. That means no data for this area, not that there is nowhere to stay.</p>`;
+ return `<div class="infoCard"><h3>🏕️ Camping &amp; lodging within ${NEARBY_KM} km</h3>${rows}
+ <p class="microcopy osmNote">Locations © OpenStreetMap contributors (ODbL). Community-maintained and incomplete — confirm they are open and taking bookings before you drive.</p></div>`;
 }
 
 
@@ -677,6 +749,56 @@ async function speciesLookupFor(q){
  }
 }
 
+
+/* ---------------------------------------------------------------------------
+   Explore filters are staged, not live.
+
+   Every filter change used to run a search immediately, and a species query
+   can reach out to Ontario's servers. Changing species and then distance fired
+   two searches and two requests, neither of which the person had asked for —
+   wasted data on a phone that is often on a weak signal at a lake.
+
+   Nothing runs now until Search is pressed (or Enter). The button shows when
+   there are unapplied changes so it never looks like the app is ignoring you.
+--------------------------------------------------------------------------- */
+let filtersDirty=false;
+
+function markFiltersDirty(){
+ filtersDirty=true;
+ const btn=$("searchBtn"),hint=$("filterHint");
+ if(btn)btn.classList.add("pending");
+ if(hint)hint.hidden=false;
+}
+
+function clearFiltersDirty(){
+ filtersDirty=false;
+ const btn=$("searchBtn"),hint=$("filterHint");
+ if(btn)btn.classList.remove("pending");
+ if(hint)hint.hidden=true;
+}
+
+/* The one place a search actually happens. */
+async function runSearch(){
+ clearFiltersDirty();
+ const radius=$("radius")?$("radius").value:"";
+ // A distance filter is meaningless without a position, so ask once, here,
+ // rather than the moment the dropdown changed.
+ if(radius&&!userLoc){locate(runSearch);return}
+ apply();
+
+ const q=$("search").value.trim();
+ const sp=$("species")?$("species").value:"";
+ const speciesTyped=q.length>=3?knownSpeciesName(q):null;
+
+ // One request per search, not two. A bare species name has no business
+ // being sent as a lake-name lookup as well.
+ if(speciesTyped)await speciesLookupFor(q);
+ else if(q.length>=3&&shown.length<5)await searchProvince(q);
+ else if(sp)await speciesLookupFor(sp);
+
+ apply();   // settle the count after any lookup, rather than leaving "Searching…"
+}
+
 async function searchProvince(q){
  const term=q.trim();
  if(term.length<3||liveBusy||liveTried.has(term.toLowerCase()))return false;
@@ -702,9 +824,7 @@ async function searchProvince(q){
   const added=mergeLiveResults(j.features||[]);
   // One township request covers the whole result set.
   if(added)loadTownshipsForLakes(lakes).then(()=>{assignTownships();apply()});
-  // A query can be both a place and a fish ("Trout Lake" / "trout"), so the
-  // species lookup runs regardless of what the name search returned.
-  speciesLookupFor(term);
+
   if(added){buildFilters(true);apply();}
   else if(status)status.textContent=previous;
   return added>0;
@@ -1342,6 +1462,7 @@ function detail(l){
  recentLakes=[l.key,...recentLakes.filter(k=>k!==l.key)].slice(0,10);localStorage.setItem("osl-recent",JSON.stringify(recentLakes));
  const fav=favoriteKeys.has(l.key),history=l.records.map(r=>`<div class="historyrow"><div><b>${esc(r.Stocking_Year||"—")}</b><span>${esc(r.Species||"Species unavailable")}</span></div><div class="historyright"><b>${num(r.Number_of_Fish_Stocked)}</b><span>${esc(r.Developmental_Stage||"")}</span></div></div>`).join("");
  $("detail").innerHTML=`<div class="detailhead"><div><h2>${esc(l.name)}</h2><div class="species">${esc(l.species.join(" • "))}</div></div><button class="bigstar ${fav?"saved":""}" id="detailFav">${fav?"★":"☆"}</button></div>
+ ${whereLine(l)}
  <div class="detailgrid">${l.stocked?`<div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div>`:`<div><small>Stocking</small><b>Not stocked</b></div>`}${l.township?`<div><small>Township</small><b>${esc(townshipLabel(l.township))}</b></div>`:""}${userLoc?`<div><small>Distance from you</small><b>${esc(distanceLabel(l))}</b></div>`:""}${l.district?`<div><small>MNRF district</small><b>${esc(l.district)}</b></div>`:""}
  <div><small>Fisheries Management Zone</small><b>${l.fmz?`FMZ ${l.fmz}`:"Loading / unavailable"}</b></div><div><small>Waterbody ID</small><b>${esc(l.waterbodyId||"—")}</b></div></div>
  ${l.fmz?`<a class="zoneAction" target="_blank" rel="noopener" href="${REGS_BASE}${l.fmz}">View Current FMZ ${l.fmz} Regulations</a>`:""}
@@ -1356,6 +1477,7 @@ ${presentBlock(l)}
  <div id="lake-depth" class="tabAnchor"></div><div class="infoCard"><h3>🌊 Lake depth</h3><p>Ontario publishes bathymetry contour lines for many lakes. Turn on the depth-contour map layer to view available contours. These data vary in age and accuracy and must never be used for navigation.</p><button class="inlineBtn" id="detailDepth">Show Depth Contours</button></div>
  <div id="lake-stocking" class="tabAnchor"></div><h3>Recent Stocking History</h3><div class="history">${history}</div>
  <div id="lake-access" class="tabAnchor"></div><div class="infoCard"><h3>🚤 Nearest fishing access</h3><div id="nearestAccess">${accessLoaded?nearestAccess(l).map(a=>`<div class="accessrow"><div><b>${accessIcon(a)} ${esc(a.AccessName||a.WaterBody||"Fishing access")}</b><span>${esc(a.AccessType||"Access point")} • ${a.km.toFixed(1)} km from lake point</span></div><a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lon}">Directions</a></div>`).join(""):"<p>Turn on “Show fishing access points” on the map to load Ontario access data.</p>"}</div></div>
+ ${nearbyStaysCard(l)}
  <div class="infoCard"><h3>Fishing information</h3><p>Stocking records are useful planning information, but fishing seasons, limits and exceptions can change. Check Ontario's current regulations before fishing.</p>
  <div class="actionstack">
  <a class="secondaryAction" target="_blank" rel="noopener" href="https://www.ontario.ca/document/ontario-fishing-regulations-summary">Check 2026 Fishing Regulations</a>
@@ -1654,19 +1776,12 @@ const fs2=$("favSearch");if(fs2)fs2.oninput=()=>{clearTimeout(fs2._t);fs2._t=set
 $("showAccess").onchange=()=>{$("showAccess").checked?loadAccess():renderAccess()};
 $("showFMZ").onchange=()=>{$("showFMZ").checked?loadFMZ(true):renderFMZ()};
 $("showDepth").onchange=renderDepth;
-$("searchBtn").onclick=()=>{apply();const q=$("search").value.trim();if(q.length<3)return;if(shown.length<5)searchProvince(q);else if(knownSpeciesName(q))speciesLookupFor(q)};
+$("searchBtn").onclick=runSearch;
 $("search").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("search").blur();apply();const q=$("search").value.trim();if(q.length>=3&&shown.length<5)searchProvince(q)}};
-$("search").oninput=()=>{
- clearTimeout($("search")._t);
- $("search")._t=setTimeout(()=>{
-  apply();
-  // Few or no local hits and a real word typed: check the whole province.
-  const q=$("search").value.trim();
-  if(q.length>=3&&shown.length<5)searchProvince(q);
-  else if(q.length>=3&&knownSpeciesName(q))speciesLookupFor(q);
- },320);
-};$("species").onchange=()=>{apply();const v=$("species").value;if(v)speciesLookupFor(v)};$("year").onchange=apply;
-$("radius").onchange=()=>{if($("radius").value&&!userLoc)locate(apply);else apply()};
+$("search").oninput=markFiltersDirty;
+$("species").onchange=markFiltersDirty;
+$("year").onchange=markFiltersDirty;
+$("radius").onchange=markFiltersDirty;
 const rf=$("resetFind");
 if(rf)rf.onclick=()=>{
  $("findSpecies").value="";$("findYear").value="";$("findMinimum").value="";
@@ -1680,7 +1795,7 @@ document.addEventListener("click",e=>{
 });
 document.querySelectorAll(".baseSwitch button").forEach(b=>b.onclick=()=>setBasemap(b.dataset.base));
 setBasemap(baseKey);
-const su=$("showUnstocked");if(su)su.onchange=apply;
+const su=$("showUnstocked");if(su)su.onchange=markFiltersDirty;
 {
  const any=$("modeAny"),stk=$("modeStocked"),note=$("modeNote"),minRow=$("findMinimum");
  const setMode=m=>{
@@ -1702,7 +1817,7 @@ const su=$("showUnstocked");if(su)su.onchange=apply;
  if(stk)stk.onclick=()=>setMode("stocked");
  setMode("any");
 }
-$("clearFilters").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";const u=$("showUnstocked");if(u)u.checked=true;apply()};
+$("clearFilters").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";const u=$("showUnstocked");if(u)u.checked=true;clearFiltersDirty();apply()};
 
 
 $("closeFind").onclick=()=>{$("findPanel").classList.remove("open");setView("explore")};
