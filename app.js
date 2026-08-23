@@ -96,7 +96,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="v1m";
+const APP_VERSION="v1n";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -421,7 +421,7 @@ async function loadWaterbodies(){
   mergeWaterbodies();
   buildFilters(true);
   apply();
-  if(userLoc)loadTownshipsFor(userLoc[0],userLoc[1],200).then(()=>{assignTownships();apply()});
+  loadTownshipsForLakes(lakes).then(()=>{assignTownships();apply()});
  }catch(e){
   // Not built yet, or offline before it was ever cached. The stocking data
   // still works on its own; say nothing rather than raising an error about a
@@ -463,6 +463,24 @@ let liveBusy=false;
 const TOWNSHIP_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open06/MapServer/1/query";
 let townshipFeatures=[];
 const townshipAreasTried=new Set();
+
+/* Resolve townships for a set of lakes, using their own bounding box. The
+   user's position is irrelevant here — these lakes have coordinates. */
+async function loadTownshipsForLakes(list){
+ const need=(list||lakes).filter(l=>!l.township&&l.lat&&l.lon);
+ if(!need.length)return;
+ // Try the cheap way first: a township we already hold may cover them.
+ assignTownships();
+ const still=need.filter(l=>!l.township);
+ if(!still.length)return;
+ const lats=still.map(l=>l.lat),lons=still.map(l=>l.lon);
+ const minLat=Math.min(...lats),maxLat=Math.max(...lats);
+ const minLon=Math.min(...lons),maxLon=Math.max(...lons);
+ const cLat=(minLat+maxLat)/2,cLon=(minLon+maxLon)/2;
+ // Half-diagonal in km, padded, so one request covers the whole result set.
+ const km=Math.max(25,distance(minLat,minLon,maxLat,maxLon)/2+20);
+ await loadTownshipsFor(cLat,cLon,Math.min(km,600));
+}
 
 async function loadTownshipsFor(lat,lon,km){
  const tag=`${km}|${lat.toFixed(1)},${lon.toFixed(1)}`;
@@ -570,7 +588,7 @@ async function searchProvince(q){
   if(j.error)throw Error(j.error.message);
   const added=mergeLiveResults(j.features||[]);
   // One township request covers the whole result set.
-  if(added&&userLoc)loadTownshipsFor(userLoc[0],userLoc[1],150).then(()=>{assignTownships();apply()});
+  if(added)loadTownshipsForLakes(lakes).then(()=>{assignTownships();apply()});
   if(added){buildFilters(true);apply();}
   else if(status)status.textContent=previous;
   return added>0;
@@ -681,7 +699,7 @@ async function araNearby(lat,lon,km,species){
  const j=await fetch(ARA_API+"?"+p).then(r=>r.json());
  if(j.error)throw Error(j.error.message);
  const n=mergeLiveResults(j.features||[]);
- if(n)await loadTownshipsFor(lat,lon,km);
+ if(n)await loadTownshipsForLakes(lakes);
  return n;
 }
 
@@ -812,6 +830,7 @@ function render(){
    :`<span>${(l.present||[]).length?(l.present.length+" species recorded"):"No survey data"}</span>${l.depthMax?`<span>${l.depthMax} m deep</span>`:""}`);
   return `<article class="record" data-i="${i}"><div class="topline"><div><h4>${esc(l.name)}</h4><div class="species">${head}</div></div><div class="cardactions">${pill}<button class="star ${fav?"saved":""}" data-fav="${esc(l.key)}" aria-label="Favourite">${fav?"★":"☆"}</button></div></div><div class="meta">${meta}</div></article>`;
  }).join("")||`<div class="record empty">${emptyMessage()}</div>`;
+ $("results").insertAdjacentHTML("afterbegin",locationPrompt());
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=e=>{if(e.target.closest(".star"))return;const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
  document.querySelectorAll(".star").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFav(b.dataset.fav)});
  markerLayer.clearLayers();
@@ -821,6 +840,13 @@ function lakeCount(n){return num(n)+" "+(n===1?"lake":"lakes")}
 function showUnstocked(){
  const el=$("showUnstocked");
  return el?el.checked:true;
+}
+/* Distance was simply absent with no location granted, which reads as a
+   missing feature rather than a missing permission. Ask for it instead. */
+function locationPrompt(){
+ if(userLoc)return "";
+ return `<button type="button" id="distancePrompt" class="distPrompt">
+  <b>Turn on location</b><span>to show how far each lake is from you</span></button>`;
 }
 function emptyMessage(){
  if(currentView==="favorites")return "No saved lakes yet. Tap ☆ on any lake to keep it here.";
@@ -1385,6 +1411,7 @@ function renderFindResults(sp,yr){
    <button class="viewLakeBtn">${t("viewLake")}</button>
   </article>`;
  }).join("")||"";
+ $("results").insertAdjacentHTML("afterbegin",locationPrompt());
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=()=>{const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
  markerLayer.clearLayers();shown.slice(0,400).forEach(l=>L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${l._findKm.toFixed(1)} km away<br>${l._findPresent?"Recorded here (not stocked)":num(l._findQty)+" fish stocked"}`));
 }
@@ -1457,6 +1484,9 @@ if(rf)rf.onclick=()=>{
  const a=$("modeAny");if(a)a.click();
  toast("Filters reset.");
 };
+document.addEventListener("click",e=>{
+ if(e.target.closest("#distancePrompt"))locate(apply);
+});
 const su=$("showUnstocked");if(su)su.onchange=apply;
 {
  const any=$("modeAny"),stk=$("modeStocked"),note=$("modeNote"),minRow=$("findMinimum");

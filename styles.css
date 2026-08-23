@@ -557,3 +557,12 @@ body.filtering .sectiontitle{margin-top:14px}
 .meta .zone{color:#7A5B10;font-weight:800;background:#F6EDD8;border-radius:6px;padding:1px 7px}
 .meta .zone::after,.meta .place::after,.meta .dist::after{color:#BECBD8}
 .featureRow .zone{background:#F6EDD8;color:#7A5B10;font-weight:800}
+
+/* Shown above results when no location has been granted, so distance reads as
+   a permission you haven't given rather than a feature that is missing. */
+.distPrompt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;
+ background:#fff;border:1px dashed #B4C6D6;border-radius:14px;padding:13px 15px;
+ text-align:left;cursor:pointer;font-family:inherit;margin-bottom:2px}
+.distPrompt b{color:var(--green);font-size:14px}
+.distPrompt span{color:var(--muted);font-size:12.5px}
+.distPrompt:active{background:#F6FAFD}
