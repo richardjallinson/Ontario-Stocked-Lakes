@@ -1,5 +1,7 @@
 # Ontario Stocked Lakes
 
+Live: https://richardjallinson.github.io/Ontario-Stocked-Lakes/
+
 Find Ontario stocked lakes by distance, species and stocking year — then check
 the regulations, access points, weather and consumption advice before you go.
 
@@ -20,8 +22,8 @@ The app needs to be served over HTTP — opening `index.html` from the file
 system breaks `fetch()` and the service worker.
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/ontario-stocked-lakes.git
-cd ontario-stocked-lakes
+git clone https://github.com/richardjallinson/Ontario-Stocked-Lakes.git
+cd Ontario-Stocked-Lakes
 
 # One-time: pull Leaflet into vendor/ (not committed)
 ./scripts/fetch-vendor.sh

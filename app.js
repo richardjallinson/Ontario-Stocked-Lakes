@@ -96,7 +96,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="v1b";
+const APP_VERSION="v1d";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -906,7 +906,12 @@ function helpMarkup(){
  <div class="versionStamp">Ontario Stocked Lakes • v${APP_VERSION}</div>`;
 }
 
-const APP_URL="https://github.com/YOUR-USERNAME/ontario-stocked-lakes";
+// Derived from wherever the app is being served, so the share link is correct
+// on GitHub Pages, on Vercel and on any domain this moves to later. A
+// hardcoded URL is what broke it last time.
+const APP_URL=(location.origin&&location.origin!=="null")
+ ? location.origin+location.pathname.replace(/index\.html$/,"")
+ : "https://richardjallinson.github.io/Ontario-Stocked-Lakes/";
 const TEXT_SIZES=["standard","large","larger"];
 function applyTextSize(size){
  document.body.classList.remove("text-large","text-larger");
