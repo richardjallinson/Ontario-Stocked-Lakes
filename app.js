@@ -267,7 +267,7 @@ function translateStaticUI(){
  if(note)note.textContent=t(findMode==="stocked"?"modeNoteStocked":"modeNoteAny");
 }
 
-const APP_VERSION="v2a";
+const APP_VERSION="v2b";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -1783,8 +1783,11 @@ const REG_CATEGORY={
  "crappie":"Crappie",
  "walleye":"Walleye and Sauger or any combination",
  "sauger":"Walleye and Sauger or any combination",
- "largemouth bass":"Largemouth Bass",
- "smallmouth bass":"Smallmouth Bass",
+ /* Bass are listed as a combined category in 18 of Ontario's 20 zones; only
+    zone 20 breaks them out separately. Both candidates are listed here, most
+    common first, and the zone decides which one actually applies. */
+ "largemouth bass":["Largemouth and Smallmouth Bass or any combination","Largemouth Bass"],
+ "smallmouth bass":["Largemouth and Smallmouth Bass or any combination","Smallmouth Bass"],
  "northern pike":"Northern Pike",
  "muskellunge":"Muskellunge",
  "musky":"Muskellunge",
@@ -1810,21 +1813,36 @@ const REG_CATEGORY={
  "bluegill":"Sunfish"
 };
 
-function regCategoryFor(species){
+function regCategoriesFor(species){
  const k=String(species||"").trim().toLowerCase();
- return REG_CATEGORY[k]||null;
+ const v=REG_CATEGORY[k];
+ if(!v)return [];
+ return Array.isArray(v)?v:[v];
+}
+
+/* Resolve to the category this zone's table actually carries. A species can
+   sit under different groupings from zone to zone, so a single fixed name
+   silently misses wherever the grouping differs. When no candidate matches,
+   the first is returned so the caller still reports the zone table as not
+   listing a limit rather than guessing one. */
+function regCategoryFor(species,fmz){
+ const cands=regCategoriesFor(species);
+ if(!cands.length)return null;
+ if(fmz)for(const c of cands)if(zoneRuleIndex.get(`${fmz}|${c}`))return c;
+ return cands[0];
 }
 
 /* Everything known about one species on one lake. */
 function speciesRule(l,species){
- const cat=regCategoryFor(species);
+ const cat=regCategoryFor(species,l.fmz);
+ const cats=regCategoriesFor(species);
  const wli=String(l.waterbodyId||"").trim();
  // A waterbody exception overrides the zone table, so it is looked up first
  // and reported even when it carries no species of its own.
  const ex=(exceptionIndex.get(wli)||[]).filter(r=>!r.species||
-   canonicalSpecies(r.species)===cat||String(r.species).toLowerCase()===String(species).toLowerCase());
+   cats.includes(canonicalSpecies(r.species))||String(r.species).toLowerCase()===String(species).toLowerCase());
  const extra=(additionalIndex.get(wli)||[]).filter(r=>!r.species||
-   canonicalSpecies(r.species)===cat||String(r.species).toLowerCase()===String(species).toLowerCase());
+   cats.includes(canonicalSpecies(r.species))||String(r.species).toLowerCase()===String(species).toLowerCase());
  const zone=cat&&l.fmz?zoneRuleIndex.get(`${l.fmz}|${cat}`)||null:null;
  return {species,category:cat,zone,exceptions:ex,additional:extra};
 }
