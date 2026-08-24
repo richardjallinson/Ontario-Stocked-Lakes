@@ -49,6 +49,15 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
+  editCatch:"Edit this catch",
+  saveCatch:"Save changes",
+  cancel:"Cancel",
+  editingCatch:"Editing a catch",
+  editedMark:"edited",
+  delete:"Delete",
+  deleteCatchAsk:"Delete this catch?",
+  catchDeleted:"Catch deleted.",
+  catchUpdated:"Catch updated.",
   unitCm:"cm",
   unitIn:"in",
   unitKg:"kg",
@@ -230,6 +239,15 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
+  editCatch:"Modifier cette prise",
+  saveCatch:"Enregistrer",
+  cancel:"Annuler",
+  editingCatch:"Modification d’une prise",
+  editedMark:"modifiée",
+  delete:"Supprimer",
+  deleteCatchAsk:"Supprimer cette prise ?",
+  catchDeleted:"Prise supprimée.",
+  catchUpdated:"Prise mise à jour.",
   unitCm:"cm",
   unitIn:"po",
   unitKg:"kg",
@@ -407,7 +425,7 @@ function translateStaticUI(){
  if(note)note.textContent=t(findMode==="stocked"?"modeNoteStocked":"modeNoteAny");
 }
 
-const APP_VERSION="v2j";
+const APP_VERSION="v2k";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -2197,6 +2215,13 @@ function startTrip(l){
    opening a different trip should start at its catches. */
 let tripTab="catches", tripTabFor=null;
 
+/* Which catch is being edited, and which is one tap from deletion. Both reset
+   when the trip changes or the tab changes: an edit you walked away from
+   should not still be open when you come back, and a half-confirmed delete
+   should certainly not be. */
+let editingCatchId=null, confirmDeleteId=null;
+function clearCatchState(){editingCatchId=null;confirmDeleteId=null}
+
 /* Species the angler could plausibly log here: what the lake is stocked with,
    plus what surveys actually recorded, minus the forage species that are in
    the data but that nobody is catching on a rod. If that comes to nothing the
@@ -2209,44 +2234,66 @@ function catchSpeciesOptions(tr){
  return [...set].filter(Boolean).sort((a,b)=>a.localeCompare(b));
 }
 
-function catchRowMarkup(c){
+function catchRowMarkup(c,active){
  const len=lenOut(c.lenCm), wt=wtOut(c.wtKg);
  const bits=[];
  if(len!=null)bits.push(`${num1(len)} ${lenUnit()}`);
  if(wt!=null)bits.push(`${num1(wt)} ${wtUnit()}`);
  const disp=c.disposition==="Kept"?t("kept"):t("released");
- return `<div class="catchrow"><div><b>${esc(c.species)}</b>
-  <span>${new Date(c.time).toLocaleTimeString(appLang==="fr"?"fr-CA":"en-CA",{hour:"numeric",minute:"2-digit"})} • ${esc(disp)}</span>
+ const when=new Date(c.time).toLocaleTimeString(appLang==="fr"?"fr-CA":"en-CA",{hour:"numeric",minute:"2-digit"});
+ /* Deleting is two taps, not one. This gets used with cold wet hands in a
+    moving boat, and a catch log is not something you can get back. */
+ const confirming=confirmDeleteId===c.id;
+ return `<div class="catchrow${confirming?" confirming":""}${editingCatchId===c.id?" editing":""}"><div><b>${esc(c.species)}</b>
+  <span>${when} • ${esc(disp)}</span>
   ${bits.length?`<span>${esc(bits.join(" • "))}</span>`:""}
   ${c.notes?`<span class="catchNote">${esc(c.notes)}</span>`:""}
-  ${c.disposition==="Kept"?`<span>🍽️ ${t("checkEatingAdvice")}</span>`:""}</div>
-  <button data-delcatch="${c.id}" aria-label="${t("deleteCatch")}">×</button></div>`;
+  ${c.edited?`<span class="catchNote">${t("editedMark")}</span>`:""}
+  ${c.disposition==="Kept"?`<span>🍽️ ${t("checkEatingAdvice")}</span>`:""}
+  ${confirming?`<div class="confirmRow"><span class="confirmAsk">${t("deleteCatchAsk")}</span>
+    <button data-confirmdel="${c.id}" class="dangerBtn">${t("delete")}</button>
+    <button data-canceldel="${c.id}" class="secondaryAction">${t("cancel")}</button></div>`:""}</div>
+  ${active&&!confirming?`<div class="rowActions">
+   <button data-editcatch="${c.id}" aria-label="${t("editCatch")}" title="${t("editCatch")}">✎</button>
+   <button data-delcatch="${c.id}" aria-label="${t("deleteCatch")}" title="${t("deleteCatch")}">×</button>
+  </div>`:""}</div>`;
 }
 
 function catchFormMarkup(tr){
+ /* One form, two jobs. Editing prefills it and retitles the button rather
+    than opening a second form somewhere else, so there is only ever one place
+    in this sheet where a fish gets described. */
+ const editing=editingCatchId?tr.catches.find(c=>c.id===editingCatchId):null;
  const opts=catchSpeciesOptions(tr);
+ const known=editing&&opts.includes(editing.species);
+ const selVal=editing?(known?editing.species:"__other"):"";
+ const otherVal=editing&&!known?editing.species:"";
  const picker=opts.length
   ? `<select id="catchSpecies" aria-label="${t("catchSpeciesLabel")}">
-      <option value="">${t("choooseSpecies")}</option>
-      ${opts.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("")}
-      <option value="__other">${t("otherSpecies")}</option>
+      <option value=""${selVal===""?" selected":""}>${t("choooseSpecies")}</option>
+      ${opts.map(s=>`<option value="${esc(s)}"${selVal===s?" selected":""}>${esc(s)}</option>`).join("")}
+      <option value="__other"${selVal==="__other"?" selected":""}>${t("otherSpecies")}</option>
      </select>
-     <input id="catchSpeciesOther" class="hidden" placeholder="${t("catchSpeciesPh")}" aria-label="${t("catchSpeciesLabel")}">`
+     <input id="catchSpeciesOther"${selVal==="__other"?"":' class="hidden"'} value="${esc(otherVal)}" placeholder="${t("catchSpeciesPh")}" aria-label="${t("catchSpeciesLabel")}">`
   : `<p class="setNote">${t("noSpeciesListNote")}</p>
-     <input id="catchSpeciesOther" placeholder="${t("catchSpeciesPh")}" aria-label="${t("catchSpeciesLabel")}">`;
- return `<div class="catchform">
+     <input id="catchSpeciesOther" value="${esc(editing?editing.species:"")}" placeholder="${t("catchSpeciesPh")}" aria-label="${t("catchSpeciesLabel")}">`;
+ const lenV=editing?num1(lenOut(editing.lenCm)):"";
+ const wtV=editing?num1(wtOut(editing.wtKg)):"";
+ const kept=editing&&editing.disposition==="Kept";
+ return `<div class="catchform${editing?" editingForm":""}">
+  ${editing?`<div class="formHead"><b>${t("editingCatch")}</b><button id="cancelEdit" class="secondaryAction">${t("cancel")}</button></div>`:""}
   ${picker}
   <div class="formrow">
-   <label class="fieldLabel">${t("length")} (${lenUnit()})<input id="catchSize" type="number" inputmode="decimal" min="0" step="0.1" placeholder="${lenUnit()}"></label>
-   <label class="fieldLabel">${t("weight")} (${wtUnit()})<input id="catchWeight" type="number" inputmode="decimal" min="0" step="0.01" placeholder="${wtUnit()}"></label>
+   <label class="fieldLabel">${t("length")} (${lenUnit()})<input id="catchSize" type="number" inputmode="decimal" min="0" step="0.1" value="${lenV}" placeholder="${lenUnit()}"></label>
+   <label class="fieldLabel">${t("weight")} (${wtUnit()})<input id="catchWeight" type="number" inputmode="decimal" min="0" step="0.01" value="${wtV}" placeholder="${wtUnit()}"></label>
   </div>
   <select id="catchDisposition" aria-label="${t("disposition")}">
-   <option value="Released">${t("released")}</option>
-   <option value="Kept">${t("kept")}</option>
+   <option value="Released"${kept?"":" selected"}>${t("released")}</option>
+   <option value="Kept"${kept?" selected":""}>${t("kept")}</option>
   </select>
-  <textarea id="catchNotes" placeholder="${t("catchNotesPh")}"></textarea>
-  <label class="checkline"><input id="catchLocation" type="checkbox"> ${t("saveCatchLocation")}</label>
-  <button id="addCatch">${t("addCatch")}</button>
+  <textarea id="catchNotes" placeholder="${t("catchNotesPh")}">${esc(editing&&editing.notes?editing.notes:"")}</textarea>
+  ${editing?"":`<label class="checkline"><input id="catchLocation" type="checkbox"> ${t("saveCatchLocation")}</label>`}
+  <button id="addCatch">${editing?t("saveCatch"):t("addCatch")}</button>
  </div>`;
 }
 
@@ -2271,7 +2318,7 @@ function openTrip(id){
  const trip=trips.find(x=>x.id===id);if(!trip)return;
  if(!Array.isArray(trip.checklist))trip.checklist=defaultChecklist();
  const l=tripLake(trip),active=!trip.ended;
- if(tripTabFor!==id){tripTab="catches";tripTabFor=id}
+ if(tripTabFor!==id){tripTab="catches";tripTabFor=id;clearCatchState()}
  const tab=tripTab;
 
  const head=`<h2>🎣 ${esc(trip.lakeName)}</h2>
@@ -2289,7 +2336,15 @@ function openTrip(id){
 
  let body="";
  if(tab==="catches"){
-  body=`<div class="catchlist">${trip.catches.length?trip.catches.map(catchRowMarkup).join(""):`<div class="historynote">${t("noCatchesYet")}</div>`}</div>
+  /* Units live in Settings too, but the moment you want them is standing over
+     a fish with a tape in your hand, not three sheets away. Same setting,
+     second door. */
+  const u=currentUnits();
+  body=`<div class="segmented unitToggle" role="group" aria-label="${t("units")}">
+    <button type="button" data-tripunits="metric" class="${u==="metric"?"on":""}">${t("unitCm")} / ${t("unitKg")}</button>
+    <button type="button" data-tripunits="imperial" class="${u==="imperial"?"on":""}">${t("unitIn")} / ${t("unitLb")}</button>
+   </div>
+   <div class="catchlist">${trip.catches.length?trip.catches.map(c=>catchRowMarkup(c,active)).join(""):`<div class="historynote">${t("noCatchesYet")}</div>`}</div>
    ${active?catchFormMarkup(trip):`<p class="setNote">${t("tripEndedNote")}</p>`}`;
  }else if(tab==="checklist"){
   body=checklistMarkup(trip);
@@ -2303,12 +2358,24 @@ function openTrip(id){
  $("tripDetail").innerHTML=head+body+foot;
  $("tripSheet").classList.remove("hidden");
 
- document.querySelectorAll("[data-triptab]").forEach(b=>b.onclick=()=>{tripTab=b.dataset.triptab;openTrip(id)});
+ document.querySelectorAll("[data-triptab]").forEach(b=>b.onclick=()=>{tripTab=b.dataset.triptab;clearCatchState();openTrip(id)});
 
  if(tab==="catches"){
+  document.querySelectorAll("[data-tripunits]").forEach(b=>b.onclick=()=>{setUnits(b.dataset.tripunits);openTrip(id)});
+  // First tap arms the delete, second one commits it.
   document.querySelectorAll("[data-delcatch]").forEach(b=>b.onclick=()=>{
-   trip.catches=trip.catches.filter(c=>c.id!==Number(b.dataset.delcatch));saveTrips();openTrip(id);
+   confirmDeleteId=Number(b.dataset.delcatch);editingCatchId=null;openTrip(id);
   });
+  document.querySelectorAll("[data-canceldel]").forEach(b=>b.onclick=()=>{confirmDeleteId=null;openTrip(id)});
+  document.querySelectorAll("[data-confirmdel]").forEach(b=>b.onclick=()=>{
+   trip.catches=trip.catches.filter(c=>c.id!==Number(b.dataset.confirmdel));
+   confirmDeleteId=null;saveTrips();openTrip(id);toast(t("catchDeleted"));
+  });
+  document.querySelectorAll("[data-editcatch]").forEach(b=>b.onclick=()=>{
+   editingCatchId=Number(b.dataset.editcatch);confirmDeleteId=null;openTrip(id);
+   const f=$("catchSpecies")||$("catchSpeciesOther");if(f)f.scrollIntoView({behavior:"smooth",block:"center"});
+  });
+  const ce=$("cancelEdit");if(ce)ce.onclick=()=>{editingCatchId=null;openTrip(id)};
   const sel=$("catchSpecies"),other=$("catchSpeciesOther");
   if(sel&&other)sel.onchange=()=>{
    other.classList.toggle("hidden",sel.value!=="__other");
@@ -2353,13 +2420,29 @@ function addCatch(id){
  else if(other)species=(other.value||"").trim();
  if(!species)return toast(t("enterSpecies"));
  const lenCm=lenIn($("catchSize").value), wtKg=wtIn($("catchWeight").value);
+ const disposition=$("catchDisposition").value;
+ const notes=($("catchNotes").value||"").trim();
+
+ /* Editing keeps the original id, timestamp and saved location: it is the
+    same fish, corrected. Only the description changes, plus a marker so the
+    log does not quietly claim to be what was first written down. */
+ if(editingCatchId){
+  const c=trip.catches.find(x=>x.id===editingCatchId);
+  if(c){
+   Object.assign(c,{species,lenCm,wtKg,disposition,notes,edited:new Date().toISOString()});
+   saveTrips();
+  }
+  editingCatchId=null;openTrip(id);toast(t("catchUpdated"));
+  return;
+ }
+
  const finish=(loc)=>{
-  trip.catches.unshift({id:Date.now(),species,lenCm,wtKg,
-   disposition:$("catchDisposition").value,notes:($("catchNotes").value||"").trim(),
+  trip.catches.unshift({id:Date.now(),species,lenCm,wtKg,disposition,notes,
    time:new Date().toISOString(),location:loc});
   saveTrips();openTrip(id);
  };
- if($("catchLocation").checked&&navigator.geolocation)
+ const gps=$("catchLocation");
+ if(gps&&gps.checked&&navigator.geolocation)
   navigator.geolocation.getCurrentPosition(p=>finish({lat:p.coords.latitude,lon:p.coords.longitude}),()=>finish(null),{timeout:8000});
  else finish(null);
 }

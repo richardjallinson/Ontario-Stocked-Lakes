@@ -773,3 +773,32 @@ body.filtering .sectiontitle{margin-top:14px}
 /* There is no global .hidden rule — the sheets each scope their own — so the
    free-text species field needs its own. */
 #catchSpeciesOther.hidden{display:none}
+
+/* Catch row actions: edit and delete. Both are 34px and separated, because
+   they sit next to each other and one of them destroys data. */
+.rowActions{display:flex;gap:6px;align-items:flex-start;flex:0 0 auto}
+.rowActions button{border:0;background:#ECF1F6;border-radius:50%;
+ width:34px;height:34px;font-size:15px;line-height:1;color:var(--green)}
+.rowActions button[data-delcatch]{background:#eee;font-size:19px}
+.catchrow.editing{background:#FFF9E8;border-radius:10px}
+
+/* Delete is armed, then confirmed. The armed row states the question rather
+   than relying on a browser dialog, which in a standalone iOS app is a modal
+   that can land behind the sheet. */
+.confirmRow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.confirmAsk{font-size:13px;font-weight:800;color:#8a2927}
+.confirmRow .secondaryAction{padding:8px 14px;font-size:13px}
+.dangerBtn{border:0;background:#8a2927;color:#fff;padding:9px 16px;
+ border-radius:10px;font-weight:900;font-size:13px;min-height:36px}
+.catchrow.confirming{background:#FCF3F2;border-radius:10px;padding-left:8px;padding-right:8px}
+
+/* Editing header inside the shared form. */
+.formHead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.formHead b{font-size:13px;color:var(--green)}
+.formHead .secondaryAction{padding:8px 14px;font-size:13px}
+.catchform.editingForm{background:#FFF9E8;border-color:#E6D3A3}
+
+/* The units toggle at the top of the catch log. Smaller than the Settings
+   one — it is a shortcut, not the primary control. */
+.unitToggle{margin-bottom:12px}
+.unitToggle button{padding:9px 6px;font-size:13px;min-height:38px}
