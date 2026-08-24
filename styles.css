@@ -635,34 +635,58 @@ body.filtering .sectiontitle{margin-top:14px}
 
 
 /* ---------------------------------------------------------------------------
-   Header mark.
+   Header: brand and controls stack on the left, mark fills the right.
 
-   The brand sits in its own flex row alongside the illustration so the mark
-   and the wordmark centre on each other, independent of .headerTop's
-   flex-start alignment. 54px keeps the mark inside the header's existing
-   height, so it costs nothing on screen — the header stays 121pt and this is
-   a sticky element on every view.
+   The mark earns a proper size by taking the column the controls used to
+   occupy, and the controls drop under the wordmark. 120px is deliberate and
+   costly: the header goes 121pt -> 187pt, and it is sticky, so that height is
+   spent on every view. It buys an illustration you can actually read.
 
-   The title drops 23px -> 20px because four controls plus the mark leave
-   roughly 155pt for it; at 23px "Stocked Lakes" is clipped. Measured, not
-   guessed. The controls stay at 36px: shrinking them further buys space but
-   moves toward the tap-target floor, which matters for a glove at the lake.
+   Controls are 30px. That is the floor the browser suite enforces for tap
+   targets, not a style choice — 28px puts all four below it.
    --------------------------------------------------------------------------- */
-.oslWrap{display:flex;align-items:center;gap:9px;min-width:0;flex:0 1 auto}
-.oslMark{height:54px;width:auto;flex:0 0 auto;display:block}
-.headerTop{gap:9px}
-.headerBrand h1{font-size:20px}
-/* The control cluster has to give back the width the mark takes, or the
-   title clips. Measured at 320px and 390px, not assumed. */
-.headerActions{gap:5px}
-.langSwitch button{padding:0 9px}
+.headerTop{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hCol{display:flex;flex-direction:column;gap:10px;min-width:0;flex:1 1 auto}
+.headerBrand h1{font-size:24px;white-space:nowrap;line-height:1.05}
+.eyebrow{font-size:10px;letter-spacing:2.4px;margin-bottom:3px}
+.headerActions{display:flex;gap:6px;flex:0 0 auto;align-items:center}
+.headerActions .round{width:30px;height:30px;font-size:16px}
+.round svg{width:15px;height:15px}
+.langSwitch{display:flex;gap:6px}
+.langSwitch button{height:30px;min-width:30px;padding:0 7px;font-size:11px;border-radius:9px}
+.oslMark{height:120px;width:auto;flex:0 0 auto;display:block}
 
-/* 320px is still a live width (the older SE), and there a mark, a full title
-   and four controls genuinely do not fit together. The mark is the thing that
-   gives way — it is decoration, the wordmark is not. Dropping it and taking
-   the title to 18px also fixes a clip that predates the mark: at 23px
-   "Stocked Lakes" needed 143px and had 107, so it was already truncating. */
-@media(max-width:360px){
+/* Control treatment. Outlined rather than filled so the wordmark stays the
+   brightest thing in the header — a white EN pill was out-shouting the app's
+   own name. Border is #5A7699: 3.27:1 against the header, just over the 3:1
+   WCAG floor for interface components. The previous #4A6B94 measured 2.79:1
+   and the first outlined pass was 1.43:1, which read as floating glyphs
+   rather than buttons. Glyphs sit at 7.5:1, well clear.
+   Contrast matters more here than usual: this app gets used in sun on water. */
+.headerActions .round,
+.langSwitch button{
+ background:transparent;
+ border:1px solid #5A7699;
+ color:#9FB8D0;
+}
+.langSwitch button{font-weight:700}
+/* The active language is marked, not spotlit. */
+.langSwitch button.active{
+ background:#ffffff14;
+ border-color:#93B0CC;
+ color:#F2F6FA;
+}
+.hCol{gap:8px}
+.headerActions{gap:5px}
+
+/* Narrow phones cannot carry a 120px mark and a 24px wordmark side by side.
+   The mark shrinks first; below 340 it goes entirely, because the app's name
+   matters and the decoration does not. */
+@media(max-width:389px){
+  .oslMark{height:104px}
+  .headerBrand h1{font-size:22px}
+}
+@media(max-width:339px){
   .oslMark{display:none}
-  .headerBrand h1{font-size:18px}
+  .headerBrand h1{font-size:20px}
 }
