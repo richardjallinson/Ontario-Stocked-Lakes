@@ -55,7 +55,7 @@ Enable it under **Settings → Pages → Source: GitHub Actions**.
 | `styles.css` | Styles |
 | `sw.js` | Service worker: shell precache, on-demand dataset cache |
 | `manifest.webmanifest` | PWA manifest |
-| `ontario-waterbodies.json` | Aquatic Resource Area index — every named lake (~2 MB) |
+| `ontario-waterbodies.json` | Aquatic Resource Area index — every named lake and pond (~2 MB) |
 | `ontario-stocking.json` | Bundled stocking snapshot (~2 MB) |
 | `ontario-regulations-2026.json` | Imported 2026 regulation summary (~1 MB) |
 | `fish-advisories-2025.json` | Fish consumption advisory locations (~11 MB) |
