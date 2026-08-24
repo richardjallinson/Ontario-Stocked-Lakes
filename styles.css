@@ -646,47 +646,81 @@ body.filtering .sectiontitle{margin-top:14px}
    targets, not a style choice — 28px puts all four below it.
    --------------------------------------------------------------------------- */
 .headerTop{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.hCol{display:flex;flex-direction:column;gap:10px;min-width:0;flex:1 1 auto}
-.headerBrand h1{font-size:24px;white-space:nowrap;line-height:1.05}
+.hCol{display:flex;flex-direction:column;gap:8px;min-width:0;flex:1 1 auto}
 .eyebrow{font-size:10px;letter-spacing:2.4px;margin-bottom:3px}
 .headerActions{display:flex;gap:6px;flex:0 0 auto;align-items:center}
-.headerActions .round{width:30px;height:30px;font-size:16px}
-.round svg{width:15px;height:15px}
-.langSwitch{display:flex;gap:6px}
-.langSwitch button{height:30px;min-width:30px;padding:0 7px;font-size:11px;border-radius:9px}
+.langSwitch{display:flex;gap:6px;flex:0 0 auto}
 .oslMark{height:120px;width:auto;flex:0 0 auto;display:block}
 
-/* Control treatment. Outlined rather than filled so the wordmark stays the
-   brightest thing in the header — a white EN pill was out-shouting the app's
-   own name. Border is #5A7699: 3.27:1 against the header, just over the 3:1
-   WCAG floor for interface components. The previous #4A6B94 measured 2.79:1
-   and the first outlined pass was 1.43:1, which read as floating glyphs
-   rather than buttons. Glyphs sit at 7.5:1, well clear.
-   Contrast matters more here than usual: this app gets used in sun on water. */
+/* The wordmark is 28px. v2g set 24px, which fell to 22px under the narrow-
+   phone rule — and 375pt is a live width, so on an iPhone X/11 Pro the app's
+   own name read as a caption beside a 120px fish. The stacked column has the
+   room: at 390px the title needs 174px of 220 available, and at 375px 162px
+   of 222. It costs no header height either — the column measures about 103px
+   against the mark's 120px, so the mark still sets the header's height. */
+.headerBrand h1{font-size:28px;white-space:nowrap;line-height:1.05}
+
+/* One shape for all four controls. The cog and ? were circles while EN and FR
+   were rounded rectangles, so a single row carried two geometries and two
+   widths — that mismatch, more than any one control, is what read as
+   unfinished. All four are now a 32px square with a 10px radius. The gaps are
+   equal too: they were 5px between the round controls and 6px inside the
+   language pair, which put uneven space between items that look like a set.
+
+   Outlined rather than filled, still — a solid white EN pill out-shouts the
+   app's own name. But v2g's #5A7699 border measured 3.27:1, barely over the
+   3:1 WCAG floor for interface components, and at that level the controls
+   read as disabled rather than pressable. A 28px wordmark can carry brighter
+   controls without losing the argument, so the border goes to #7691B2
+   (4.72:1) and the glyphs to #B4C9DC (9:1). This app is used in sun on open
+   water, so contrast is not cosmetic. */
 .headerActions .round,
 .langSwitch button{
+ width:32px;height:32px;min-width:32px;padding:0;
+ border-radius:10px;
  background:transparent;
- border:1px solid #5A7699;
- color:#9FB8D0;
+ border:1px solid #7691B2;
+ color:#B4C9DC;
+ display:inline-flex;align-items:center;justify-content:center;
+ cursor:pointer;
 }
-.langSwitch button{font-weight:700}
+.headerActions .round{font-size:16px}
+.round svg{width:16px;height:16px}
+.langSwitch button{font-size:11.5px;font-weight:700}
 /* The active language is marked, not spotlit. */
 .langSwitch button.active{
- background:#ffffff14;
- border-color:#93B0CC;
+ background:#ffffff1c;
+ border-color:#B4C9DC;
  color:#F2F6FA;
 }
-.hCol{gap:8px}
-.headerActions{gap:5px}
 
-/* Narrow phones cannot carry a 120px mark and a 24px wordmark side by side.
+/* Narrow phones cannot carry a 120px mark and a 28px wordmark side by side.
    The mark shrinks first; below 340 it goes entirely, because the app's name
    matters and the decoration does not. */
 @media(max-width:389px){
   .oslMark{height:104px}
-  .headerBrand h1{font-size:22px}
+  .headerBrand h1{font-size:26px}
 }
 @media(max-width:339px){
   .oslMark{display:none}
-  .headerBrand h1{font-size:20px}
+  .headerBrand h1{font-size:24px}
+}
+
+/* Tablets. 32px is a phone floor, not a considered size — 28px puts all four
+   controls under the 30px tap target the browser suite enforces, so 32px is
+   simply the smallest thing that passes. On an iPad it looks like a phone
+   layout stretched wide, so the controls and the wordmark both step up.
+   740px catches every iPad in portrait — mini 744, Air 820, 11-inch 834,
+   12.9-inch 1024 — and all of them in landscape. */
+@media(min-width:740px){
+  .headerBrand h1{font-size:34px}
+  .eyebrow{font-size:11px}
+  .hCol{gap:10px}
+  .headerActions{gap:8px}
+  .langSwitch{gap:8px}
+  .headerActions .round,
+  .langSwitch button{width:38px;height:38px;min-width:38px;border-radius:12px}
+  .headerActions .round{font-size:19px}
+  .round svg{width:19px;height:19px}
+  .langSwitch button{font-size:13px}
 }
