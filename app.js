@@ -32,6 +32,39 @@ const I18N={
   useLocation:"Use my location",
   appLink:"App link",appLinkNote:"Share Ontario Stocked Lakes with someone.",
   copyLink:"Copy link",shareApp:"Share",linkCopied:"Link copied.",
+  heroTitle:"Find your next fishing spot",searchPh:"Search a lake, township or species",search:"Search",
+  statLakesLbl:"Stocked lakes",statRecordsLbl:"Stocking records",statSpeciesLbl:"Species",statLatestLbl:"Latest year",
+  recentlyStocked:"Recently Stocked",recentlyStockedSub:"Newest records first",
+  recentNear:"Recent Near Me",recentNearSub:"Newest stocked lakes close to you",
+  regs2026:"2026 Regulations",regs2026Sub:"Official Ontario fishing rules",
+  fishOnlineSub:"Government lake information",fishOnlineSub2:"Government lake information and maps",
+  lakesNearYou:"Lakes near you",sortedByDrive:"Sorted by how far you'd have to drive.",within:"Within",
+  myLakesSub:"Lakes you've saved. Tap \u2606 on any lake to keep it here.",filterSavedPh:"Filter your saved lakes",
+  tripsCatches:"Trips & catches",logbookSub:"Your logbook, stored on this device.",
+  findFishHead:"\uD83D\uDD0E Find Fish",findFishSub:"Find which lakes hold a species, near you.",
+  modeAny:"Anywhere the fish are",modeStocked:"Stocked lakes only",
+  anySpecies:"Any species",anyYear:"Any year",optionalLakePh:"Optional lake name",
+  onlyAccess:"Only lakes with a nearby fishing access point",reset:"Reset",
+  allSpecies:"All species",allYears:"All years",anyDistance:"Any distance",clear:"Clear",
+  includeUnstocked:"Include lakes that aren't stocked",filtersChanged:"Filters changed \u2014 tap Search to apply.",
+  showAccess:"Show fishing access points",showFMZ:"Show Fisheries Management Zones",
+  showDepth:"Show lake depth contours",accessStatus:"Boat launches \u2022 shore access \u2022 docks/piers",
+  depthStatus:"Government bathymetry \u2022 not for navigation",
+  lakeMap:"Lake map",baseMap:"Map",baseTopo:"Topo",basePlain:"Plain",tapMarker:"Tap a marker for details",loading:"Loading\u2026",
+  officialSources:"Official Ontario sources",
+  regsSummaryNote:"Regulations in this app are a summary. These are the authoritative sources \u2014 open them before you fish.",
+  regsSummaryTitle:"2026 Fishing Regulations Summary",regsSummarySub:"Seasons, limits and slot sizes by zone",
+  licences:"Fishing licences",licencesSub:"Buy or renew an Outdoors Card and licence",
+  eatingGuide:"Guide to Eating Ontario Fish",eatingGuideSub:"Consumption advisories by waterbody",
+  ecWeather:"Environment Canada weather",ecWeatherSub:"Forecasts and marine warnings",
+  openData:"Ontario Open Data",openDataSub:"The datasets behind this app",
+  footerSources:"Fish stocking, regulations and advisory data: Government of Ontario. Weather alerts: Environment and Climate Change Canada.",
+  footerDisclaimer:"Not an official Government of Ontario application. Always confirm the current regulations before you fish.",
+  noSpeciesRecorded:"No species recorded",notStocked:"Not stocked",latestStocking:"Latest stocking",speciesUnavailable:"Species unavailable",
+  exploreStocked:"Explore stocked lakes",stockedNearMe:"Stocked lakes near me",recentWithin100:"Recently stocked within 100 km",
+  myFishingTrips:"My Fishing Trips",tripsCount:"trips",
+  settings:"Settings",helpAbout:"Help and about",withinKm:"Within {n} km",
+  regsEnglishNote:"Ontario publishes its regulations, seasons and limits in English only in this dataset, so that text stays as the province wrote it.",
   stockingData:"Stocking data",
   stockingDataNote:"Bundled with the app, so it opens without a network. Check Ontario for newer records whenever you have a signal.",
   checkStockings:"Check for new stockings",checkingStockings:"Checking…",
@@ -69,7 +102,40 @@ const I18N={
   useLocation:"Utiliser ma position",
   appLink:"Lien de l'application",appLinkNote:"Partagez Ontario Stocked Lakes avec quelqu'un.",
   copyLink:"Copier le lien",shareApp:"Partager",linkCopied:"Lien copié.",
-  stockingData:"Données d'ensemencement",
+  heroTitle:"Trouvez votre prochain coin de p\u00eache",searchPh:"Rechercher un lac, un canton ou une esp\u00e8ce",search:"Rechercher",
+  statLakesLbl:"Lacs ensemenc\u00e9s",statRecordsLbl:"Ensemencements",statSpeciesLbl:"Esp\u00e8ces",statLatestLbl:"Derni\u00e8re ann\u00e9e",
+  recentlyStocked:"Ensemenc\u00e9s r\u00e9cemment",recentlyStockedSub:"Les plus r\u00e9cents d'abord",
+  recentNear:"R\u00e9cents pr\u00e8s de moi",recentNearSub:"Lacs ensemenc\u00e9s r\u00e9cemment, pr\u00e8s de vous",
+  regs2026:"R\u00e8glements 2026",regs2026Sub:"R\u00e8gles de p\u00eache officielles de l'Ontario",
+  fishOnlineSub:"Renseignements gouvernementaux sur les lacs",fishOnlineSub2:"Renseignements et cartes du gouvernement",
+  lakesNearYou:"Lacs pr\u00e8s de vous",sortedByDrive:"Tri\u00e9s selon la distance \u00e0 parcourir.",within:"Dans un rayon de",
+  myLakesSub:"Vos lacs enregistr\u00e9s. Touchez \u2606 sur un lac pour l'ajouter ici.",filterSavedPh:"Filtrer vos lacs enregistr\u00e9s",
+  tripsCatches:"Sorties et prises",logbookSub:"Votre carnet, conserv\u00e9 sur cet appareil.",
+  findFishHead:"\uD83D\uDD0E Trouver du poisson",findFishSub:"Trouvez les lacs o\u00f9 vit une esp\u00e8ce, pr\u00e8s de vous.",
+  modeAny:"Partout o\u00f9 vit le poisson",modeStocked:"Lacs ensemenc\u00e9s seulement",
+  anySpecies:"Toutes les esp\u00e8ces",anyYear:"Toutes les ann\u00e9es",optionalLakePh:"Nom du lac (facultatif)",
+  onlyAccess:"Seulement les lacs avec un acc\u00e8s de p\u00eache \u00e0 proximit\u00e9",reset:"R\u00e9initialiser",
+  allSpecies:"Toutes les esp\u00e8ces",allYears:"Toutes les ann\u00e9es",anyDistance:"Toute distance",clear:"Effacer",
+  includeUnstocked:"Inclure les lacs non ensemenc\u00e9s",filtersChanged:"Filtres modifi\u00e9s \u2014 touchez Rechercher pour appliquer.",
+  showAccess:"Afficher les acc\u00e8s de p\u00eache",showFMZ:"Afficher les zones de gestion des p\u00eaches",
+  showDepth:"Afficher les courbes de profondeur",accessStatus:"Mises \u00e0 l'eau \u2022 acc\u00e8s riverain \u2022 quais",
+  depthStatus:"Bathym\u00e9trie gouvernementale \u2022 pas pour la navigation",
+  lakeMap:"Carte du lac",baseMap:"Carte",baseTopo:"Topo",basePlain:"\u00c9pur\u00e9e",tapMarker:"Touchez un rep\u00e8re pour les d\u00e9tails",loading:"Chargement\u2026",
+  officialSources:"Sources officielles de l'Ontario",
+  regsSummaryNote:"Les r\u00e8glements pr\u00e9sent\u00e9s ici sont un r\u00e9sum\u00e9. Voici les sources officielles \u2014 consultez-les avant de p\u00eacher.",
+  regsSummaryTitle:"R\u00e9sum\u00e9 des r\u00e8glements de p\u00eache 2026",regsSummarySub:"Saisons, limites et fourchettes de taille par zone",
+  licences:"Permis de p\u00eache",licencesSub:"Acheter ou renouveler une Carte Plein air et un permis",
+  eatingGuide:"Guide de consommation du poisson de l'Ontario",eatingGuideSub:"Avis de consommation par plan d'eau",
+  ecWeather:"M\u00e9t\u00e9o d'Environnement Canada",ecWeatherSub:"Pr\u00e9visions et avertissements maritimes",
+  openData:"Donn\u00e9es ouvertes de l'Ontario",openDataSub:"Les jeux de donn\u00e9es derri\u00e8re cette application",
+  footerSources:"Donn\u00e9es d'ensemencement, de r\u00e9glementation et d'avis de consommation\u00a0: gouvernement de l'Ontario. Alertes m\u00e9t\u00e9o\u00a0: Environnement et Changement climatique Canada.",
+  footerDisclaimer:"Application non officielle du gouvernement de l'Ontario. V\u00e9rifiez toujours les r\u00e8glements en vigueur avant de p\u00eacher.",
+  noSpeciesRecorded:"Aucune esp\u00e8ce r\u00e9pertori\u00e9e",notStocked:"Non ensemenc\u00e9",latestStocking:"Dernier ensemencement",speciesUnavailable:"Esp\u00e8ce non disponible",
+  exploreStocked:"Explorer les lacs ensemenc\u00e9s",stockedNearMe:"Lacs ensemenc\u00e9s pr\u00e8s de moi",recentWithin100:"Ensemenc\u00e9s r\u00e9cemment dans un rayon de 100\u00a0km",
+  myFishingTrips:"Mes sorties de p\u00eache",tripsCount:"sorties",
+  settings:"Param\u00e8tres",helpAbout:"Aide et \u00e0 propos",withinKm:"Dans un rayon de {n}\u00a0km",
+  regsEnglishNote:"L'Ontario ne publie ce jeu de donn\u00e9es \u2014 r\u00e8glements, saisons et limites \u2014 qu'en anglais. Ce texte demeure donc tel que r\u00e9dig\u00e9 par la province.",
+  stockingData:"Donn\u00e9es d'ensemencement",
   stockingDataNote:"Incluses dans l'application, qui s'ouvre donc sans réseau. Vérifiez auprès de l'Ontario s'il y a de nouvelles données lorsque vous avez du signal.",
   checkStockings:"Vérifier les nouveaux ensemencements",checkingStockings:"Vérification…",
   asOf:"Données d'ensemencement de l'Ontario au",liveData:"Données d'ensemencement de l'Ontario, chargées en direct."
@@ -84,6 +150,19 @@ function setLanguage(lang){
  translateStaticUI();apply();
 }
 function translateStaticUI(){
+ // Everything carrying a data-i18n key. Before this the switch reached eight
+ // elements and roughly a hundred hardcoded English strings sat untouched, so
+ // FR gave you French tabs on an English app.
+ document.querySelectorAll("[data-i18n]").forEach(el=>{el.textContent=t(el.dataset.i18n)});
+ document.querySelectorAll("[data-i18n-ph]").forEach(el=>{el.placeholder=t(el.dataset.i18nPh)});
+ document.querySelectorAll("[data-i18n-aria]").forEach(el=>{el.setAttribute("aria-label",t(el.dataset.i18nAria))});
+ document.querySelectorAll("[data-i18n-within]").forEach(el=>{
+  el.textContent=t("withinKm").replace("{n}",el.dataset.i18nWithin);
+ });
+ document.documentElement.lang=appLang;
+ // Species wheels are rebuilt because their labels are translated while their
+ // values stay English — the filters match on the value, so nothing shifts.
+ if(typeof lakes!=="undefined"&&lakes.length)buildFilters(true);
  const ff=document.querySelector('.tabs button[data-view="findfish"]');
  if(ff)ff.textContent=t("findFish");
  const run=$("runFind");if(run)run.textContent=t("findStocked");
@@ -94,6 +173,11 @@ function translateStaticUI(){
   if(b)b.textContent=tabText[k];
  });
  const tag=$("brandTagline");if(tag)tag.textContent=t("tagline");
+ // The snapshot line is written when data loads, which is usually before the
+ // user ever touches the language toggle. Re-render it here or FR leaves an
+ // English sentence sitting under the dashboard.
+ const age=$("dataAge");
+ if(age&&age.textContent.trim())age.textContent=stockingBuilt?`${t("asOf")} ${stockingBuilt}.`:t("liveData");
  const hb=$("helpBtn");if(hb)hb.setAttribute("aria-label",t("help"));
  const ot=$("onboardTitle");if(ot)ot.textContent=t("onboardTitle");
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
@@ -104,7 +188,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="v1w";
+const APP_VERSION="v1x";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -262,6 +346,30 @@ function refreshLocationQuietly(){
    .catch(()=>{});
  }
 }
+/* ---------------------------------------------------------------------------
+   Species and life-stage names.
+
+   These come out of Ontario's stocking table in English. They are also the
+   words a francophone angler reads on every single card, so leaving them
+   untranslated makes the French build look like a translation that gave up
+   halfway. Twelve species, four stages — the names below follow the usage in
+   Ontario's own French fisheries material.
+
+   A species that is not in this table falls through unchanged, which is the
+   right failure: an English name is honest, an invented French one is not.
+------------------------------------------------------------------------- */
+const SPECIES_FR={
+ "Brook Trout":"Omble de fontaine","Brown Trout":"Truite brune","Rainbow Trout":"Truite arc-en-ciel",
+ "Lake Trout":"Touladi","Aurora Trout":"Omble Aurora","Splake":"Truite moulac",
+ "Walleye":"Doré jaune","Chinook Salmon":"Saumon quinnat","Coho Salmon":"Saumon coho",
+ "Atlantic Salmon":"Saumon atlantique","Lake Whitefish":"Grand corégone","Bluegill":"Crapet arlequin"
+};
+const STAGE_FR={
+ "Yearlings":"Sujets d'un an","Yearling":"Sujet d'un an","Fingerlings":"Fretin",
+ "Fingerling":"Fretin","Adult":"Adulte","Fry":"Alevins"
+};
+function speciesLabel(v){return appLang==="fr"&&SPECIES_FR[v]?SPECIES_FR[v]:v}
+function stageLabel(v){return appLang==="fr"&&STAGE_FR[v]?STAGE_FR[v]:v}
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function name(r){return r.Official_Waterbody_Name||r.Unoffcial_Waterbody_Name||"Unnamed waterbody"}
 function num(v){return Number(v||0).toLocaleString("en-CA",{maximumFractionDigits:0})}
@@ -1096,7 +1204,7 @@ function fillSpecies(){
  rows.forEach(r=>{if(r.Species)set.add(r.Species)});
  lakes.forEach(l=>(l.present||[]).forEach(x=>set.add(x)));
  const all=[...set].sort((a,b)=>a.localeCompare(b));
- const opts=all.map(v=>`<option>${esc(v)}</option>`).join("");
+ const opts=all.map(v=>`<option value="${esc(v)}">${esc(speciesLabel(v))}</option>`).join("");
  const sel=$("species"),find=$("findSpecies");
  if(sel)sel.insertAdjacentHTML("beforeend",opts);
  if(find)find.insertAdjacentHTML("beforeend",opts);
@@ -1130,16 +1238,16 @@ function render(){
  const filtering=!!(($("search").value||"").trim()||$("species").value||$("year").value||$("radius").value);
  document.body.classList.toggle("filtering",filtering&&currentView==="explore");
  const mc=$("mapCount");if(mc)mc.textContent=lakeCount(Math.min(shown.length,400))+" on the map";
- $("listTitle").textContent=currentView==="favorites"?"My Lakes":currentView==="near"?"Stocked lakes near me":currentView==="recentnear"?"Recently stocked within 100 km":currentView==="findfish"?$("listTitle").textContent:"Explore stocked lakes";
+ $("listTitle").textContent=currentView==="favorites"?t("myLakes"):currentView==="near"?t("stockedNearMe"):currentView==="recentnear"?t("recentWithin100"):currentView==="findfish"?$("listTitle").textContent:t("exploreStocked");
  $("results").innerHTML=shown.slice(0,250).map((l,i)=>{
   const latest=l.records.filter(r=>Number(r.Stocking_Year)===l.latestYear),latestFish=latest.reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0),fav=favoriteKeys.has(l.key);
   // An unstocked lake has no year and no stocking totals, so it gets its own
   // pill and its own meta line instead of a row of dashes.
   const listSpecies=l.stocked?l.species:(l.present||[]);
-  const head=listSpecies.length?esc(listSpecies.slice(0,3).join(" • "))+(listSpecies.length>3?` <span class="more">+${listSpecies.length-3}</span>`:"")
-   :`<span class="nospecies">No species recorded</span>`;
+  const head=listSpecies.length?esc(listSpecies.slice(0,3).map(speciesLabel).join(" • "))+(listSpecies.length>3?` <span class="more">+${listSpecies.length-3}</span>`:"")
+   :`<span class="nospecies">${t("noSpeciesRecorded")}</span>`;
   const pill=l.stocked?`<span class="pill">${esc(l.latestYear||"—")}</span>`
-   :`<span class="pill wild">Not stocked</span>`;
+   :`<span class="pill wild">${t("notStocked")}</span>`;
   // Township and distance come first: with three Rice Lakes on screen they
   // are the only things that tell them apart.
   // Township, zone and distance identify the lake. Everything after them is
@@ -1159,7 +1267,7 @@ function render(){
  document.querySelectorAll(".star").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFav(b.dataset.fav)});
  markerLayer.clearLayers();
  fitToResults();
- shown.slice(0,400).forEach(l=>{const m=L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${esc((l.stocked?l.species:(l.present||[])).slice(0,4).join(", "))}<br>${l.stocked?("Latest stocking: "+esc(l.latestYear||"—")):"Not stocked"}`);m.on("click",()=>detail(l))});
+ shown.slice(0,400).forEach(l=>{const m=L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${esc((l.stocked?l.species:(l.present||[])).slice(0,4).map(speciesLabel).join(", "))}<br>${l.stocked?(t("latestStocking")+": "+esc(l.latestYear||"—")):t("notStocked")}`);m.on("click",()=>detail(l))});
 }
 function lakeCount(n){return num(n)+" "+(n===1?"lake":"lakes")}
 
@@ -1544,7 +1652,7 @@ function presentBlock(l){
 
 function detail(l){
  recentLakes=[l.key,...recentLakes.filter(k=>k!==l.key)].slice(0,10);localStorage.setItem("osl-recent",JSON.stringify(recentLakes));
- const fav=favoriteKeys.has(l.key),history=l.records.map(r=>`<div class="historyrow"><div><b>${esc(r.Stocking_Year||"—")}</b><span>${esc(r.Species||"Species unavailable")}</span></div><div class="historyright"><b>${num(r.Number_of_Fish_Stocked)}</b><span>${esc(r.Developmental_Stage||"")}</span></div></div>`).join("");
+ const fav=favoriteKeys.has(l.key),history=l.records.map(r=>`<div class="historyrow"><div><b>${esc(r.Stocking_Year||"—")}</b><span>${esc(r.Species?speciesLabel(r.Species):t("speciesUnavailable"))}</span></div><div class="historyright"><b>${num(r.Number_of_Fish_Stocked)}</b><span>${esc(r.Developmental_Stage?stageLabel(r.Developmental_Stage):"")}</span></div></div>`).join("");
  $("detail").innerHTML=`<div class="detailhead"><div><h2>${esc(l.name)}</h2><div class="species">${esc(l.species.join(" • "))}</div></div><button class="bigstar ${fav?"saved":""}" id="detailFav">${fav?"★":"☆"}</button></div>
  ${whereLine(l)}
  <div class="detailgrid">${l.stocked?`<div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div>`:`<div><small>Stocking</small><b>Not stocked</b></div>`}${l.township?`<div><small>Township</small><b>${esc(townshipLabel(l.township))}</b></div>`:""}${userLoc?`<div><small>Distance from you</small><b>${esc(distanceLabel(l))}</b></div>`:""}${l.district?`<div><small>MNRF district</small><b>${esc(l.district)}</b></div>`:""}
@@ -1606,7 +1714,7 @@ function addCatch(id){
  if($("catchLocation").checked&&navigator.geolocation)navigator.geolocation.getCurrentPosition(p=>finish({lat:p.coords.latitude,lon:p.coords.longitude}),()=>finish(null),{timeout:8000});else finish(null);
 }
 function renderTrips(){
- $("listTitle").textContent="My Fishing Trips";$("count").textContent=`${trips.length} trips`;markerLayer.clearLayers();
+ $("listTitle").textContent=t("myFishingTrips");$("count").textContent=`${trips.length} ${t("tripsCount")}`;markerLayer.clearLayers();
  $("results").innerHTML=trips.length?trips.map(t=>`<article class="record tripcard" data-trip="${t.id}"><div class="topline"><div><h4>${esc(t.lakeName)}</h4><div class="species">${t.ended?"Completed":"Active trip"}</div></div><span class="pill">${t.catches.length} catch${t.catches.length===1?"":"es"}</span></div><div class="meta"><span>🎣 ${new Date(t.started).toLocaleDateString("en-CA")}</span>${t.fmz?`<span>🗺️ FMZ ${t.fmz}</span>`:""}</div></article>`).join(""):`<div class="record empty">No fishing trips yet. Open a lake and tap “Start Fishing Trip.”</div>`;
  document.querySelectorAll("[data-trip]").forEach(e=>e.onclick=()=>openTrip(Number(e.dataset.trip)));
 }
@@ -1816,7 +1924,7 @@ function recentNearMe(){
   currentView="recentnear";$("search").value="";$("species").value="";$("year").value="";$("radius").value="100";
   shown=[...lakes].filter(l=>distance(userLoc[0],userLoc[1],l.lat,l.lon)<=100)
     .sort((a,b)=>b.latestYear-a.latestYear || distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon));
-  $("listTitle").textContent="Recently stocked within 100 km";
+  $("listTitle").textContent=t("recentWithin100");
   render();
  };
  if(!userLoc)locate(run);else run();
@@ -2032,6 +2140,11 @@ function settingsMarkup(){
   <p class="setNote">${t("locationNote")}</p>
   <button id="setLocate" class="ghostbtn wide" type="button">${t("useLocation")}</button>
  </section>
+
+ ${appLang==="fr"?`<section class="setBlock">
+  <h3>${t("language")}</h3>
+  <p class="setNote">${t("regsEnglishNote")}</p>
+ </section>`:""}
 
  <section class="setBlock">
   <h3>${t("stockingData")}</h3>

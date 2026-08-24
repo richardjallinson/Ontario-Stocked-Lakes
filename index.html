@@ -23,14 +23,14 @@
       <h1>Stocked Lakes</h1>
     </div>
     <div class="headerActions">
-      <button id="settingsBtn" class="round" type="button" aria-label="Settings">
+      <button id="settingsBtn" class="round" type="button" aria-label="Settings" data-i18n-aria="settings">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 14.5a1.6 1.6 0 0 0 .33 1.77l.06.06a1.9 1.9 0 1 1-2.7 2.7l-.06-.06a1.6 1.6 0 0 0-1.77-.33 1.6 1.6 0 0 0-.97 1.47v.17a1.9 1.9 0 1 1-3.8 0v-.09a1.6 1.6 0 0 0-1.05-1.47 1.6 1.6 0 0 0-1.77.33l-.06.06a1.9 1.9 0 1 1-2.7-2.7l.06-.06a1.6 1.6 0 0 0 .33-1.77 1.6 1.6 0 0 0-1.47-.97H3.6a1.9 1.9 0 1 1 0-3.8h.09A1.6 1.6 0 0 0 5.16 8.6a1.6 1.6 0 0 0-.33-1.77l-.06-.06a1.9 1.9 0 1 1 2.7-2.7l.06.06a1.6 1.6 0 0 0 1.77.33h.08A1.6 1.6 0 0 0 10.35 3v-.17a1.9 1.9 0 0 1 3.8 0v.09a1.6 1.6 0 0 0 .97 1.47 1.6 1.6 0 0 0 1.77-.33l.06-.06a1.9 1.9 0 1 1 2.7 2.7l-.06.06a1.6 1.6 0 0 0-.33 1.77v.08a1.6 1.6 0 0 0 1.47.97h.17a1.9 1.9 0 1 1 0 3.8h-.09a1.6 1.6 0 0 0-1.47.97Z"/></svg>
       </button>
       <div class="langSwitch" role="group" aria-label="Language / Langue">
         <button id="langEN" class="active" type="button">EN</button>
         <button id="langFR" type="button">FR</button>
       </div>
-      <button id="helpBtn" class="round" type="button" aria-label="Help and about">?</button>
+      <button id="helpBtn" class="round" type="button" aria-label="Help and about" data-i18n-aria="helpAbout">?</button>
     </div>
   </div>
   <div class="tabstrip">
@@ -47,35 +47,35 @@
 </header>
 <main>
 <section class="hero" data-show="explore">
-  <h2>Find your next fishing spot</h2>
+  <h2 data-i18n="heroTitle">Find your next fishing spot</h2>
   <p id="brandTagline">Find stocked lakes. Know the rules. Plan the trip.</p>
   <div class="searchrow">
-    <input id="search" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="Search a lake, township or species">
-    <button id="searchBtn">Search</button>
+    <input id="search" type="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="Search a lake, township or species" data-i18n-ph="searchPh">
+    <button id="searchBtn" data-i18n="search">Search</button>
   </div>
 </section>
 
 <section class="dashboard" id="dashboard" data-show="explore" aria-label="Dataset summary" aria-live="polite">
-  <div><strong id="statLakes">—</strong><span>Stocked lakes</span></div>
-  <div><strong id="statRecords">—</strong><span>Stocking records</span></div>
-  <div><strong id="statSpecies">—</strong><span>Species</span></div>
-  <div><strong id="statLatest">—</strong><span>Latest year</span></div>
+  <div><strong id="statLakes">—</strong><span data-i18n="statLakesLbl">Stocked lakes</span></div>
+  <div><strong id="statRecords">—</strong><span data-i18n="statRecordsLbl">Stocking records</span></div>
+  <div><strong id="statSpecies">—</strong><span data-i18n="statSpeciesLbl">Species</span></div>
+  <div><strong id="statLatest">—</strong><span data-i18n="statLatestLbl">Latest year</span></div>
 </section>
 <p class="dataAge" id="dataAge" data-show="explore"></p>
 
 <section class="quick" data-show="explore">
-  <button id="recentBtn" type="button"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.2 12c0 2.8-3 5.1-6.3 5.1-2.4 0-4.7-1.3-5.9-2.8a.6.6 0 0 1 0-.8c1.2-1.5 3.5-2.8 5.9-2.8 3.3 0 6.3 2.4 6.3 5.1Z" transform="translate(0 -2.4)"/><path d="m15.1 10.9 5-3.1v9.4l-5-3.1"/><circle cx="6.7" cy="10.4" r=".95" stroke="none" fill="currentColor"/></svg></i><b>Recently Stocked</b><span>Newest records first</span></button>
-  <button id="recentNearBtn" type="button"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></i><b>Recent Near Me</b><span>Newest stocked lakes close to you</span></button>
-  <a id="regsBtn" href="https://www.ontario.ca/document/ontario-fishing-regulations-summary" target="_blank" rel="noopener"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.2A1.6 1.6 0 0 1 5.6 3.6H19a.8.8 0 0 1 .8.8v13.8a.8.8 0 0 1-.8.8H5.6A1.6 1.6 0 0 0 4 20.6V5.2Z"/><path d="M4 18.9a1.6 1.6 0 0 1 1.6-1.6h14.2"/><path d="M8.2 8h7.4M8.2 11.4h5.2"/></svg></i><b>2026 Regulations</b><span>Official Ontario fishing rules</span></a>
-  <a id="fishOnlineBtn" href="https://www.ontario.ca/fishonline" target="_blank" rel="noopener"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20.5h17"/><path d="M5.5 20.5V10M18.5 20.5V10M9.8 20.5V10M14.2 20.5V10"/><path d="m12 3.2 8.5 4.6h-17L12 3.2Z"/></svg></i><b>Fish ON-Line</b><span>Government lake information</span></a>
+  <button id="recentBtn" type="button"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.2 12c0 2.8-3 5.1-6.3 5.1-2.4 0-4.7-1.3-5.9-2.8a.6.6 0 0 1 0-.8c1.2-1.5 3.5-2.8 5.9-2.8 3.3 0 6.3 2.4 6.3 5.1Z" transform="translate(0 -2.4)"/><path d="m15.1 10.9 5-3.1v9.4l-5-3.1"/><circle cx="6.7" cy="10.4" r=".95" stroke="none" fill="currentColor"/></svg></i><b data-i18n="recentlyStocked">Recently Stocked</b><span data-i18n="recentlyStockedSub">Newest records first</span></button>
+  <button id="recentNearBtn" type="button"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></i><b data-i18n="recentNear">Recent Near Me</b><span data-i18n="recentNearSub">Newest stocked lakes close to you</span></button>
+  <a id="regsBtn" href="https://www.ontario.ca/document/ontario-fishing-regulations-summary" target="_blank" rel="noopener"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.2A1.6 1.6 0 0 1 5.6 3.6H19a.8.8 0 0 1 .8.8v13.8a.8.8 0 0 1-.8.8H5.6A1.6 1.6 0 0 0 4 20.6V5.2Z"/><path d="M4 18.9a1.6 1.6 0 0 1 1.6-1.6h14.2"/><path d="M8.2 8h7.4M8.2 11.4h5.2"/></svg></i><b data-i18n="regs2026">2026 Regulations</b><span data-i18n="regs2026Sub">Official Ontario fishing rules</span></a>
+  <a id="fishOnlineBtn" href="https://www.ontario.ca/fishonline" target="_blank" rel="noopener"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20.5h17"/><path d="M5.5 20.5V10M18.5 20.5V10M9.8 20.5V10M14.2 20.5V10"/><path d="m12 3.2 8.5 4.6h-17L12 3.2Z"/></svg></i><b>Fish ON-Line</b><span data-i18n="fishOnlineSub">Government lake information</span></a>
 </section>
 
 
 <section class="viewhead" data-show="near" hidden>
-  <h2>Lakes near you</h2>
-  <p>Sorted by how far you'd have to drive.</p>
+  <h2 data-i18n="lakesNearYou">Lakes near you</h2>
+  <p data-i18n="sortedByDrive">Sorted by how far you'd have to drive.</p>
   <div class="viewrow">
-    <label class="inlinefield">Within
+    <label class="inlinefield"><span data-i18n="within">Within</span>
       <select id="nearRadius">
         <option value="25">25 km</option>
         <option value="50" selected>50 km</option>
@@ -83,115 +83,115 @@
         <option value="200">200 km</option>
       </select>
     </label>
-    <button id="nearLocate" class="ghostbtn" type="button">Use my location</button>
+    <button id="nearLocate" class="ghostbtn" type="button" data-i18n="useLocation">Use my location</button>
   </div>
 </section>
 
 <section class="viewhead" data-show="favorites" hidden>
-  <h2>My lakes</h2>
-  <p>Lakes you've saved. Tap ☆ on any lake to keep it here.</p>
+  <h2 data-i18n="myLakes">My lakes</h2>
+  <p data-i18n="myLakesSub">Lakes you've saved. Tap ☆ on any lake to keep it here.</p>
   <div class="viewrow">
     <input id="favSearch" type="search" autocomplete="off" autocorrect="off" autocapitalize="none"
-           spellcheck="false" placeholder="Filter your saved lakes">
+           spellcheck="false" placeholder="Filter your saved lakes" data-i18n-ph="filterSavedPh">
   </div>
 </section>
 
 <section class="viewhead" data-show="trips" hidden>
-  <h2>Trips &amp; catches</h2>
-  <p>Your logbook, stored on this device.</p>
+  <h2 data-i18n="tripsCatches">Trips &amp; catches</h2>
+  <p data-i18n="logbookSub">Your logbook, stored on this device.</p>
 </section>
 
 <section id="findPanel" class="findpanel" data-show="findfish">
-  <div class="findhead"><div><h3>🔎 Find Fish</h3><p>Find which lakes hold a species, near you.</p></div><button id="closeFind">×</button></div>
+  <div class="findhead"><div><h3><span data-i18n="findFishHead">🔎 Find Fish</span></h3><p data-i18n="findFishSub">Find which lakes hold a species, near you.</p></div><button id="closeFind">×</button></div>
   <div class="modeRow" role="group" aria-label="What to search">
-    <button type="button" id="modeAny" class="on">Anywhere the fish are</button>
-    <button type="button" id="modeStocked">Stocked lakes only</button>
+    <button type="button" id="modeAny" class="on" data-i18n="modeAny">Anywhere the fish are</button>
+    <button type="button" id="modeStocked" data-i18n="modeStocked">Stocked lakes only</button>
   </div>
   <p class="panelNote" id="modeNote">Searches provincial fish survey records, not just stocking. Most Ontario fish were never stocked.</p>
   <div class="findgrid">
-    <label>Distance
+    <label><span data-i18n="distance">Distance</span>
       <select id="findRadius">
-        <option value="25">Within 25 km</option>
-        <option value="50" selected>Within 50 km</option>
-        <option value="100">Within 100 km</option>
-        <option value="200">Within 200 km</option>
+        <option value="25" data-i18n-within="25">Within 25 km</option>
+        <option value="50" selected data-i18n-within="50">Within 50 km</option>
+        <option value="100" data-i18n-within="100">Within 100 km</option>
+        <option value="200" data-i18n-within="200">Within 200 km</option>
       </select>
     </label>
-    <label>Species<select id="findSpecies"><option value="">Any species</option></select></label>
-    <label class="stockOnlyField">Stocking year<select id="findYear"><option value="">Any year</option></select></label>
-    <label class="stockOnlyField">Minimum fish stocked<input id="findMinimum" type="number" min="0" step="100" placeholder="e.g. 2000"></label>
-    <label>Lake name<input id="findLake" type="search" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Optional lake name"></label>
-    <label>Sort results
+    <label><span data-i18n="species">Species</span><select id="findSpecies"><option value="" data-i18n="anySpecies">Any species</option></select></label>
+    <label class="stockOnlyField"><span data-i18n="stockingYear">Stocking year</span><select id="findYear"><option value="" data-i18n="anyYear">Any year</option></select></label>
+    <label class="stockOnlyField"><span data-i18n="minimumStocked">Minimum fish stocked</span><input id="findMinimum" type="number" min="0" step="100" placeholder="e.g. 2000"></label>
+    <label><span data-i18n="lakeName">Lake name</span><input id="findLake" type="search" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Optional lake name" data-i18n-ph="optionalLakePh"></label>
+    <label><span data-i18n="sortResults">Sort results</span>
       <select id="findSort"><option value="closest" selected>Closest</option><option value="best">Best Match</option><option value="recent">Most recently stocked</option><option value="quantity">Most fish stocked</option></select>
     </label>
   </div>
-  <label class="checkline"><input id="findAccess" type="checkbox"> Only lakes with a nearby fishing access point</label>
+  <label class="checkline"><input id="findAccess" type="checkbox"> <span data-i18n="onlyAccess">Only lakes with a nearby fishing access point</span></label>
   <div class="findActions">
-    <button id="resetFind" class="ghostbtn" type="button">Reset</button>
+    <button id="resetFind" class="ghostbtn" type="button" data-i18n="reset">Reset</button>
     <button id="runFind" class="runfind">Find Fish Near Me</button>
   </div>
 </section>
 <section class="filters" data-show="explore favorites">
-  <select id="species"><option value="">All species</option></select>
-  <select id="year"><option value="">All years</option></select>
+  <select id="species"><option value="" data-i18n="allSpecies">All species</option></select>
+  <select id="year"><option value="" data-i18n="allYears">All years</option></select>
   <select id="radius">
-    <option value="">Any distance</option><option value="25">Within 25 km</option><option value="50">Within 50 km</option><option value="100">Within 100 km</option><option value="200">Within 200 km</option>
+    <option value="" data-i18n="anyDistance">Any distance</option><option value="25" data-i18n-within="25">Within 25 km</option><option value="50" data-i18n-within="50">Within 50 km</option><option value="100" data-i18n-within="100">Within 100 km</option><option value="200" data-i18n-within="200">Within 200 km</option>
   </select>
-  <button id="clearFilters" class="clearbtn">Clear</button>
+  <button id="clearFilters" class="clearbtn" data-i18n="clear">Clear</button>
 </section>
 <section class="filters wideline" data-show="explore favorites">
-  <label class="checkline inlinecheck"><input type="checkbox" id="showUnstocked" checked> Include lakes that aren't stocked</label>
-  <p class="filterHint" id="filterHint" hidden>Filters changed — tap Search to apply.</p>
+  <label class="checkline inlinecheck"><input type="checkbox" id="showUnstocked" checked> <span data-i18n="includeUnstocked">Include lakes that aren't stocked</span></label>
+  <p class="filterHint" id="filterHint" hiddendata-i18n="filtersChanged">Filters changed — tap Search to apply.</p>
 </section>
 
 
-<div class="sectiontitle" data-show="explore findfish near favorites trips"><h3 id="listTitle">Explore stocked lakes</h3><span id="count">Loading…</span></div>
+<div class="sectiontitle" data-show="explore findfish near favorites trips"><h3 id="listTitle">Explore stocked lakes</h3><span id="count" data-i18n="loading">Loading…</span></div>
 <section id="results" class="results" data-show="explore findfish near favorites trips"></section>
 
 <section class="mapcontrols" data-show="explore findfish near">
   <div class="accessbar">
-    <label><input type="checkbox" id="showAccess"> <i class="ti"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.2 15.6h17.6l-2.2 4H5.4l-2.2-4Z"/><path d="M6 15.6V9.4h9.2l3.4 6.2"/><path d="M10.6 9.4V6.2h3"/></svg></i><b>Show fishing access points</b></label>
-    <span id="accessStatus">Boat launches • shore access • docks/piers</span>
+    <label><input type="checkbox" id="showAccess"> <i class="ti"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.2 15.6h17.6l-2.2 4H5.4l-2.2-4Z"/><path d="M6 15.6V9.4h9.2l3.4 6.2"/><path d="M10.6 9.4V6.2h3"/></svg></i><b data-i18n="showAccess">Show fishing access points</b></label>
+    <span id="accessStatus" data-i18n="accessStatus">Boat launches • shore access • docks/piers</span>
   </div>
   <div class="accessbar">
-    <label><input type="checkbox" id="showFMZ"> <i class="ti"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3.5 3.8 5.6a1 1 0 0 0-.6.9v13a.6.6 0 0 0 .85.55L9 18l6 2.5 5.2-2.1a1 1 0 0 0 .6-.9v-13a.6.6 0 0 0-.85-.55L15 6 9 3.5Z"/><path d="M9 3.5V18M15 6v14.5"/></svg></i><b>Show Fisheries Management Zones</b></label>
+    <label><input type="checkbox" id="showFMZ"> <i class="ti"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3.5 3.8 5.6a1 1 0 0 0-.6.9v13a.6.6 0 0 0 .85.55L9 18l6 2.5 5.2-2.1a1 1 0 0 0 .6-.9v-13a.6.6 0 0 0-.85-.55L15 6 9 3.5Z"/><path d="M9 3.5V18M15 6v14.5"/></svg></i><b data-i18n="showFMZ">Show Fisheries Management Zones</b></label>
     <span id="fmzStatus">Ontario FMZ 1–20</span>
   </div>
   <div class="accessbar">
-    <label><input type="checkbox" id="showDepth"> <i class="ti"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.4c2-1.6 3.4-1.6 5.4 0s3.4 1.6 5.4 0 3.4-1.6 5.4 0"/><path d="M3 13c2-1.6 3.4-1.6 5.4 0s3.4 1.6 5.4 0 3.4-1.6 5.4 0"/><path d="M3 17.6c2-1.6 3.4-1.6 5.4 0s3.4 1.6 5.4 0 3.4-1.6 5.4 0"/></svg></i><b>Show lake depth contours</b></label>
-    <span id="depthStatus">Government bathymetry • not for navigation</span>
+    <label><input type="checkbox" id="showDepth"> <i class="ti"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.4c2-1.6 3.4-1.6 5.4 0s3.4 1.6 5.4 0 3.4-1.6 5.4 0"/><path d="M3 13c2-1.6 3.4-1.6 5.4 0s3.4 1.6 5.4 0 3.4-1.6 5.4 0"/><path d="M3 17.6c2-1.6 3.4-1.6 5.4 0s3.4 1.6 5.4 0 3.4-1.6 5.4 0"/></svg></i><b data-i18n="showDepth">Show lake depth contours</b></label>
+    <span id="depthStatus" data-i18n="depthStatus">Government bathymetry • not for navigation</span>
   </div>
 </section>
 
 <section class="mapcard" data-show="explore findfish near favorites">
   <div class="maphead">
-    <b>Lake map</b>
+    <b data-i18n="lakeMap">Lake map</b>
     <div class="baseSwitch" role="group" aria-label="Basemap">
-      <button type="button" data-base="map" class="on">Map</button>
-      <button type="button" data-base="topo">Topo</button>
-      <button type="button" data-base="plain">Plain</button>
+      <button type="button" data-base="map" class="on" data-i18n="baseMap">Map</button>
+      <button type="button" data-base="topo" data-i18n="baseTopo">Topo</button>
+      <button type="button" data-base="plain" data-i18n="basePlain">Plain</button>
     </div>
   </div>
-  <div class="mapsub"><span id="mapCount">Tap a marker for details</span></div>
+  <div class="mapsub"><span id="mapCount" data-i18n="tapMarker">Tap a marker for details</span></div>
   <div id="mapNotice" class="mapNotice hidden"></div>
   <div id="map"></div>
 </section>
 
 <section id="resourcesPanel" class="resourcesPanel" data-show="resources" hidden>
-  <h3>Official Ontario sources</h3>
-  <p class="panelNote">Regulations in this app are a summary. These are the authoritative sources — open them before you fish.</p>
+  <h3 data-i18n="officialSources">Official Ontario sources</h3>
+  <p class="panelNote" data-i18n="regsSummaryNote">Regulations in this app are a summary. These are the authoritative sources — open them before you fish.</p>
   <a class="resourceLink" href="https://www.ontario.ca/document/ontario-fishing-regulations-summary" target="_blank" rel="noopener">
-    <b>2026 Fishing Regulations Summary</b><span>Seasons, limits and slot sizes by zone</span></a>
+    <b data-i18n="regsSummaryTitle">2026 Fishing Regulations Summary</b><span data-i18n="regsSummarySub">Seasons, limits and slot sizes by zone</span></a>
   <a class="resourceLink" href="https://www.ontario.ca/fishonline" target="_blank" rel="noopener">
-    <b>Fish ON-Line</b><span>Government lake information and maps</span></a>
+    <b>Fish ON-Line</b><span data-i18n="fishOnlineSub2">Government lake information and maps</span></a>
   <a class="resourceLink" href="https://www.ontario.ca/page/fishing-licence" target="_blank" rel="noopener">
-    <b>Fishing licences</b><span>Buy or renew an Outdoors Card and licence</span></a>
+    <b data-i18n="licences">Fishing licences</b><span data-i18n="licencesSub">Buy or renew an Outdoors Card and licence</span></a>
   <a class="resourceLink" href="https://www.ontario.ca/page/fish-consumption-report" target="_blank" rel="noopener">
-    <b>Guide to Eating Ontario Fish</b><span>Consumption advisories by waterbody</span></a>
+    <b data-i18n="eatingGuide">Guide to Eating Ontario Fish</b><span data-i18n="eatingGuideSub">Consumption advisories by waterbody</span></a>
   <a class="resourceLink" href="https://weather.gc.ca/" target="_blank" rel="noopener">
-    <b>Environment Canada weather</b><span>Forecasts and marine warnings</span></a>
+    <b data-i18n="ecWeather">Environment Canada weather</b><span data-i18n="ecWeatherSub">Forecasts and marine warnings</span></a>
   <a class="resourceLink" href="https://data.ontario.ca/en/dataset/recreational-fishing-regulations-data" target="_blank" rel="noopener">
-    <b>Ontario Open Data</b><span>The datasets behind this app</span></a>
+    <b data-i18n="openData">Ontario Open Data</b><span data-i18n="openDataSub">The datasets behind this app</span></a>
 </section>
 </main>
 
@@ -203,8 +203,8 @@
 </div></div>
 
 <footer>
-  Fish stocking, regulations and advisory data: Government of Ontario. Weather alerts: Environment and Climate Change Canada.<br>
-  Not an official Government of Ontario application. Always confirm the current regulations before you fish.
+  <span data-i18n="footerSources">Fish stocking, regulations and advisory data: Government of Ontario. Weather alerts: Environment and Climate Change Canada.</span><br>
+  <span data-i18n="footerDisclaimer">Not an official Government of Ontario application. Always confirm the current regulations before you fish.</span>
 </footer>
 
 <div id="onboarding" class="onboarding hidden" role="dialog" aria-modal="true">
@@ -216,7 +216,7 @@
     <div class="onboardSteps">
       <div><b>1</b><span id="onboardStep1">Choose a distance and species</span></div>
       <div><b>2</b><span id="onboardStep2">Compare stocked lakes</span></div>
-      <div><b>3</b><span id="onboardStep3">Open a lake and verify the current rules</span></div>
+      <div><b>3</b><span id="onboardStep3" data-i18n="onboard3">Open a lake and verify the current rules</span></div>
     </div>
     <button id="startExploring" class="primaryModalAction" type="button">Start Exploring</button>
   </div>
