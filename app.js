@@ -283,7 +283,7 @@ function translateStaticUI(){
  if(note)note.textContent=t(findMode==="stocked"?"modeNoteStocked":"modeNoteAny");
 }
 
-const APP_VERSION="v2d";
+const APP_VERSION="v2f";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -785,7 +785,7 @@ function adviceFor(loc,species,length){
 function advisoryPanel(l){
  if(!advisoriesLoaded)return `<div class="historynote">Consumption-advisory data is loading.</div>`;
  const matches=l.advisoryMatches||[];
- if(matches.length!==1)return `<div class="historynote">${matches.length>1?"More than one Ontario Fish Guide location has this waterbody name, so V1K will not guess which advisory applies.":"No exact-name Ontario Fish Guide advisory location was matched to this lake."} Use Ontario's official Fish Guide to verify the location.</div><a class="secondaryAction" target="_blank" rel="noopener" href="https://www.ontario.ca/page/fish-consumption-report">Open Ontario Fish Guide</a>`;
+ if(matches.length!==1)return `<div class="historynote">${matches.length>1?"More than one Ontario Fish Guide location has this waterbody name, so this app will not guess which advisory applies.":"No exact-name Ontario Fish Guide advisory location was matched to this lake."} Use Ontario's official Fish Guide to verify the location.</div><a class="secondaryAction" target="_blank" rel="noopener" href="https://www.ontario.ca/page/fish-consumption-report">Open Ontario Fish Guide</a>`;
  const loc=matches[0],species=[...new Set(loc.advisories.map(a=>a.species))].sort();
  return `<div class="advisorybox"><b>${esc(loc.name)}</b>${loc.desc?`<span>${esc(loc.desc)}</span>`:""}<label>Fish species<select id="advSpecies">${species.map(s=>`<option>${esc(s)}</option>`).join("")}</select></label><label>Fish length (cm)<input id="advLength" type="number" min="1" step="1" placeholder="e.g. 42"></label><button id="checkAdvice">Check Eating Advice</button><div id="adviceResult"></div></div><a class="secondaryAction" target="_blank" rel="noopener" href="https://www.ontario.ca/page/fish-consumption-report">Verify in Official Ontario Fish Guide</a>`;
 }
@@ -1232,6 +1232,23 @@ async function speciesLookupFor(q){
 --------------------------------------------------------------------------- */
 let filtersDirty=false;
 
+/* The staged group — search text, species, year, Explore's own radius —
+   only takes effect when Search is pressed or Clear is used. apply() used to
+   read these controls' live DOM values directly, which meant switching tabs
+   (setView calls apply() unconditionally) silently applied whatever was
+   sitting unsubmitted in the box: the Search button still showed "pending",
+   nothing had been confirmed, and the list changed anyway. committed is the
+   snapshot apply() actually filters against; only commitFilters() advances
+   it, and only from a real submission — a Search press, Clear, or an
+   intentionally-immediate control like Near Me's own radius picker. */
+let committed={q:"",sp:"",yr:"",radius:0};
+function commitFilters(){
+ committed.q=$("search")?$("search").value:"";
+ committed.sp=$("species")?$("species").value:"";
+ committed.yr=$("year")?$("year").value:"";
+ committed.radius=Number($("radius")?$("radius").value:0)||0;
+}
+
 function markFiltersDirty(){
  filtersDirty=true;
  const btn=$("searchBtn"),hint=$("filterHint");
@@ -1249,6 +1266,7 @@ function clearFiltersDirty(){
 /* The one place a search actually happens. */
 async function runSearch(){
  clearFiltersDirty();
+ commitFilters();
  const radius=$("radius")?$("radius").value:"";
  // A distance filter is meaningless without a position, so ask once, here,
  // rather than the moment the dropdown changed.
@@ -1491,7 +1509,7 @@ function fillSpecies(){
 
 function apply(){
  if(currentView==="trips"){renderTrips();return}
- const q=(currentView==="favorites"&&$("favSearch")?$("favSearch").value:$("search").value).trim().toLowerCase(),sp=$("species").value,yr=$("year").value,radius=Number($("radius").value)||0;
+ const q=(currentView==="favorites"&&$("favSearch")?$("favSearch").value:committed.q).trim().toLowerCase(),sp=committed.sp,yr=committed.yr,radius=committed.radius;
  shown=lakes.filter(l=>{
   if(currentView==="favorites"&&!favoriteKeys.has(l.key))return false;
   if(!showUnstocked()&&!l.stocked)return false;
@@ -1650,8 +1668,6 @@ function regulationUrl(l){return l.fmz?`${REGS_BASE}${l.fmz}`:"https://www.ontar
 const ONTARIO_REGS_DATASET_URL="https://data.ontario.ca/en/dataset/recreational-fishing-regulations-data";
 const ONTARIO_REGS_SUMMARY_URL="https://www.ontario.ca/document/ontario-fishing-regulations-summary";
 const ONTARIO_REGS_UPDATED="2026-08-04";
-const REG_ENGINE_VERSION="V1O";
-
 const ECCC_ALERTS_API="https://api.weather.gc.ca/collections/weather-alerts/items";
 const ECCC_WEATHER_HOME="https://weather.gc.ca/";
 
@@ -1742,13 +1758,13 @@ function exactRuleCard(l,species){
  if(r.status==="zone"){
   return `<div class="regCard verified"><div class="regTitle"><b>🎣 ${esc(r.species)} — FMZ ${l.fmz}</b><span>Verified zone-wide 2026 rule</span></div>
   <div class="regGrid exact"><div><small>${t("sportLimit")}</small><b>${esc(r.rule.sport)}</b></div><div><small>${t("conservationLimit")}</small><b>${esc(r.rule.conservation)}</b></div><div><small>Slot / size</small><b>${esc(r.rule.size)}</b></div><div><small>${t("season")}</small><b>${esc(r.rule.season)}</b></div></div>
-  <p class="regWarning">These are catch/possession limits for the selected licence type. Zone-wide rule shown only when V1O has not identified a packaged waterbody exception. Fish sanctuaries, bait/gear rules and variation orders can still override normal rules.</p>
+  <p class="regWarning">These are catch/possession limits for the selected licence type. Zone-wide rule shown only when the app has not identified a packaged waterbody exception. Fish sanctuaries, bait/gear rules and variation orders can still override normal rules.</p>
   <div class="sourceStamp">Ontario 2026 regulations • current-summary check: Aug. 4, 2026</div>
   <a target="_blank" rel="noopener" href="${officialRuleSource(l)}">Verify Current FMZ ${l.fmz} Regulations</a></div>`;
  }
  if(r.status==="exception"){
   return `<div class="regCard exception"><div class="regTitle"><b>⚠️ ${esc(r.species)} — special waterbody</b><span>Exception check required</span></div>
-  <p>This lake is identified in the packaged Ontario waterbody-exception index for FMZ ${l.fmz}. V1O will not substitute the normal zone-wide limit, season or slot size.</p><div class="exceptionChecklist"><span>✓ Zone identified</span><span>✓ Species identified</span><span>⚠ Waterbody exception applies</span></div><a target="_blank" rel="noopener" href="${officialRuleSource(l)}">Open Exact Ontario Exception</a></div>`;
+  <p>This lake is identified in the packaged Ontario waterbody-exception index for FMZ ${l.fmz}. The app will not substitute the normal zone-wide limit, season or slot size.</p><div class="exceptionChecklist"><span>✓ Zone identified</span><span>✓ Species identified</span><span>⚠ Waterbody exception applies</span></div><a target="_blank" rel="noopener" href="${officialRuleSource(l)}">Open Exact Ontario Exception</a></div>`;
  }
  return regulationCard(l,r.species);
 }
@@ -1764,7 +1780,7 @@ function regulationCard(l,species){
      <div><small>Slot / size</small><b>Check zone + exception</b></div>
      <div><small>${t("season")}</small><b>Check current dates</b></div>
    </div>
-   <p class="regWarning">This species/FMZ combination has not yet been packaged as a verified numeric rule. Ontario rules can also be overridden by species exceptions, waterbody exceptions, fish sanctuaries and variation orders. V1O will not display a guessed legal limit.</p>
+   <p class="regWarning">This species/FMZ combination has not yet been packaged as a verified numeric rule. Ontario rules can also be overridden by species exceptions, waterbody exceptions, fish sanctuaries and variation orders. The app will not display a guessed legal limit.</p>
    <div class="regActions"><a target="_blank" rel="noopener" href="${officialRuleSource(l)}">Open FMZ ${l.fmz} Current Rules</a><a target="_blank" rel="noopener" href="${ONTARIO_REGS_DATASET_URL}">Ontario 2026 Regulation Dataset</a></div>
  </div>`;
 }
@@ -2246,6 +2262,7 @@ function renderFindResults(sp,yr){
 function recentNearMe(){
  const run=()=>{
   currentView="recentnear";$("search").value="";$("species").value="";$("year").value="";$("radius").value="100";
+  commitFilters();
   shown=[...lakes].filter(l=>distance(userLoc[0],userLoc[1],l.lat,l.lon)<=100)
     .sort((a,b)=>b.latestYear-a.latestYear || distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon));
   $("listTitle").textContent=t("recentWithin100");
@@ -2276,7 +2293,12 @@ function setView(v){
  if(v==="resources")return;
  if(v==="trips")return renderTrips();
  if(v==="near"){
-  const r=$("nearRadius");if(r)$("radius").value=r.value;
+  // #radius is one shared setting between Explore and Near Me — Near Me's own
+  // selector writes into the same field, so the committed snapshot has to
+  // follow this sync too, or a later Search press on Explore would silently
+  // pick up whatever radius Near Me last set rather than what Explore's own
+  // dropdown shows.
+  const r=$("nearRadius");if(r){$("radius").value=r.value;committed.radius=Number(r.value)||0;}
   if(!userLoc)locate(apply);
  }
  apply();
@@ -2286,7 +2308,7 @@ function syncTabs(){
  const map={recentnear:"near",findfish:"findfish"};
  setView(map[currentView]||currentView);
 }
-const nr=$("nearRadius");if(nr)nr.onchange=()=>{$("radius").value=nr.value;if(!userLoc)locate(apply);else apply()};
+const nr=$("nearRadius");if(nr)nr.onchange=()=>{$("radius").value=nr.value;committed.radius=Number(nr.value)||0;if(!userLoc)locate(apply);else apply()};
 const nl=$("nearLocate");if(nl)nl.onclick=()=>locate(apply);
 const fs2=$("favSearch");if(fs2)fs2.oninput=()=>{clearTimeout(fs2._t);fs2._t=setTimeout(apply,200)};
 $("showAccess").onchange=()=>{$("showAccess").checked?loadAccess():renderAccess()};
@@ -2331,13 +2353,13 @@ const su=$("showUnstocked");if(su)su.onchange=markFiltersDirty;
  if(stk)stk.onclick=()=>setMode("stocked");
  setMode("any");
 }
-$("clearFilters").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";const u=$("showUnstocked");if(u)u.checked=true;clearFiltersDirty();apply()};
+$("clearFilters").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";const u=$("showUnstocked");if(u)u.checked=true;clearFiltersDirty();commitFilters();apply()};
 
 
 $("closeFind").onclick=()=>{$("findPanel").classList.remove("open");setView("explore")};
 $("runFind").onclick=runFindFish;
 $("recentNearBtn").onclick=recentNearMe;
-$("recentBtn").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";currentView="explore";shown=[...lakes].sort((a,b)=>b.latestYear-a.latestYear);render()};
+$("recentBtn").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";commitFilters();currentView="explore";shown=[...lakes].sort((a,b)=>b.latestYear-a.latestYear);render()};
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
 $("closeSheet").onclick=()=>$("sheet").classList.add("hidden");
 $("closeTrip").onclick=()=>$("tripSheet").classList.add("hidden");$("tripSheet").onclick=e=>{if(e.target===$("tripSheet"))$("tripSheet").classList.add("hidden")};$("sheet").onclick=e=>{if(e.target===$("sheet"))$("sheet").classList.add("hidden")};

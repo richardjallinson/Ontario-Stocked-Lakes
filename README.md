@@ -136,5 +136,5 @@ their own licences, above.
 
 ---
 
-**Version v2d.** `APP_VERSION` in `app.js` and `VERSION` in `sw.js` both read
-`v2d` and must always match. See [CHANGELOG.md](CHANGELOG.md) for what changed.
+**Version v2f.** `APP_VERSION` in `app.js` and `VERSION` in `sw.js` both read
+`v2f` and must always match. See [CHANGELOG.md](CHANGELOG.md) for what changed.

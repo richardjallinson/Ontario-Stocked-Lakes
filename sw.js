@@ -3,7 +3,7 @@
    load isn't blocked on ~12 MB. Live government API calls always go to the
    network so regulations and advisories are never served stale. */
 
-const VERSION = "v2d";
+const VERSION = "v2f";
 const SHELL = `osl-shell-${VERSION}`;
 const DATA  = `osl-data-${VERSION}`;
 
@@ -15,6 +15,7 @@ const SHELL_FILES = [
   "./manifest.webmanifest",
   "./vendor/leaflet/leaflet.css",
   "./vendor/leaflet/leaflet.js",
+  "./icons/header-mark.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./privacy.html",

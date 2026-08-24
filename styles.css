@@ -632,3 +632,37 @@ body.filtering .sectiontitle{margin-top:14px}
  .plate img,.findPlate img{animation:plateIn .32s ease-out both}
 }
 @keyframes plateIn{from{opacity:0;transform:scale(1.015)}to{opacity:1;transform:none}}
+
+
+/* ---------------------------------------------------------------------------
+   Header mark.
+
+   The brand sits in its own flex row alongside the illustration so the mark
+   and the wordmark centre on each other, independent of .headerTop's
+   flex-start alignment. 54px keeps the mark inside the header's existing
+   height, so it costs nothing on screen — the header stays 121pt and this is
+   a sticky element on every view.
+
+   The title drops 23px -> 20px because four controls plus the mark leave
+   roughly 155pt for it; at 23px "Stocked Lakes" is clipped. Measured, not
+   guessed. The controls stay at 36px: shrinking them further buys space but
+   moves toward the tap-target floor, which matters for a glove at the lake.
+   --------------------------------------------------------------------------- */
+.oslWrap{display:flex;align-items:center;gap:9px;min-width:0;flex:0 1 auto}
+.oslMark{height:54px;width:auto;flex:0 0 auto;display:block}
+.headerTop{gap:9px}
+.headerBrand h1{font-size:20px}
+/* The control cluster has to give back the width the mark takes, or the
+   title clips. Measured at 320px and 390px, not assumed. */
+.headerActions{gap:5px}
+.langSwitch button{padding:0 9px}
+
+/* 320px is still a live width (the older SE), and there a mark, a full title
+   and four controls genuinely do not fit together. The mark is the thing that
+   gives way — it is decoration, the wordmark is not. Dropping it and taking
+   the title to 18px also fixes a clip that predates the mark: at 23px
+   "Stocked Lakes" needed 143px and had 107, so it was already truncating. */
+@media(max-width:360px){
+  .oslMark{display:none}
+  .headerBrand h1{font-size:18px}
+}
