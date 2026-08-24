@@ -55,16 +55,40 @@ Enable it under **Settings → Pages → Source: GitHub Actions**.
 | `styles.css` | Styles |
 | `sw.js` | Service worker: shell precache, on-demand dataset cache |
 | `manifest.webmanifest` | PWA manifest |
+| `ontario-waterbodies.json` | Aquatic Resource Area index — every named lake (~2 MB) |
+| `ontario-stocking.json` | Bundled stocking snapshot (~2 MB) |
 | `ontario-regulations-2026.json` | Imported 2026 regulation summary (~1 MB) |
 | `fish-advisories-2025.json` | Fish consumption advisory locations (~11 MB) |
+| `ontario-places.json` | GeoNames town gazetteer, for "12 km N of Apsley" |
+| `ontario-nearby.json` | OpenStreetMap camping and lodging within 10 km |
 | `icons/` | App icons |
+| `vendor/leaflet/` | Vendored Leaflet — no CDN at runtime |
 | `scripts/fetch-vendor.sh` | Downloads Leaflet into `vendor/` |
+
+### Bundled data
+
+These are built once on a machine with a network and committed, so the app
+opens and searches with no signal. Rebuild them from `tools/`:
+
+| File | Tool | Source |
+| --- | --- | --- |
+| `ontario-waterbodies.json` | `build-waterbodies.py` | Ontario Aquatic Resource Area |
+| `ontario-stocking.json` | `build-stocking.py` | Ontario fish stocking table |
+| `ontario-places.json` | `build-gazetteer.py` | GeoNames (CC-BY) |
+| `ontario-nearby.json` | `build-nearby.py` | OpenStreetMap (ODbL) |
+
+The waterbody index is what makes the app cover the province rather than only
+the lakes somebody has stocked. It also decides what a lake sheet lists:
+baitfish and the family-level survey placeholders are hidden from display, and
+when that empties a list the app says which of the three reasons applies rather
+than implying the lake holds no fish. See `HIDDEN_SPECIES` and `speciesGap()`
+in `app.js`.
 
 ### Live data sources
 
 The app calls these at runtime; nothing is proxied and no API keys are needed.
 
-- **Fish stocking** — ArcGIS FeatureServer, current and historical stocking records
+- **Fish stocking** — ArcGIS FeatureServer, used to refresh the bundled snapshot on demand
 - **Fishing access points** — Protected fishing access FeatureServer
 - **Fisheries Management Zones, lake surveys, bathymetry** — Ontario LIO Open Data services
 - **Weather alerts** — [Environment and Climate Change Canada GeoMet API](https://api.weather.gc.ca)
@@ -75,7 +99,7 @@ The app calls these at runtime; nothing is proxied and no API keys are needed.
 
 ## Features
 
-- Search stocked lakes by name, township or species
+- Search every named Ontario lake by name, township or species — stocked or not
 - Find Fish: distance, species, stocking year, minimum quantity, access filter, Best Match ranking
 - Map layers: fishing access points, Fisheries Management Zones, depth contours
 - Per-lake detail: stocking history, observed species, regulations, access, depth, consumption advice, weather alerts
@@ -109,3 +133,8 @@ Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Source code is [MIT](LICENSE). The bundled government datasets are covered by
 their own licences, above.
+
+---
+
+**Version v1z.** `APP_VERSION` in `app.js` and `VERSION` in `sw.js` both read
+`v1z` and must always match. See [CHANGELOG.md](CHANGELOG.md) for what changed.

@@ -1,6 +1,45 @@
 
 const I18N={
  en:{
+  // Survey / species-presence wording. Three distinct facts — see speciesGap().
+  fishPresentHead:"Fish species present",
+  fishPresentSub:"Species recorded in Ontario's Aquatic Resource Area surveys.",
+  fishPresentSeparate:"Separate from the stocking history below.",
+  fishPresentTap:"Tap one for its limits and season.",
+  surveyNone:"No fish survey has been published for this waterbody. That means no data, not an empty lake.",
+  surveyForageOnly:"This lake has been surveyed, but the only species recorded were baitfish and forage fish, which this app does not list. That is a record of what the crew netted, not a full picture of the lake.",
+  surveyUnidentified:"This lake has been surveyed, but the records are not identified to species — only to a family or genus. There are fish here; Ontario's data does not say which.",
+  headForageOnly:"Forage species only",
+  headUnidentified:"Not identified to species",
+  metaNoSurvey:"No survey data",
+  metaForageOnly:"Forage species only",
+  metaUnidentified:"Not identified to species",
+  speciesRecordedOne:"species recorded",
+  speciesRecordedMany:"species recorded",
+  maxDepth:"Maximum depth",meanDepth:"Mean depth",surfaceArea:"Surface area",
+  waterClarity:"Water clarity",thermalRegime:"Thermal regime",
+  // Status and progress lines
+  loadingData:"Loading Ontario data…",loadingRecords:"Loading…",searchingOntario:"Searching Ontario…",
+  searchingAllLakes:"Searching all Ontario lakes…",searchingFor:"Searching Ontario for {sp}…",
+  loadingZones:"Loading Ontario FMZ boundaries…",zonesRetry:"Zone boundaries unavailable — retrying",
+  zonesUnavailable:"Zone boundaries unavailable",loadingAccess:"Loading Ontario access points…",
+  accessUnavailable:"Access-point service unavailable",findingLocation:"Finding your location…",
+  locationUnavailable:"Location unavailable",
+  contoursOn:"Depth contours on • not for navigation",
+  bathyNote:"Government bathymetry • not for navigation",
+  // Find Fish mode note
+  modeNoteAny:"Searches provincial fish survey records, not just stocking. Most Ontario fish were never stocked.",
+  modeNoteStocked:"Only lakes with a stocking record for this species.",
+  // Catch log
+  catchSpeciesPh:"Species e.g. Walleye",catchLengthPh:"Length cm",catchNotesPh:"Catch notes (optional)",
+  tripNotesPh:"Trip notes",enterSpecies:"Enter the fish species.",minimumPh:"e.g. 2000",
+  // Result cards
+  badgeBestMatch:"Best Match",recordedNotStocked:"Recorded here (not stocked)",
+  fishStocked:"fish stocked",kmAway:"km away",records:"records",
+  explore:"Explore",nearMe:"Near Me",sections:"Sections",
+  noLakeWithSpecies:"No lake within {r} km has {sp} on record. Try a wider distance — or the species may simply not have been surveyed nearby.",
+  noLakesWithin:"No lakes found within {r} km.",
+  weatherAlert:"Weather alert",lakeArea:"Lake area",
   findFish:"Find Fish",distance:"Distance",species:"Species",stockingYear:"Stocking year",
   minimumStocked:"Minimum fish stocked",lakeName:"Lake name",sortResults:"Sort results",
   bestMatch:"Best Match",closest:"Closest",recent:"Most recently stocked",quantity:"Most fish stocked",
@@ -26,7 +65,7 @@ const I18N={
   dataSources:"Government data sources",disclaimer:"Not an official Government of Ontario app.",
   yourData:"Your data",yourDataText:"Trips, catches and saved lakes stay on this device. Save a backup before you change or reset your device.",
   exportData:"Save a backup",importData:"Restore a backup",
-  settings:"Settings",textSize:"Text size",textSizeNote:"Larger text throughout the app. Useful in bright sun or on the water.",
+  textSize:"Text size",textSizeNote:"Larger text throughout the app. Useful in bright sun or on the water.",
   sizePreview:"Brook Trout • stocked 2025 • 4,200 fish",
   location:"Location",locationNote:"Used on this device to sort lakes by distance. Never sent anywhere.",
   useLocation:"Use my location",
@@ -71,6 +110,46 @@ const I18N={
   asOf:"Ontario stocking data as of",liveData:"Ontario stocking data, loaded live."
  },
  fr:{
+  // Formulation des relev\u00e9s d'esp\u00e8ces \u2014 trois faits distincts, voir speciesGap().
+  fishPresentHead:"Esp\u00e8ces de poissons pr\u00e9sentes",
+  fishPresentSub:"Esp\u00e8ces r\u00e9pertori\u00e9es dans les relev\u00e9s des aires de ressources aquatiques de l'Ontario.",
+  fishPresentSeparate:"Distinct de l'historique d'ensemencement ci-dessous.",
+  fishPresentTap:"Touchez une esp\u00e8ce pour conna\u00eetre ses limites et sa saison.",
+  surveyNone:"Aucun relev\u00e9 de poissons n'a \u00e9t\u00e9 publi\u00e9 pour ce plan d'eau. Cela signifie qu'il n'y a pas de donn\u00e9es, et non que le lac est vide.",
+  surveyForageOnly:"Ce lac a fait l'objet d'un relev\u00e9, mais les seules esp\u00e8ces r\u00e9pertori\u00e9es \u00e9taient des poissons-app\u00e2ts et des poissons fourrages, que cette application ne r\u00e9pertorie pas. Il s'agit du relev\u00e9 des captures de l'\u00e9quipe, et non d'un portrait complet du lac.",
+  surveyUnidentified:"Ce lac a fait l'objet d'un relev\u00e9, mais les donn\u00e9es ne pr\u00e9cisent pas l'esp\u00e8ce \u2014 seulement la famille ou le genre. Il y a des poissons ici; les donn\u00e9es de l'Ontario ne disent pas lesquels.",
+  headForageOnly:"Poissons fourrages seulement",
+  headUnidentified:"Esp\u00e8ce non pr\u00e9cis\u00e9e",
+  metaNoSurvey:"Aucun relev\u00e9",
+  metaForageOnly:"Poissons fourrages seulement",
+  metaUnidentified:"Esp\u00e8ce non pr\u00e9cis\u00e9e",
+  speciesRecordedOne:"esp\u00e8ce r\u00e9pertori\u00e9e",
+  speciesRecordedMany:"esp\u00e8ces r\u00e9pertori\u00e9es",
+  maxDepth:"Profondeur maximale",meanDepth:"Profondeur moyenne",surfaceArea:"Superficie",
+  waterClarity:"Transparence de l'eau",thermalRegime:"R\u00e9gime thermique",
+  // Lignes d'\u00e9tat et de progression
+  loadingData:"Chargement des donn\u00e9es de l'Ontario\u2026",loadingRecords:"Chargement\u2026",
+  searchingOntario:"Recherche en Ontario\u2026",
+  searchingAllLakes:"Recherche dans tous les lacs de l'Ontario\u2026",searchingFor:"Recherche de {sp} en Ontario\u2026",
+  loadingZones:"Chargement des limites des ZGP de l'Ontario\u2026",zonesRetry:"Limites de zone non disponibles \u2014 nouvelle tentative",
+  zonesUnavailable:"Limites de zone non disponibles",loadingAccess:"Chargement des points d'acc\u00e8s de l'Ontario\u2026",
+  accessUnavailable:"Service des points d'acc\u00e8s non disponible",findingLocation:"Localisation en cours\u2026",
+  locationUnavailable:"Position non disponible",
+  contoursOn:"Courbes de profondeur activ\u00e9es \u2022 ne pas utiliser pour la navigation",
+  bathyNote:"Bathym\u00e9trie gouvernementale \u2022 ne pas utiliser pour la navigation",
+  // Note du mode Trouver du poisson
+  modeNoteAny:"Recherche dans les relev\u00e9s provinciaux de poissons, pas seulement l'ensemencement. La plupart des poissons de l'Ontario n'ont jamais \u00e9t\u00e9 ensemenc\u00e9s.",
+  modeNoteStocked:"Seuls les lacs ayant un registre d'ensemencement pour cette esp\u00e8ce.",
+  // Journal de p\u00eache
+  catchSpeciesPh:"Esp\u00e8ce, p. ex. dor\u00e9 jaune",catchLengthPh:"Longueur cm",catchNotesPh:"Notes sur la capture (facultatif)",
+  tripNotesPh:"Notes de sortie",enterSpecies:"Entrez l'esp\u00e8ce de poisson.",minimumPh:"p. ex. 2000",
+  // Fiches de r\u00e9sultats
+  badgeBestMatch:"Meilleure correspondance",recordedNotStocked:"R\u00e9pertori\u00e9 ici (non ensemenc\u00e9)",
+  fishStocked:"poissons ensemenc\u00e9s",kmAway:"km",records:"enregistrements",
+  explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
+  noLakeWithSpecies:"Aucun lac dans un rayon de {r}\u00a0km n'a de {sp} au registre. Essayez une distance plus grande \u2014 ou l'esp\u00e8ce n'a simplement pas fait l'objet d'un relev\u00e9 \u00e0 proximit\u00e9.",
+  noLakesWithin:"Aucun lac trouv\u00e9 dans un rayon de {r}\u00a0km.",
+  weatherAlert:"Alerte m\u00e9t\u00e9o",lakeArea:"Secteur du lac",
   findFish:"Trouver du poisson",distance:"Distance",species:"Espèce",stockingYear:"Année d'ensemencement",
   minimumStocked:"Nombre minimal de poissons ensemencés",lakeName:"Nom du lac",sortResults:"Trier les résultats",
   bestMatch:"Meilleure correspondance",closest:"Les plus proches",recent:"Ensemencement le plus récent",quantity:"Plus grand nombre ensemencé",
@@ -96,7 +175,7 @@ const I18N={
   dataSources:"Sources de données gouvernementales",disclaimer:"Ceci n’est pas une application officielle du gouvernement de l’Ontario.",
   yourData:"Vos données",yourDataText:"Les sorties, les prises et les lacs enregistrés restent sur cet appareil. Enregistrez une copie avant de changer ou de réinitialiser votre appareil.",
   exportData:"Enregistrer une copie",importData:"Restaurer une copie",
-  settings:"Réglages",textSize:"Taille du texte",textSizeNote:"Agrandit le texte dans toute l'application. Utile au soleil ou sur l'eau.",
+  textSize:"Taille du texte",textSizeNote:"Agrandit le texte dans toute l'application. Utile au soleil ou sur l'eau.",
   sizePreview:"Omble de fontaine • ensemencé 2025 • 4 200 poissons",
   location:"Position",locationNote:"Utilisée sur cet appareil pour trier les lacs par distance. Jamais transmise.",
   useLocation:"Utiliser ma position",
@@ -163,15 +242,11 @@ function translateStaticUI(){
  // Species wheels are rebuilt because their labels are translated while their
  // values stay English — the filters match on the value, so nothing shifts.
  if(typeof lakes!=="undefined"&&lakes.length)buildFilters(true);
- const ff=document.querySelector('.tabs button[data-view="findfish"]');
- if(ff)ff.textContent=t("findFish");
- const run=$("runFind");if(run)run.textContent=t("findStocked");
- const tabText={explore:appLang==="fr"?"Explorer":"Explore",near:appLang==="fr"?"Près de moi":"Near Me",
-  favorites:t("myLakes"),trips:t("trips"),resources:t("regulations")};
- Object.keys(tabText).forEach(k=>{
-  const b=document.querySelector('.tabs button[data-view="'+k+'"]');
-  if(b)b.textContent=tabText[k];
- });
+ // The tab strip, the sort wheel, the run button and onboarding all carry
+ // data-i18n keys now, so the walk above has already done them. v1x set each
+ // of these by hand here, and the sort wheel was assigned by option index —
+ // which did not match the markup order, so French swapped "Closest" and
+ // "Best Match" on every switch.
  const tag=$("brandTagline");if(tag)tag.textContent=t("tagline");
  // The snapshot line is written when data loads, which is usually before the
  // user ever touches the language toggle. Re-render it here or FR leaves an
@@ -179,16 +254,14 @@ function translateStaticUI(){
  const age=$("dataAge");
  if(age&&age.textContent.trim())age.textContent=stockingBuilt?`${t("asOf")} ${stockingBuilt}.`:t("liveData");
  const hb=$("helpBtn");if(hb)hb.setAttribute("aria-label",t("help"));
- const ot=$("onboardTitle");if(ot)ot.textContent=t("onboardTitle");
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
- const o1=$("onboardStep1");if(o1)o1.textContent=t("onboard1");
- const o2=$("onboardStep2");if(o2)o2.textContent=t("onboard2");
- const o3=$("onboardStep3");if(o3)o3.textContent=t("onboard3");
- const se=$("startExploring");if(se)se.textContent=t("startExploring");
- const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
+ // The Find Fish mode note is rewritten by setMode() on every switch, so it has
+ // to be re-rendered here rather than left to the data-i18n default.
+ const note=$("modeNote");
+ if(note)note.textContent=t(findMode==="stocked"?"modeNoteStocked":"modeNoteAny");
 }
 
-const APP_VERSION="v1x";
+const APP_VERSION="v1z";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -358,17 +431,160 @@ function refreshLocationQuietly(){
    A species that is not in this table falls through unchanged, which is the
    right failure: an English name is honest, an invented French one is not.
 ------------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------------
+   Forage species, and why they are hidden.
+
+   Ontario's ARA survey records every fish a crew netted, which is the right
+   thing for a fisheries dataset and the wrong thing for a lake sheet. A lake
+   would list twenty chips and an angler would scroll past Iowa Darter,
+   Blacknose Shiner and Creek Chub looking for Walleye.
+
+   So the display drops three groups:
+
+     FORAGE   minnows, shiners, dace, chubs, sticklebacks, sculpins, darters
+              and the other small baitfish nobody drives two hours to catch.
+     NOT_ANGLED  lampreys, gobies, ruffe, goldfish, alewife, gizzard shad.
+              Not bait, but not a target either. Rainbow Smelt is deliberately
+              NOT here — Ontario has a real spring dip-net fishery for it.
+     ROLLUP   "Unidentifiable", "Sunfishes", "Moxostoma sp." and the rest of
+              the family- and genus-level placeholders. These are not species.
+              The card promises "tap one for its limits and season" and there
+              is no season for Sander sp., so every one of these chips was a
+              dead end.
+
+   Carp, suckers, redhorse, bullheads, rock bass and bowfin all stay. The line
+   is baitfish, not glamour.
+
+   This is a DISPLAY filter only. Nothing is deleted from the data: the ARA
+   record still holds every species, hasSpeciesData() can still see them, and
+   the sheet says so when a filter empties a list.
+--------------------------------------------------------------------------- */
+const HIDDEN_SPECIES=new Set([
+ // Shiners
+ "Common Shiner","Golden Shiner","Blacknose Shiner","Spottail Shiner","Mimic Shiner",
+ "Emerald Shiner","Blackchin Shiner","Rosyface Shiner","Spotfin Shiner","Sand Shiner",
+ "Bridle Shiner","Redfin Shiner","Silver Shiner","Striped Shiner","Ghost Shiner",
+ "Pugnose Shiner","River Shiner","Notropis sp.","Luxilus sp.",
+ // Dace
+ "Northern Redbelly Dace","Finescale Dace","Northern Pearl Dace","Longnose Dace",
+ "Blacknose Dace","Redside Dace","Chrosomus sp.","Chrosomus hybrids",
+ "Northern Redbelly Dace x Finescale Dace","Finescale Dace x Northern Pearl Dace",
+ "Northern Redbelly Dace x Northern Pearl Dace","Blacknose Dace x Creek Chub",
+ "Common Shiner x Creek Chub",
+ // Chubs
+ "Creek Chub","Lake Chub","Hornyhead Chub","River Chub","Silver Chub","Gravel Chub",
+ "Chub","Nocomis sp.","Semotilus sp.",
+ // Minnows
+ "Fathead Minnow","Bluntnose Minnow","Brassy Minnow","Eastern Silvery Minnow",
+ "Pugnose Minnow","Central Mudminnow","Fathead Minnow x Bluntnose Minnow",
+ // Sticklebacks
+ "Brook Stickleback","Ninespine Stickleback","Threespine Stickleback",
+ "Fourspine Stickleback","Sticklebacks",
+ // Sculpins
+ "Mottled Sculpin","Slimy Sculpin","Spoonhead Sculpin","Deepwater Sculpin",
+ "Fourhorn Sculpin","Sculpins","Cottus sp.","COTTIDAE hybrids",
+ // Darters and the small perches
+ "Iowa Darter","Johnny Darter","Johnny Darter x Tesselated Darter","Tessellated Darter",
+ "Rainbow Darter","Least Darter","River Darter","Blackside Darter","Fantail Darter",
+ "Greenside Darter","Channel Darter","Eastern Sand Darter","Etheostoma sp.",
+ "Logperch","Trout-Perch","Trout-Perches",
+ // Other small forage
+ "Banded Killifish","Brook Silverside","New World Silversides","Central Stoneroller",
+ "Tadpole Madtom","Margined Madtom","Noturus sp.","Stonecat",
+ "Alewife","Gizzard Shad","Herrings","Alosa sp.","Smelts",
+ // Not angled
+ "Silver Lamprey","Sea Lamprey","American Brook Lamprey","Northern Brook Lamprey",
+ "Round Goby","Freshwater Tubenose Goby","Ruffe","Goldfish",
+ // Family and genus placeholders — not species, no regulation to look up
+ "Unidentifiable","Carps and Minnows","CYPRINIDAE hybrids","Suckers","Perches",
+ "Sunfishes","Pikes","North American Catfishes","Whitefish subfamily",
+ "Salmon and Trout subfamily","Grayling subfamily","Bowfins","Cods","Freshwater Eels",
+ "Temperate Basses","Moxostoma sp.","Catostomus sp.","Lepomis sp.","Coregonus sp.",
+ "Micropterus sp.","Sander sp.","Ictalurus sp.","Ameiurus sp.","Ictiobus sp.",
+ "Rhinichthys sp.","Esox sp.","Salmo sp.","Pumpkinseed x Bluegill"
+]);
+
+/* The list an angler sees. Everything downstream — chips, filter wheels, map
+   popups, search, the "+N" count — goes through this one function so the app
+   can never show a species the filters cannot find. */
+function anglerSpecies(list){
+ return (list||[]).filter(s=>!HIDDEN_SPECIES.has(s));
+}
+/* Why a visible list came back empty. The distinction matters: "no records"
+   and "records we don't show you" are different facts, and telling an angler
+   the wrong one about a lake they are about to drive to is exactly the kind of
+   thing this app must not do. */
+function speciesGap(list){
+ const raw=list||[];
+ if(!raw.length)return "none";                       // nobody has surveyed it
+ if(anglerSpecies(raw).length)return "";             // something to show
+ return raw.some(s=>/sp\.$|hybrids$|^Unidentifiable$|subfamily$|^Suckers$|^Perches$|^Sunfishes$|^Pikes$|^Herrings$|^Smelts$|^Sculpins$|^Sticklebacks$|Catfishes$|^Bowfins$|^Cods$|Eels$|Basses$/.test(s))
+  ? "unidentified"                                   // surveyed, not keyed to species
+  : "forage";                                        // surveyed, all baitfish
+}
+
+/* ---------------------------------------------------------------------------
+   French species names.
+
+   Every species the app can still display, so a French lake sheet never shows
+   a stray English chip beside "Omble de fontaine". Names follow Ontario's own
+   French fisheries material and the standard Quebec/CMFFA usage.
+
+   The forage species above are absent on purpose: they are never rendered, so
+   a French name for them would be dead weight — and the obscure dace and
+   shiner names are exactly the ones worth not guessing at.
+--------------------------------------------------------------------------- */
 const SPECIES_FR={
+ // Trout, char and salmon
  "Brook Trout":"Omble de fontaine","Brown Trout":"Truite brune","Rainbow Trout":"Truite arc-en-ciel",
  "Lake Trout":"Touladi","Aurora Trout":"Omble Aurora","Splake":"Truite moulac",
- "Walleye":"Doré jaune","Chinook Salmon":"Saumon quinnat","Coho Salmon":"Saumon coho",
- "Atlantic Salmon":"Saumon atlantique","Lake Whitefish":"Grand corégone","Bluegill":"Crapet arlequin"
+ "Arctic Char":"Omble chevalier","Atlantic Salmon":"Saumon atlantique",
+ "Chinook Salmon":"Saumon quinnat","Coho Salmon":"Saumon coho","Pink Salmon":"Saumon rose",
+ "Sockeye Salmon":"Saumon rouge","Arctic Grayling":"Corégone arctique",
+ // Whitefish and ciscoes
+ "Lake Whitefish":"Grand corégone","Round Whitefish":"Ménomini rond",
+ "Pygmy Whitefish":"Corégone nain","Cisco":"Cisco de lac","Lake Herring (Cisco)":"Cisco de lac",
+ "Shortjaw Cisco":"Cisco à mâchoires courtes","Blackfin Cisco":"Cisco à nageoires noires",
+ "Shortnose Cisco":"Cisco à museau court","Deepwater Cisco":"Cisco de profondeur",
+ "Nipigon Cisco":"Cisco de Nipigon","Bloater":"Cisco de fumage","Kiyi":"Cisco kiyi",
+ // Pike and walleye
+ "Northern Pike":"Grand brochet","Muskellunge":"Maskinongé",
+ "Tiger Muskellunge":"Maskinongé tigré","Grass Pickerel":"Brochet vermiculé",
+ "Walleye":"Doré jaune","Sauger":"Doré noir","Saugeye":"Doré hybride",
+ "Blue Pike":"Doré bleu",
+ // Bass, sunfish and crappie
+ "Smallmouth Bass":"Achigan à petite bouche","Largemouth Bass":"Achigan à grande bouche",
+ "Rock Bass":"Crapet de roche","White Bass":"Bar blanc","Striped Bass":"Bar rayé",
+ "White Perch":"Baret","Pumpkinseed":"Crapet-soleil","Bluegill":"Crapet arlequin",
+ "Green Sunfish":"Crapet vert","Northern Sunfish":"Crapet du nord",
+ "Black Crappie":"Marigane noire","White Crappie":"Marigane blanche",
+ "Yellow Perch":"Perchaude",
+ // Catfish and bullheads
+ "Brown Bullhead":"Barbotte brune","Yellow Bullhead":"Barbotte jaune",
+ "Black Bullhead":"Barbotte noire","Channel Catfish":"Barbue de rivière",
+ // Suckers and redhorse
+ "White Sucker":"Meunier noir","Longnose Sucker":"Meunier rouge",
+ "Northern Hog Sucker":"Suceur ballot","Spotted Sucker":"Suceur tacheté",
+ "Lake Chubsucker":"Sucet de lac","Quillback":"Couette",
+ "Black Buffalo":"Buffalo noir","Shorthead Redhorse":"Chevalier rouge",
+ "Silver Redhorse":"Chevalier blanc","Greater Redhorse":"Chevalier jaune",
+ "Golden Redhorse":"Chevalier doré","Black Redhorse":"Chevalier de rivière",
+ "River Redhorse":"Chevalier de rivière",
+ // Everything else still shown
+ "Burbot":"Lotte","Lake Sturgeon":"Esturgeon jaune","American Eel":"Anguille d'Amérique",
+ "Bowfin":"Poisson-castor","Longnose Gar":"Lépisosté osseux","Spotted Gar":"Lépisosté tacheté",
+ "Freshwater Drum":"Malachigan","Mooneye":"Laquaiche argentée","Goldeye":"Laquaiche aux yeux d'or",
+ "Rainbow Smelt":"Éperlan arc-en-ciel","Common Carp":"Carpe commune","Fallfish":"Ouitouche"
 };
 const STAGE_FR={
  "Yearlings":"Sujets d'un an","Yearling":"Sujet d'un an","Fingerlings":"Fretin",
  "Fingerling":"Fretin","Adult":"Adulte","Fry":"Alevins"
 };
 function speciesLabel(v){return appLang==="fr"&&SPECIES_FR[v]?SPECIES_FR[v]:v}
+/* ARA reports one of four thermal regimes. "Unknown" is a real value in the
+   data, not a missing one, so it gets a label rather than being blanked. */
+const THERMAL_FR={"Cold":"Eau froide","Cool":"Eau tempérée","Warm":"Eau chaude","Unknown":"Non déterminé"};
+function thermalLabel(v){return appLang==="fr"&&THERMAL_FR[v]?THERMAL_FR[v]:v}
 function stageLabel(v){return appLang==="fr"&&STAGE_FR[v]?STAGE_FR[v]:v}
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function name(r){return r.Official_Waterbody_Name||r.Unoffcial_Waterbody_Name||"Unnamed waterbody"}
@@ -420,7 +636,7 @@ function assignFMZ(){
 }
 async function loadFMZ(show=true){
  if(fmzLoaded){if(show)renderFMZ();return}
- $("fmzStatus").textContent="Loading Ontario FMZ boundaries…";
+ $("fmzStatus").textContent=t("loadingZones");
  try{
   const p=new URLSearchParams({
    where:"1=1",outFields:"FISHERIES_MANAGEMENT_ZONE_ID,LOCATION_DESCR",
@@ -437,19 +653,19 @@ async function loadFMZ(show=true){
   $("fmzStatus").textContent=`20 Ontario Fisheries Management Zones loaded`;
   if(show)renderFMZ();
  }catch(e){
-  $("fmzStatus").textContent="Zone boundaries unavailable — retrying";
+  $("fmzStatus").textContent=t("zonesRetry");
   $("showFMZ").checked=false;
   if(!loadFMZ._retried){loadFMZ._retried=true;setTimeout(()=>loadFMZ(show),4000)}
-  else $("fmzStatus").textContent="Zone boundaries unavailable";
+  else $("fmzStatus").textContent=t("zonesUnavailable");
  }
 }
 function renderDepth(){
  if($("showDepth").checked){
   if(!map.hasLayer(bathyLayer))bathyLayer.addTo(map);
-  $("depthStatus").textContent="Depth contours on • not for navigation";
+  $("depthStatus").textContent=t("contoursOn");
  }else{
   if(map.hasLayer(bathyLayer))map.removeLayer(bathyLayer);
-  $("depthStatus").textContent="Government bathymetry • not for navigation";
+  $("depthStatus").textContent=t("bathyNote");
  }
 }
 function renderFMZ(){
@@ -458,7 +674,7 @@ function renderFMZ(){
 }
 async function loadAccess(){
  if(accessLoaded){renderAccess();return}
- $("accessStatus").textContent="Loading Ontario access points…";
+ $("accessStatus").textContent=t("loadingAccess");
  try{
   const p=new URLSearchParams({where:"1=1",outFields:"AccessName,WaterBody,Town,County,Owner,Manager,AccessType,BoatSize,RampType,UniversalA,Parking,Shorefishi,Dock,Directions,CoordX,CoordY",returnGeometry:"true",outSR:"4326",f:"geojson",resultRecordCount:"2000"});
   const j=await fetch(ACCESS_API+"?"+p).then(r=>r.json());
@@ -469,7 +685,7 @@ async function loadAccess(){
    return {...a,lat:Number(lat),lon:Number(lon)}
   }).filter(a=>Number.isFinite(a.lat)&&Number.isFinite(a.lon));
   accessLoaded=true;$("accessStatus").textContent=`${num(accessPoints.length)} government access points loaded`;renderAccess();
- }catch(e){$("accessStatus").textContent="Access-point service unavailable";$("showAccess").checked=false}
+ }catch(e){$("accessStatus").textContent=t("accessUnavailable");$("showAccess").checked=false}
 }
 function accessIcon(a){
  const t=String(a.AccessType||"").toLowerCase(),dock=String(a.Dock||"").toLowerCase();
@@ -600,7 +816,7 @@ async function loadBundledStocking(){
 
 async function loadLiveStocking(){
  let all=[],offset=0,page=0;
- while(true){const j=await fetchPage(offset),batch=(j.features||[]).map(x=>x.attributes);all.push(...batch);$("count").textContent=`Loading… ${num(all.length)} records`;page++;if(batch.length<1000||!j.exceededTransferLimit)break;offset+=batch.length;if(page>100)break}
+ while(true){const j=await fetchPage(offset),batch=(j.features||[]).map(x=>x.attributes);all.push(...batch);$("count").textContent=`${t("loadingRecords")} ${num(all.length)} ${t("records")}`;page++;if(batch.length<1000||!j.exceededTransferLimit)break;offset+=batch.length;if(page>100)break}
  stockingBuilt="";        // live data has no snapshot date; it is today's
  return all;
 }
@@ -612,7 +828,7 @@ function afterStockingLoaded(){
 }
 
 async function load(){
- $("count").textContent="Loading Ontario data…";
+ $("count").textContent=t("loadingData");
  ["statLakes","statRecords","statSpecies","statLatest"].forEach(id=>{const el=$(id);if(el)el.textContent="…"});
  try{
   let all;
@@ -908,7 +1124,7 @@ function knownSpeciesName(q){
  if(t.length<3)return null;
  const all=new Set(SPORT_SPECIES);
  rows.forEach(r=>{if(r.Species)all.add(r.Species)});
- lakes.forEach(l=>(l.present||[]).forEach(x=>all.add(x)));
+ lakes.forEach(l=>anglerSpecies(l.present).forEach(x=>all.add(x)));
  for(const sp of all)if(sp.toLowerCase()===t)return sp;              // "walleye"
  for(const sp of all)if(sp.toLowerCase().startsWith(t)&&t.length>=4)return sp;  // "walle"
  // "brook trout" typed against "Brook Trout" with odd spacing
@@ -927,7 +1143,7 @@ async function speciesLookupFor(q){
  const sp=knownSpeciesName(q);
  if(!sp||!userLoc)return 0;
  const status=$("count"),previous=status?status.textContent:"";
- if(status)status.textContent=`Searching Ontario for ${sp}…`;
+ if(status)status.textContent=t("searchingFor").replace("{sp}",speciesLabel(sp));
  try{
   const n=await araNearby(userLoc[0],userLoc[1],explorerRadius(),sp);
   if(n){buildFilters(true);apply()}
@@ -995,7 +1211,7 @@ async function searchProvince(q){
  liveBusy=true;liveTried.add(term.toLowerCase());
  const status=$("count");
  const previous=status?status.textContent:"";
- if(status)status.textContent="Searching all Ontario lakes…";
+ if(status)status.textContent=t("searchingAllLakes");
  try{
   const p=new URLSearchParams({
    where:`WATERBODY_TYPE = 'Lake or Pond' AND UPPER(OFFICIAL_WATERBODY_NAME) LIKE UPPER('%${escSql(term)}%')`,
@@ -1202,7 +1418,7 @@ function fillSpecies(){
  // the ones somebody happened to stock.
  const set=new Set(SPORT_SPECIES);
  rows.forEach(r=>{if(r.Species)set.add(r.Species)});
- lakes.forEach(l=>(l.present||[]).forEach(x=>set.add(x)));
+ lakes.forEach(l=>anglerSpecies(l.present).forEach(x=>set.add(x)));
  const all=[...set].sort((a,b)=>a.localeCompare(b));
  const opts=all.map(v=>`<option value="${esc(v)}">${esc(speciesLabel(v))}</option>`).join("");
  const sel=$("species"),find=$("findSpecies");
@@ -1216,7 +1432,7 @@ function apply(){
  shown=lakes.filter(l=>{
   if(currentView==="favorites"&&!favoriteKeys.has(l.key))return false;
   if(!showUnstocked()&&!l.stocked)return false;
-  if(sp&&!(l.species.includes(sp)||(l.present||[]).includes(sp)))return false;
+  if(sp&&!(l.species.includes(sp)||anglerSpecies(l.present).includes(sp)))return false;
   if(yr&&!l.records.some(r=>String(r.Stocking_Year)===yr))return false;
   if(q&&!matchesQuery(l,q))return false;
   if(radius&&userLoc&&distance(userLoc[0],userLoc[1],l.lat,l.lon)>radius)return false;
@@ -1243,9 +1459,13 @@ function render(){
   const latest=l.records.filter(r=>Number(r.Stocking_Year)===l.latestYear),latestFish=latest.reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0),fav=favoriteKeys.has(l.key);
   // An unstocked lake has no year and no stocking totals, so it gets its own
   // pill and its own meta line instead of a row of dashes.
-  const listSpecies=l.stocked?l.species:(l.present||[]);
+  const listSpecies=l.stocked?l.species:anglerSpecies(l.present);
+  // The empty case is not one case. A stocked lake with no stocked species is
+  // a data gap; an unstocked lake can be unsurveyed, forage-only, or keyed no
+  // finer than a family. Each says a different thing to someone choosing a lake.
+  const headGap=l.stocked?"none":speciesGap(l.present);
   const head=listSpecies.length?esc(listSpecies.slice(0,3).map(speciesLabel).join(" • "))+(listSpecies.length>3?` <span class="more">+${listSpecies.length-3}</span>`:"")
-   :`<span class="nospecies">${t("noSpeciesRecorded")}</span>`;
+   :`<span class="nospecies">${t(headGap==="forage"?"headForageOnly":headGap==="unidentified"?"headUnidentified":"noSpeciesRecorded")}</span>`;
   const pill=l.stocked?`<span class="pill">${esc(l.latestYear||"—")}</span>`
    :`<span class="pill wild">${t("notStocked")}</span>`;
   // Township and distance come first: with three Rice Lakes on screen they
@@ -1259,7 +1479,7 @@ function render(){
   ].join("");
   const meta=where+(l.stocked
    ?`<span>${num(latestFish)} stocked</span><span>${l.records.length} record${l.records.length===1?"":"s"}</span>`
-   :`<span>${(l.present||[]).length?(l.present.length+" species recorded"):"No survey data"}</span>${l.depthMax?`<span>${l.depthMax} m deep</span>`:""}`);
+   :`<span>${surveyMetaLabel(l)}</span>${l.depthMax?`<span>${l.depthMax} m deep</span>`:""}`);
   return `<article class="record" data-i="${i}"><div class="topline"><div><h4>${esc(l.name)}</h4><div class="species">${head}</div></div><div class="cardactions">${pill}<button class="star ${fav?"saved":""}" data-fav="${esc(l.key)}" aria-label="Favourite">${fav?"★":"☆"}</button></div></div><div class="meta">${meta}</div></article>`;
  }).join("")||`<div class="record empty">${emptyMessage()}</div>`;
  $("results").insertAdjacentHTML("afterbegin",locationPrompt());
@@ -1267,7 +1487,7 @@ function render(){
  document.querySelectorAll(".star").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFav(b.dataset.fav)});
  markerLayer.clearLayers();
  fitToResults();
- shown.slice(0,400).forEach(l=>{const m=L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${esc((l.stocked?l.species:(l.present||[])).slice(0,4).map(speciesLabel).join(", "))}<br>${l.stocked?(t("latestStocking")+": "+esc(l.latestYear||"—")):t("notStocked")}`);m.on("click",()=>detail(l))});
+ shown.slice(0,400).forEach(l=>{const m=L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${esc((l.stocked?l.species:anglerSpecies(l.present)).slice(0,4).map(speciesLabel).join(", "))}<br>${l.stocked?(t("latestStocking")+": "+esc(l.latestYear||"—")):t("notStocked")}`);m.on("click",()=>detail(l))});
 }
 function lakeCount(n){return num(n)+" "+(n===1?"lake":"lakes")}
 
@@ -1316,7 +1536,7 @@ function phraseIn(words,toks){
    otherwise "trout township" could match a Trout in one field and a Township
    in another and look like a hit. */
 function searchFields(l){
- return [l.name,l.township,l.district,...(l.species||[]),...(l.present||[])]
+ return [l.name,l.township,l.district,...(l.species||[]),...anglerSpecies(l.present)]
   .filter(Boolean).map(searchWords);
 }
 
@@ -1624,27 +1844,45 @@ function wireSpeciesChips(){
  };
 }
 
+/* The one-line survey summary on a result row. Three different facts, three
+   different sentences — see speciesGap(). */
+function surveyMetaLabel(l){
+ const shownSp=anglerSpecies(l.present);
+ if(shownSp.length)return shownSp.length+" "+t(shownSp.length===1?"speciesRecordedOne":"speciesRecordedMany");
+ const gap=speciesGap(l.present);
+ return gap==="none"?t("metaNoSurvey"):gap==="unidentified"?t("metaUnidentified"):t("metaForageOnly");
+}
+
 function presentBlock(l){
- const sp=l.present||[];
+ const sp=anglerSpecies(l.present);
  const facts=[
-  l.depthMax?["Maximum depth",l.depthMax+" m"]:null,
-  l.depthMean?["Mean depth",l.depthMean+" m"]:null,
-  l.areaHa?["Surface area",num(l.areaHa)+" ha"]:null,
-  l.clarity?["Water clarity",l.clarity+" m"]:null,
-  l.thermal?["Thermal regime",l.thermal]:null
+  l.depthMax?[t("maxDepth"),l.depthMax+" m"]:null,
+  l.depthMean?[t("meanDepth"),l.depthMean+" m"]:null,
+  l.areaHa?[t("surfaceArea"),num(l.areaHa)+" ha"]:null,
+  l.clarity?[t("waterClarity"),l.clarity+" m"]:null,
+  l.thermal?[t("thermalRegime"),thermalLabel(l.thermal)]:null
  ].filter(Boolean);
+ const gap=speciesGap(l.present);
  if(!sp.length&&!facts.length&&l.stocked)return "";
 
- // A blank species list means nobody has surveyed the lake, NOT that it holds
- // no fish. Saying "no fish" about a lake somebody is about to drive two hours
- // to would be the worst thing this app could do, so the wording is explicit.
+ // A blank list is never "no fish". There are three separate reasons a list
+ // can come back empty and they are three different facts:
+ //
+ //   none          nobody has surveyed this lake
+ //   forage        surveyed, but only baitfish were recorded
+ //   unidentified  surveyed, but the records stop at family or genus
+ //
+ // Saying "only baitfish" about a lake whose record reads "Pikes" would be a
+ // lie — there IS a pike-family fish in there, ARA just never keyed it. Each
+ // case gets its own sentence, and each keeps the ARA link so a curious angler
+ // is never stonewalled.
  const list=sp.length
-  ?`<div class="speciesGrid">${sp.map(x=>`<button type="button" class="spChip" data-sprule="${esc(x)}" data-lakekey="${esc(l.key)}">${esc(x)}<i aria-hidden="true">›</i></button>`).join("")}</div>`
-  :`<p class="setNote">No fish survey has been published for this waterbody. That means no data, not an empty lake.</p>`;
+  ?`<div class="speciesGrid">${sp.map(x=>`<button type="button" class="spChip" data-sprule="${esc(x)}" data-lakekey="${esc(l.key)}">${esc(speciesLabel(x))}<i aria-hidden="true">›</i></button>`).join("")}</div>`
+  :`<p class="setNote">${t(gap==="none"?"surveyNone":gap==="unidentified"?"surveyUnidentified":"surveyForageOnly")}</p>`;
 
  return `<div class="infoCard">
-  <h3>Fish species present</h3>
-  <p class="panelNote">Species recorded in Ontario's Aquatic Resource Area surveys${l.stocked?" — separate from the stocking history below":""}. Tap one for its limits and season.</p>
+  <h3>${t("fishPresentHead")}</h3>
+  <p class="panelNote">${t("fishPresentSub")}${l.stocked?" "+t("fishPresentSeparate"):""} ${t("fishPresentTap")}</p>
   ${list}
   ${facts.length?`<div class="detailgrid">${facts.map(f=>`<div><small>${f[0]}</small>${esc(String(f[1]))}</div>`).join("")}</div>`:""}
  </div>`;
@@ -1698,8 +1936,8 @@ function openTrip(id){
  ${l?`<div class="lakeSnapshot"><b>Lake snapshot</b><span>Stocked: ${esc(l.species.join(", ")||"—")}</span><span>Latest stocking: ${esc(l.latestYear||"—")}</span>${l.observedSpecies&&l.observedSpecies.length?`<span>Observed: ${esc(l.observedSpecies.map(s=>s.species).join(", "))}</span>`:""}</div>`:""}
  ${t.fmz?`<a class="zoneAction" target="_blank" rel="noopener" href="${REGS_BASE}${t.fmz}">Check FMZ ${t.fmz} Regulations</a>`:""}
  <h3>Catch Log</h3><div class="catchlist">${t.catches.length?t.catches.map(c=>`<div class="catchrow"><div><b>${esc(c.species)}</b><span>${new Date(c.time).toLocaleTimeString("en-CA",{hour:"numeric",minute:"2-digit"})} • ${esc(c.disposition)}</span>${c.size?`<span>${esc(c.size)} cm</span>`:""}${c.disposition==="Kept"&&c.size?`<span>🍽️ Check lake eating advice</span>`:""}</div><button data-delcatch="${c.id}">×</button></div>`).join(""):`<div class="historynote">No catches logged yet.</div>`}</div>
- ${active?`<div class="catchform"><input id="catchSpecies" placeholder="Species e.g. Walleye"><div class="formrow"><input id="catchSize" type="number" min="0" step="0.1" placeholder="Length cm"><select id="catchDisposition"><option>Released</option><option>Kept</option></select></div><textarea id="catchNotes" placeholder="Catch notes (optional)"></textarea><label class="checkline"><input id="catchLocation" type="checkbox"> Save current catch location</label><button id="addCatch">+ Add Catch</button></div>
- <textarea id="tripNotes" class="tripnotes" placeholder="Trip notes">${esc(t.notes||"")}</textarea><button id="saveTripNotes" class="secondaryAction">Save Trip Notes</button><button id="endTrip" class="endTrip">End Fishing Trip</button>`:""}
+ ${active?`<div class="catchform"><input id="catchSpecies" placeholder="${t('catchSpeciesPh')}"><div class="formrow"><input id="catchSize" type="number" min="0" step="0.1" placeholder="${t('catchLengthPh')}"><select id="catchDisposition"><option>Released</option><option>Kept</option></select></div><textarea id="catchNotes" placeholder="${t('catchNotesPh')}"></textarea><label class="checkline"><input id="catchLocation" type="checkbox"> Save current catch location</label><button id="addCatch">+ Add Catch</button></div>
+ <textarea id="tripNotes" class="tripnotes" placeholder="${t('tripNotesPh')}">${esc(t.notes||"")}</textarea><button id="saveTripNotes" class="secondaryAction">Save Trip Notes</button><button id="endTrip" class="endTrip">End Fishing Trip</button>`:""}
  `;
  $("tripSheet").classList.remove("hidden");
  document.querySelectorAll("[data-delcatch]").forEach(b=>b.onclick=()=>{t.catches=t.catches.filter(c=>c.id!==Number(b.dataset.delcatch));saveTrips();openTrip(t.id)});
@@ -1709,7 +1947,7 @@ function openTrip(id){
  }
 }
 function addCatch(id){
- const t=trips.find(x=>x.id===id),species=$("catchSpecies").value.trim();if(!species)return alert("Enter the fish species.");
+ const t=trips.find(x=>x.id===id),species=$("catchSpecies").value.trim();if(!species)return alert(t("enterSpecies"));
  const finish=(loc)=>{t.catches.unshift({id:Date.now(),species,size:$("catchSize").value,disposition:$("catchDisposition").value,notes:$("catchNotes").value.trim(),time:new Date().toISOString(),location:loc});saveTrips();openTrip(id)};
  if($("catchLocation").checked&&navigator.geolocation)navigator.geolocation.getCurrentPosition(p=>finish({lat:p.coords.latitude,lon:p.coords.longitude}),()=>finish(null),{timeout:8000});else finish(null);
 }
@@ -1721,7 +1959,7 @@ function renderTrips(){
 function locate(after){
  const nativeLoc=nativeBridge("requestLocation");
  if(!nativeLoc&&!navigator.geolocation)return toast("This device cannot share a location. Use the search box to find a lake by name.");
- $("count").textContent="Finding your location…";
+ $("count").textContent=t("findingLocation");
 
  if(nativeLoc){
   window.__nativeLocationResult=r=>{
@@ -1745,7 +1983,7 @@ function locate(after){
   if(after)after();else apply();
  }
  function onLocateFailed(denied){
-  $("count").textContent="Location unavailable";
+  $("count").textContent=t("locationUnavailable");
   toast(denied
    ?"Location is off. Turn it on in Settings, or search for a lake by name."
    :"Your location could not be found right now. Try again outdoors, or search for a lake by name.");
@@ -1774,7 +2012,7 @@ function bestMatchScore(l){
   // Stocking recency and volume mean nothing for a lake nobody stocked.
   // Score it on what is actually known: how thoroughly it has been surveyed
   // and how big it is.
-  const spp=(l.present||[]).length;
+  const spp=anglerSpecies(l.present).length;
   score+=Math.min(28,spp*3);
   score+=Math.min(12,Math.log10(Math.max(1,Number(l.areaHa)||0))*6);
  }
@@ -1824,7 +2062,7 @@ async function wireWeather(l){
   box.innerHTML='<span class="weatherLoading">Checking Environment Canada alerts…</span>';
   const alerts=await weatherAlertsForLake(l);
   if(!alerts.length){box.innerHTML='<div class="weatherOK">✓ ${t("noAlert")}</div>';return}
-  box.innerHTML=alerts.slice(0,5).map(f=>{const p=f.properties||{};return `<div class="weatherAlert"><b>⚠ ${esc(p.alert_name_en||p.alert_short_name_en||"Weather alert")}</b><span>${esc(p.feature_name_en||p.province||"Lake area")}</span>${p.alert_type?`<span>${esc(p.alert_type)}</span>`:""}</div>`}).join("");
+  box.innerHTML=alerts.slice(0,5).map(f=>{const p=f.properties||{};return `<div class="weatherAlert"><b>⚠ ${esc(p.alert_name_en||p.alert_short_name_en||t("weatherAlert"))}</b><span>${esc(p.feature_name_en||p.province||t("lakeArea"))}</span>${p.alert_type?`<span>${esc(p.alert_type)}</span>`:""}</div>`}).join("");
  };
  await load();const b=$("refreshAlerts");if(b)b.onclick=load;
 }
@@ -1846,7 +2084,7 @@ function runFindFish(){
   // that were never stocked are in the pool at all.
   if(findMode==="any"&&userLoc){
    const btn=$("runFind"),label=btn?btn.textContent:"";
-   if(btn){btn.disabled=true;btn.textContent="Searching Ontario…"}
+   if(btn){btn.disabled=true;btn.textContent=t("searchingOntario")}
    try{ await araNearby(userLoc[0],userLoc[1],radius,sp||null); }
    catch(e){ toast("Couldn't reach the Ontario fish survey. Showing what's already on this device."); }
    finally{ if(btn){btn.disabled=false;btn.textContent=label} }
@@ -1863,7 +2101,7 @@ function runFindFish(){
 
     const relevant=l.records.filter(r=>(!sp||r.Species===sp)&&(!yr||String(r.Stocking_Year)===yr));
     const qty=relevant.reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0);
-    const presentMatch=!sp||(l.present||[]).some(x=>x.toLowerCase()===sp.toLowerCase());
+    const presentMatch=!sp||anglerSpecies(l.present).some(x=>x.toLowerCase()===sp.toLowerCase());
 
     if(wantStocked){
      if(!relevant.length||qty<min)return false;
@@ -1891,8 +2129,8 @@ function runFindFish(){
    renderFindResults(sp,yr);$("findPanel").classList.remove("open");
    if(!shown.length){
     $("results").innerHTML=`<div class="record empty">${sp
-     ?`No lake within ${radius} km has ${esc(sp)} on record. Try a wider distance — or the species may simply not have been surveyed nearby.`
-     :`No lakes found within ${radius} km.`}</div>`;
+     ?t("noLakeWithSpecies").replace("{r}",radius).replace("{sp}",esc(speciesLabel(sp)))
+     :t("noLakesWithin").replace("{r}",radius)}</div>`;
    }
   };
   if(needAccess&&!accessLoaded)loadAccess().then(execute);else execute();
@@ -1906,7 +2144,7 @@ function renderFindResults(sp,yr){
   const rs=ruleSummaryForResult(l,sp);
   const access=hasNearbyAccess(l);
   return `<article class="record finder2" data-i="${i}">
-   <div class="finderTop"><div><div class="matchBadge">★ ${Number.isFinite(l._bestScore)?l._bestScore:0} Best Match</div><h4>${esc(l.name)}</h4><div class="species">${esc(sp||(l.stocked?l.species:(l.present||[])).slice(0,3).join(" • "))}</div></div><span class="distancebadge">${l._findKm<10?l._findKm.toFixed(1):Math.round(l._findKm)} km<small>${esc(bearingLabel(userLoc[0],userLoc[1],l.lat,l.lon))}</small></span></div>
+   <div class="finderTop"><div><div class="matchBadge">★ ${Number.isFinite(l._bestScore)?l._bestScore:0} ${t("badgeBestMatch")}</div><h4>${esc(l.name)}</h4><div class="species">${esc(sp||(l.stocked?l.species:anglerSpecies(l.present)).slice(0,3).map(speciesLabel).join(" • "))}</div></div><span class="distancebadge">${l._findKm<10?l._findKm.toFixed(1):Math.round(l._findKm)} km<small>${esc(bearingLabel(userLoc[0],userLoc[1],l.lat,l.lon))}</small></span></div>
    ${l._findPresent
      ?`<div class="heroStock present"><div><small>Recorded in this lake</small><b>${esc(sp||"Surveyed")}</b></div><div><small>Stocking</small><b>Not stocked</b></div></div>`
      :`<div class="heroStock"><div><small>${t("matchingStocked")}</small><b>${num(l._findQty)}</b></div><div><small>${t("mostRecent")}</small><b>${l._findYear||"—"}</b></div></div>`}
@@ -1917,7 +2155,7 @@ function renderFindResults(sp,yr){
  }).join("")||"";
  $("results").insertAdjacentHTML("afterbegin",locationPrompt());
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=()=>{const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
- markerLayer.clearLayers();fitToResults();shown.slice(0,400).forEach(l=>L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${l._findKm.toFixed(1)} km away<br>${l._findPresent?"Recorded here (not stocked)":num(l._findQty)+" fish stocked"}`));
+ markerLayer.clearLayers();fitToResults();shown.slice(0,400).forEach(l=>L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${l._findKm.toFixed(1)} km away<br>${l._findPresent?t("recordedNotStocked"):num(l._findQty)+" fish stocked"}`));
 }
 function recentNearMe(){
  const run=()=>{
@@ -1994,9 +2232,7 @@ const su=$("showUnstocked");if(su)su.onchange=markFiltersDirty;
   findMode=m;
   if(any)any.classList.toggle("on",m==="any");
   if(stk)stk.classList.toggle("on",m==="stocked");
-  if(note)note.textContent=m==="any"
-   ?"Searches provincial fish survey records, not just stocking. Most Ontario fish were never stocked."
-   :"Only lakes with a stocking record for this species.";
+  if(note)note.textContent=t(m==="any"?"modeNoteAny":"modeNoteStocked");
   // "Minimum fish stocked" cannot apply to a lake nobody stocked.
   // Stocking year and minimum-stocked are meaningless for a lake nobody
   // stocked, so they are dimmed rather than silently ignored.

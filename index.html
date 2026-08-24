@@ -34,13 +34,13 @@
     </div>
   </div>
   <div class="tabstrip">
-    <div class="tabs hscroll" role="tablist" aria-label="Sections">
-      <button data-view="explore" type="button" role="tab">Explore</button>
-      <button data-view="findfish" type="button" role="tab">Find Fish</button>
-      <button data-view="near" type="button" role="tab">Near Me</button>
-      <button data-view="favorites" type="button" role="tab">My Lakes</button>
-      <button data-view="trips" type="button" role="tab">Trips</button>
-      <button data-view="resources" type="button" role="tab">Regulations</button>
+    <div class="tabs hscroll" role="tablist" aria-label="Sections" data-i18n-aria="sections">
+      <button data-view="explore" type="button" role="tab" data-i18n="explore">Explore</button>
+      <button data-view="findfish" type="button" role="tab" data-i18n="findFish">Find Fish</button>
+      <button data-view="near" type="button" role="tab" data-i18n="nearMe">Near Me</button>
+      <button data-view="favorites" type="button" role="tab" data-i18n="myLakes">My Lakes</button>
+      <button data-view="trips" type="button" role="tab" data-i18n="trips">Trips</button>
+      <button data-view="resources" type="button" role="tab" data-i18n="regulations">Regulations</button>
     </div>
     <div class="tabfade" aria-hidden="true"></div>
   </div>
@@ -107,7 +107,7 @@
     <button type="button" id="modeAny" class="on" data-i18n="modeAny">Anywhere the fish are</button>
     <button type="button" id="modeStocked" data-i18n="modeStocked">Stocked lakes only</button>
   </div>
-  <p class="panelNote" id="modeNote">Searches provincial fish survey records, not just stocking. Most Ontario fish were never stocked.</p>
+  <p class="panelNote" id="modeNote" data-i18n="modeNoteAny">Searches provincial fish survey records, not just stocking. Most Ontario fish were never stocked.</p>
   <div class="findgrid">
     <label><span data-i18n="distance">Distance</span>
       <select id="findRadius">
@@ -119,16 +119,16 @@
     </label>
     <label><span data-i18n="species">Species</span><select id="findSpecies"><option value="" data-i18n="anySpecies">Any species</option></select></label>
     <label class="stockOnlyField"><span data-i18n="stockingYear">Stocking year</span><select id="findYear"><option value="" data-i18n="anyYear">Any year</option></select></label>
-    <label class="stockOnlyField"><span data-i18n="minimumStocked">Minimum fish stocked</span><input id="findMinimum" type="number" min="0" step="100" placeholder="e.g. 2000"></label>
+    <label class="stockOnlyField"><span data-i18n="minimumStocked">Minimum fish stocked</span><input id="findMinimum" type="number" min="0" step="100" placeholder="e.g. 2000" data-i18n-ph="minimumPh"></label>
     <label><span data-i18n="lakeName">Lake name</span><input id="findLake" type="search" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Optional lake name" data-i18n-ph="optionalLakePh"></label>
     <label><span data-i18n="sortResults">Sort results</span>
-      <select id="findSort"><option value="closest" selected>Closest</option><option value="best">Best Match</option><option value="recent">Most recently stocked</option><option value="quantity">Most fish stocked</option></select>
+      <select id="findSort"><option value="closest" selected data-i18n="closest">Closest</option><option value="best" data-i18n="bestMatch">Best Match</option><option value="recent" data-i18n="recent">Most recently stocked</option><option value="quantity" data-i18n="quantity">Most fish stocked</option></select>
     </label>
   </div>
   <label class="checkline"><input id="findAccess" type="checkbox"> <span data-i18n="onlyAccess">Only lakes with a nearby fishing access point</span></label>
   <div class="findActions">
     <button id="resetFind" class="ghostbtn" type="button" data-i18n="reset">Reset</button>
-    <button id="runFind" class="runfind">Find Fish Near Me</button>
+    <button id="runFind" class="runfind" data-i18n="findStocked">Find Fish Near Me</button>
   </div>
 </section>
 <section class="filters" data-show="explore favorites">
@@ -211,14 +211,14 @@
   <div class="onboardCard">
     <button id="closeOnboarding" class="modalClose" type="button">×</button>
     <img class="onboardIcon" src="icons/icon-192.png" alt="" width="60" height="60">
-    <h2 id="onboardTitle">Find your next Ontario fishing lake</h2>
+    <h2 id="onboardTitle" data-i18n="onboardTitle">Find your next Ontario fishing lake</h2>
     <p id="onboardText">Search by distance, species and stocking history, then check regulations, access, weather and eating advice before you go.</p>
     <div class="onboardSteps">
-      <div><b>1</b><span id="onboardStep1">Choose a distance and species</span></div>
-      <div><b>2</b><span id="onboardStep2">Compare stocked lakes</span></div>
+      <div><b>1</b><span id="onboardStep1" data-i18n="onboard1">Choose a distance and species</span></div>
+      <div><b>2</b><span id="onboardStep2" data-i18n="onboard2">Compare stocked lakes</span></div>
       <div><b>3</b><span id="onboardStep3" data-i18n="onboard3">Open a lake and verify the current rules</span></div>
     </div>
-    <button id="startExploring" class="primaryModalAction" type="button">Start Exploring</button>
+    <button id="startExploring" class="primaryModalAction" type="button" data-i18n="startExploring">Start Exploring</button>
   </div>
 </div>
 <div id="settingsSheet" class="sheet hidden"><div class="sheetbox">
