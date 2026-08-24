@@ -49,6 +49,7 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
+  rightsNote:"App, design and text. The government, OpenStreetMap and GeoNames data it uses stay under their own licences.",
   plateAboutNote:"They are shown to help you picture the fish, not to identify one. Several Ontario species are easily confused and their limits differ \u2014 check the official rule before keeping anything.",
   noLakeWithSpecies:"No lake within {r} km has {sp} on record. Try a wider distance — or the species may simply not have been surveyed nearby.",
   noLakesWithin:"No lakes found within {r} km.",
@@ -168,6 +169,7 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
+  rightsNote:"Application, conception et textes. Les donn\u00e9es gouvernementales, OpenStreetMap et GeoNames qu'elle utilise demeurent sous leurs propres licences.",
   plateAboutNote:"Elles vous aident \u00e0 visualiser le poisson, mais ne servent pas \u00e0 l'identifier. Plusieurs esp\u00e8ces de l'Ontario se confondent facilement et leurs limites diff\u00e8rent \u2014 v\u00e9rifiez la r\u00e8gle officielle avant de garder une prise.",
   noLakeWithSpecies:"Aucun lac dans un rayon de {r}\u00a0km n'a de {sp} au registre. Essayez une distance plus grande \u2014 ou l'esp\u00e8ce n'a simplement pas fait l'objet d'un relev\u00e9 \u00e0 proximit\u00e9.",
   noLakesWithin:"Aucun lac trouv\u00e9 dans un rayon de {r}\u00a0km.",
@@ -283,7 +285,7 @@ function translateStaticUI(){
  if(note)note.textContent=t(findMode==="stocked"?"modeNoteStocked":"modeNoteAny");
 }
 
-const APP_VERSION="v2h";
+const APP_VERSION="v2i";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -2434,8 +2436,7 @@ function helpMarkup(){
   <a target="_blank" rel="noopener" href="https://weather.gc.ca/">Environment Canada Weather</a>
  </div>
  ${speciesArtCredit?`<div class="aboutBlock"><h3>${t("illustrations")}</h3>
-  <p class="helpNote">${esc(speciesArtCredit)} ${t("plateAboutNote")}</p>
-  <a target="_blank" rel="noopener" href="https://www.fws.gov/media">U.S. Fish and Wildlife Service media library</a>
+  <p class="helpNote">${esc(speciesArtCredit).replace(/[.\s]+$/,"")}. ${t("plateAboutNote")}</p>
  </div>`:""}
  <div class="aboutBlock"><h3>${t("yourData")}</h3><p class="helpNote">${t("yourDataText")}</p>
   <div class="dataActions">
@@ -2443,7 +2444,7 @@ function helpMarkup(){
    <label class="importBtn">${t("importData")}<input id="importData" type="file" accept="application/json,.json" hidden></label>
   </div>
  </div>
- <div class="versionStamp">Ontario Stocked Lakes • v${APP_VERSION}</div>`;
+ <div class="versionStamp">Ontario Stocked Lakes • ${APP_VERSION}<span>© 2026 Richard J Allinson</span><span class="rightsNote">${t("rightsNote")}</span></div>`;
 }
 
 // Derived from wherever the app is being served, so the share link is correct
@@ -2524,7 +2525,7 @@ function settingsMarkup(){
   <button id="openHelpFromSettings" class="ghostbtn wide" type="button">${t("helpTitle")}</button>
  </section>
 
- <div class="versionStamp">Ontario Stocked Lakes • v${APP_VERSION}</div>`;
+ <div class="versionStamp">Ontario Stocked Lakes • ${APP_VERSION}<span>© 2026 Richard J Allinson</span><span class="rightsNote">${t("rightsNote")}</span></div>`;
 }
 
 function openSettings(){

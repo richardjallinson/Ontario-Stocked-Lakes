@@ -724,3 +724,11 @@ body.filtering .sectiontitle{margin-top:14px}
   .round svg{width:19px;height:19px}
   .langSwitch button{font-size:13px}
 }
+
+/* Version stamp carries the ownership line now. The spans are blocks so the
+   three lines stack; the rights note is quieter because it is a scoping
+   clarification, not a claim — the government, OSM and GeoNames data the app
+   bundles is not the author's to licence, and the stamp should not imply it is. */
+.versionStamp span{display:block;margin-top:3px}
+.versionStamp .rightsNote{font-size:9.5px;line-height:1.45;opacity:.85;
+ max-width:34em;margin-left:auto;margin-right:auto}

@@ -127,14 +127,18 @@ application or is responsible for its contents.
 
 ## Contributing
 
-Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+Issues and bug reports are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+Pull requests are not being accepted, because contributed code would sit
+awkwardly under the licence below.
 
 ## Licence
 
-Source code is [MIT](LICENSE). The bundled government datasets are covered by
-their own licences, above.
+Copyright © 2026 Richard J Allinson. All rights reserved. This source is
+published to be read, not reused: see [LICENSE](LICENSE) for the terms. The
+bundled government, OpenStreetMap and GeoNames data stays under its own
+licences, above, and nothing here restricts your rights in that material.
 
 ---
 
-**Version v2h.** `APP_VERSION` in `app.js` and `VERSION` in `sw.js` both read
-`v2h` and must always match. See [CHANGELOG.md](CHANGELOG.md) for what changed.
+**Version v2i.** `APP_VERSION` in `app.js` and `VERSION` in `sw.js` both read
+`v2i` and must always match. See [CHANGELOG.md](CHANGELOG.md) for what changed.

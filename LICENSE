@@ -1,28 +1,55 @@
-MIT License
+Copyright (c) 2026 Richard J Allinson. All rights reserved.
 
-Copyright (c) 2026 Ontario Stocked Lakes contributors
+Ontario Stocked Lakes — proprietary licence
+===========================================
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This software, including its source code, design, artwork, text and the
+compiled data files distributed with it, is the property of Richard J
+Allinson and is protected by copyright.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+You may view this source code for reference. You may not copy, modify,
+merge, publish, distribute, sublicense, sell, or create derivative works
+from it, or host your own copy of the application, in whole or in part,
+without prior written permission from the copyright holder.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+No licence, express or implied, is granted by the publication of this
+source code.
 
----
 
-The government datasets distributed with this repository
-(ontario-regulations-2026.json, fish-advisories-2025.json) are not covered by
-the MIT licence above. They are used under the Open Government Licence –
-Ontario: https://www.ontario.ca/page/open-government-licence-ontario
+Third-party data and components
+-------------------------------
+
+The reservation above covers this application only. It does not extend to
+material the application incorporates, which remains under the licence of
+its own rights holder and is not relicensed here:
+
+  * Ontario stocking records, waterbody index, fishing regulations and
+    fish consumption advisories — Open Government Licence – Ontario
+    https://www.ontario.ca/page/open-government-licence-ontario
+
+  * Weather data — Environment and Climate Change Canada Data Server
+    End-use Licence
+    https://eccc-msc.github.io/open-data/licence/readme_en/
+
+  * Camping and lodging locations — (c) OpenStreetMap contributors,
+    Open Database Licence (ODbL). The in-app attribution required by the
+    ODbL is enforced by the test suite and must not be removed.
+    https://www.openstreetmap.org/copyright
+
+  * Place names — GeoNames, Creative Commons Attribution
+    https://www.geonames.org/
+
+  * Map tiles — CARTO and Ontario Land Information Ontario, under their
+    respective terms.
+
+  * Leaflet — BSD 2-Clause, (c) Vladimir Agafonkin and CloudMade.
+
+Nothing in this licence restricts any right you hold in that material
+under its own terms.
+
+
+Contact
+-------
+
+For permission requests, contact the copyright holder through the project
+repository.

@@ -1,6 +1,15 @@
 # Contributing
 
-Thanks for helping out.
+Thanks for helping out. Bug reports, data corrections and feature suggestions
+are genuinely useful — please open an issue.
+
+Code contributions are a different matter. This project is all rights reserved
+(see [LICENSE](LICENSE)), so merged code would leave you holding copyright in
+part of a proprietary application. Pull requests are therefore not being
+accepted. If you want to propose a change, describe it in an issue.
+
+The conventions below still apply to anyone reading the source or running it
+locally for reference.
 
 ## Setup
 
@@ -9,14 +18,14 @@ Thanks for helping out.
 python3 -m http.server 8080
 ```
 
-## Before you open a pull request
+## Checks the project runs
 
 ```bash
 node --check app.js
 node --check sw.js
 ```
 
-CI runs the same checks.
+CI runs the same checks on every push.
 
 ## Conventions
 
