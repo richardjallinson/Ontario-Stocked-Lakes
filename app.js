@@ -31,7 +31,11 @@ const I18N={
   location:"Location",locationNote:"Used on this device to sort lakes by distance. Never sent anywhere.",
   useLocation:"Use my location",
   appLink:"App link",appLinkNote:"Share Ontario Stocked Lakes with someone.",
-  copyLink:"Copy link",shareApp:"Share",linkCopied:"Link copied."
+  copyLink:"Copy link",shareApp:"Share",linkCopied:"Link copied.",
+  stockingData:"Stocking data",
+  stockingDataNote:"Bundled with the app, so it opens without a network. Check Ontario for newer records whenever you have a signal.",
+  checkStockings:"Check for new stockings",checkingStockings:"Checking…",
+  asOf:"Ontario stocking data as of",liveData:"Ontario stocking data, loaded live."
  },
  fr:{
   findFish:"Trouver du poisson",distance:"Distance",species:"Espèce",stockingYear:"Année d'ensemencement",
@@ -64,7 +68,11 @@ const I18N={
   location:"Position",locationNote:"Utilisée sur cet appareil pour trier les lacs par distance. Jamais transmise.",
   useLocation:"Utiliser ma position",
   appLink:"Lien de l'application",appLinkNote:"Partagez Ontario Stocked Lakes avec quelqu'un.",
-  copyLink:"Copier le lien",shareApp:"Partager",linkCopied:"Lien copié."
+  copyLink:"Copier le lien",shareApp:"Partager",linkCopied:"Lien copié.",
+  stockingData:"Données d'ensemencement",
+  stockingDataNote:"Incluses dans l'application, qui s'ouvre donc sans réseau. Vérifiez auprès de l'Ontario s'il y a de nouvelles données lorsque vous avez du signal.",
+  checkStockings:"Vérifier les nouveaux ensemencements",checkingStockings:"Vérification…",
+  asOf:"Données d'ensemencement de l'Ontario au",liveData:"Données d'ensemencement de l'Ontario, chargées en direct."
  }
 };
 let appLang=localStorage.getItem("osl-language")||"en";
@@ -96,7 +104,7 @@ function translateStaticUI(){
  const sort=$("findSort");if(sort&&sort.options.length>=4){sort.options[0].text=t("bestMatch");sort.options[1].text=t("closest");sort.options[2].text=t("recent");sort.options[3].text=t("quantity")}
 }
 
-const APP_VERSION="v1u";
+const APP_VERSION="v1w";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -444,18 +452,92 @@ function wireAdvisory(l){
   out.innerHTML=`<div class="mealgrid"><div><small>General population</small><b>${g?esc(g.meals):"N/A"}</b><span>meals/month</span></div><div><small>Sensitive population</small><b>${s?esc(s.meals):"N/A"}</b><span>meals/month</span></div></div>${cause?`<p class="microcopy">Advisory cause listed by Ontario: ${esc(cause)}</p>`:""}<p class="microcopy">This is planning information from Ontario's 2025 advisory database. Verify current advice in the official Fish Guide.</p>`;
  };
 }
+/* ---------------------------------------------------------------------------
+   Where the stocking table comes from.
+
+   It used to come from the live ArcGIS API on every cold open: 12,000-odd
+   records, every field, before the user had asked for anything. Invisible on
+   wifi; a spinner and a chunk of cellular data on a weak signal; and with no
+   signal at all, an app with no stocking data whatsoever — which is a strange
+   state for something whose whole argument is that it works at the lake.
+
+   Now it is a bundled file like every other dataset here, built by
+   tools/build-stocking.py. The API is still available, but only when the user
+   asks for it from Settings.
+
+   If the file has not been built, we fall back to the API exactly as before,
+   so a fresh checkout still works before anyone has run the tool. --------- */
+
+let stockingBuilt="";     // snapshot date, shown in the UI so it never looks live
+
+/* The bundled file shortens its keys to halve the size. Expand them back to
+   the names the rest of the app already uses, so nothing downstream changes. */
+function expandStocking(payload){
+ const map=payload.fields||{};
+ return (payload.rows||[]).map(r=>{
+  const out={};
+  for(const k in r)out[map[k]||k]=r[k];
+  return out;
+ });
+}
+
+async function loadBundledStocking(){
+ const r=await fetch("ontario-stocking.json");
+ if(!r.ok)throw Error("not built");
+ const j=await r.json();
+ if(!Array.isArray(j.rows)||!j.rows.length)throw Error("empty");
+ stockingBuilt=j.built||"";
+ return expandStocking(j);
+}
+
+async function loadLiveStocking(){
+ let all=[],offset=0,page=0;
+ while(true){const j=await fetchPage(offset),batch=(j.features||[]).map(x=>x.attributes);all.push(...batch);$("count").textContent=`Loading… ${num(all.length)} records`;page++;if(batch.length<1000||!j.exceededTransferLimit)break;offset+=batch.length;if(page>100)break}
+ stockingBuilt="";        // live data has no snapshot date; it is today's
+ return all;
+}
+
+function afterStockingLoaded(){
+ buildLakes();updateDashboard();buildFilters();apply();
+ loadFMZ(false).then(()=>apply());
+ loadObservedSpecies();loadAdvisories();loadFullRegulations();loadWaterbodies();loadTripData();
+}
+
 async function load(){
  $("count").textContent="Loading Ontario data…";
  ["statLakes","statRecords","statSpecies","statLatest"].forEach(id=>{const el=$(id);if(el)el.textContent="…"});
  try{
-  let all=[],offset=0,page=0;
-  while(true){const j=await fetchPage(offset),batch=(j.features||[]).map(x=>x.attributes);all.push(...batch);$("count").textContent=`Loading… ${num(all.length)} records`;page++;if(batch.length<1000||!j.exceededTransferLimit)break;offset+=batch.length;if(page>100)break}
-  rows=all.filter(x=>x.Latitude&&x.Longitude);buildLakes();updateDashboard();buildFilters();apply();loadFMZ(false).then(()=>apply());loadObservedSpecies();loadAdvisories();loadFullRegulations();loadWaterbodies();loadTripData();
+  let all;
+  try{ all=await loadBundledStocking(); }
+  catch(e){ all=await loadLiveStocking(); }   // file not built: behave as before
+  rows=all.filter(x=>x.Latitude&&x.Longitude);
+  afterStockingLoaded();
  }catch(e){
   $("results").innerHTML=`<div class="error"><b>Ontario stocking data didn't load.</b><br>Check your connection and pull to reload. If you were offline, saved lakes and regulations are still available.<br><small>${esc(e.message)}</small></div>`;
   $("count").textContent="Unavailable";
   ["statLakes","statRecords","statSpecies","statLatest"].forEach(id=>{const el=$(id);if(el)el.textContent="—"});
   toast("Ontario stocking data didn't load. Check your connection.");
+ }
+}
+
+/* Settings → "Check for new stockings". The only thing that touches the live
+   API now, and only because someone asked it to. */
+async function refreshStockingFromAPI(){
+ const btn=$("refreshStocking");
+ if(btn){btn.disabled=true;btn.textContent=t("checkingStockings")}
+ try{
+  const all=await loadLiveStocking();
+  const fresh=all.filter(x=>x.Latitude&&x.Longitude);
+  const added=fresh.length-rows.length;
+  rows=fresh;
+  afterStockingLoaded();
+  toast(added>0?`${num(added)} new stocking records.`
+       :added<0?"Ontario's records changed. Updated."
+       :"No new stocking records.");
+ }catch(e){
+  toast("Couldn't reach Ontario's stocking service.");
+ }finally{
+  if(btn){btn.disabled=false;btn.textContent=t("checkStockings")}
  }
 }
 
@@ -988,6 +1070,8 @@ function updateDashboard(){
  $("statRecords").textContent=num(rows.length);
  $("statSpecies").textContent=num(speciesCount);
  $("statLatest").textContent=latestYear||"—";
+ const age=$("dataAge");
+ if(age)age.textContent=stockingBuilt?`${t("asOf")} ${stockingBuilt}.`:t("liveData");
 }
 function buildFilters(rebuild){
  const sel=$("species"),find=$("findSpecies");
@@ -1950,6 +2034,13 @@ function settingsMarkup(){
  </section>
 
  <section class="setBlock">
+  <h3>${t("stockingData")}</h3>
+  <p class="setNote">${t("stockingDataNote")}</p>
+  <p class="setNote">${stockingBuilt?`${t("asOf")} ${esc(stockingBuilt)}.`:t("liveData")}</p>
+  <button id="refreshStocking" class="ghostbtn wide" type="button">${t("checkStockings")}</button>
+ </section>
+
+ <section class="setBlock">
   <h3>${t("appLink")}</h3>
   <p class="setNote">${t("appLinkNote")}</p>
   <div class="linkRow"><code id="appUrl">${esc(APP_URL)}</code></div>
@@ -1981,6 +2072,7 @@ function openSettings(){
  c.querySelectorAll("[data-size]").forEach(b=>b.onclick=()=>{applyTextSize(b.dataset.size);openSettings()});
  c.querySelectorAll("[data-lang]").forEach(b=>b.onclick=()=>{setLanguage(b.dataset.lang);openSettings()});
  const sl=$("setLocate");if(sl)sl.onclick=()=>{$("settingsSheet").classList.add("hidden");locate(apply)};
+ const rs=$("refreshStocking");if(rs)rs.onclick=refreshStockingFromAPI;
  const cl=$("copyLink");if(cl)cl.onclick=()=>{
   const done=()=>toast(t("linkCopied"));
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(APP_URL).then(done).catch(()=>toast(APP_URL));

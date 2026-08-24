@@ -596,3 +596,7 @@ body.filtering .sectiontitle{margin-top:14px}
 /* v1u trip data: the "About 12 km N of Apsley" line and the OSM credit. */
 .whereLine{margin:2px 0 12px;color:var(--muted);font-size:13px}
 .osmNote{margin-top:8px}
+
+/* The stocking table is a bundled snapshot, not a live feed. Say so plainly
+   under the dashboard, the same way the lodging card names its source. */
+.dataAge{margin:-2px 16px 14px;font-size:.78rem;opacity:.6;text-align:center}
