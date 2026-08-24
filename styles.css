@@ -732,3 +732,44 @@ body.filtering .sectiontitle{margin-top:14px}
 .versionStamp span{display:block;margin-top:3px}
 .versionStamp .rightsNote{font-size:9.5px;line-height:1.45;opacity:.85;
  max-width:34em;margin-left:auto;margin-right:auto}
+
+/* ---------------------------------------------------------------------------
+   Trip sheet: tabs, checklist, catch form.
+
+   The sheet used to be one long scroll — snapshot, catch log, form, notes,
+   end-trip — so logging a fish on the water meant scrolling past everything
+   else with cold hands. Three tabs put each job one tap away and keep the
+   End Fishing Trip button pinned below them, out of the way of the tap you
+   actually make forty times a day.
+   --------------------------------------------------------------------------- */
+.tripTabs{display:flex;gap:6px;margin:14px 0 12px;border-bottom:1px solid var(--line)}
+.tripTabs button{flex:1;border:0;background:transparent;color:var(--muted);
+ font:inherit;font-weight:800;font-size:13px;padding:10px 4px;min-height:40px;
+ border-bottom:2px solid transparent;cursor:pointer}
+.tripTabs button.on{color:var(--green);border-bottom-color:var(--gold)}
+
+/* Labelled number fields. Length and weight are indistinguishable as two bare
+   boxes, and the unit belongs on the label rather than in a placeholder that
+   vanishes the moment you type. */
+.fieldLabel{display:grid;gap:4px;font-size:11px;font-weight:800;color:var(--muted)}
+.fieldLabel input{width:100%}
+
+/* Checklist. Rows are 44px because this is used standing in a boat. */
+.checklistHead{display:flex;justify-content:space-between;align-items:center;margin:0 0 4px}
+.checklistHead h3{margin:0}
+.checklist{display:grid;gap:6px;margin:10px 0 12px}
+.checkItem{display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 10px;
+ background:#fff;border:1px solid var(--line);border-radius:12px;cursor:pointer}
+.checkItem input{width:22px;height:22px;flex:0 0 auto;accent-color:var(--green)}
+.checkItem span{flex:1;font-size:14px}
+.checkItem.done span{color:var(--muted);text-decoration:line-through}
+.checkItem button{border:0;background:#eee;border-radius:50%;width:30px;height:30px;
+ flex:0 0 auto;font-size:16px;line-height:1;color:var(--ink)}
+.addItemRow{grid-template-columns:1fr auto;align-items:center;gap:8px}
+.addItemRow input{border:1px solid var(--line);border-radius:10px;padding:11px;
+ font:inherit;background:#fff;min-height:44px}
+.secondaryAction.wide{width:100%;margin-top:4px}
+.catchrow .catchNote{font-style:italic}
+/* There is no global .hidden rule — the sheets each scope their own — so the
+   free-text species field needs its own. */
+#catchSpeciesOther.hidden{display:none}

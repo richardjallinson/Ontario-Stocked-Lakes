@@ -49,6 +49,67 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
+  unitCm:"cm",
+  unitIn:"in",
+  unitKg:"kg",
+  unitLb:"lb",
+  units:"Units",
+  unitsNote:"Lengths and weights are stored the same way either way, so switching does not change anything you have already logged.",
+  metric:"Metric (cm / kg)",
+  imperial:"Imperial (in / lb)",
+  length:"Length",
+  weight:"Weight",
+  disposition:"Kept or released",
+  released:"Released",
+  kept:"Kept",
+  catchLog:"Catch log",
+  checklist:"Checklist",
+  notes:"Notes",
+  tripSections:"Trip sections",
+  activeTrip:"Active trip",
+  completedTrip:"Completed",
+  catchOne:"catch",
+  catchMany:"catches",
+  fmz:"FMZ",
+  lakeSnapshot:"Lake snapshot",
+  stockedWith:"Stocked",
+  latestStocking:"Latest stocking",
+  observed:"Observed",
+  checkFmzRegs:"Check regulations for FMZ",
+  noCatchesYet:"No catches logged yet.",
+  noTripsYet:"No fishing trips yet. Open a lake and tap “Start Fishing Trip.”",
+  tripEndedNote:"This trip has ended, so no more catches can be added.",
+  addCatch:"+ Add catch",
+  deleteCatch:"Delete this catch",
+  catchSpeciesLabel:"Species",
+  choooseSpecies:"Choose a species…",
+  otherSpecies:"Other…",
+  noSpeciesListNote:"No species are on record for this lake, so type what you caught.",
+  saveCatchLocation:"Save current catch location",
+  checkEatingAdvice:"Check the eating advice for this lake",
+  checklistNote:"Saved with this trip. Add your own items — they stay on this device.",
+  addItem:"Add",
+  addItemPh:"Add an item…",
+  removeItem:"Remove this item",
+  uncheckAll:"Uncheck everything",
+  saveTripNotes:"Save trip notes",
+  notesSaved:"Trip notes saved.",
+  endTrip:"End fishing trip",
+  chk_licence:"Fishing licence / Outdoors Card",
+  chk_rodReel:"Rods and reels",
+  chk_tackle:"Tackle box",
+  chk_lineHooks:"Spare line and hooks",
+  chk_bait:"Bait",
+  chk_netPliers:"Landing net and pliers",
+  chk_measure:"Tape or measuring board",
+  chk_pfd:"Life jackets",
+  chk_firstAid:"First aid kit",
+  chk_sunProtection:"Sunscreen, hat and sunglasses",
+  chk_rainGear:"Rain gear",
+  chk_waterFood:"Water and food",
+  chk_phonePower:"Phone and power bank",
+  chk_floatPlan:"Tell someone where you are going",
+  chk_garbageBag:"Bag for your garbage",
   rightsNote:"App, design and text. The government, OpenStreetMap and GeoNames data it uses stay under their own licences.",
   plateAboutNote:"They are shown to help you picture the fish, not to identify one. Several Ontario species are easily confused and their limits differ \u2014 check the official rule before keeping anything.",
   noLakeWithSpecies:"No lake within {r} km has {sp} on record. Try a wider distance — or the species may simply not have been surveyed nearby.",
@@ -169,6 +230,67 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
+  unitCm:"cm",
+  unitIn:"po",
+  unitKg:"kg",
+  unitLb:"lb",
+  units:"Unités",
+  unitsNote:"Les longueurs et les poids sont enregistrés de la même façon dans les deux cas : changer d’unités ne modifie rien de ce que vous avez déjà noté.",
+  metric:"Métrique (cm / kg)",
+  imperial:"Impérial (po / lb)",
+  length:"Longueur",
+  weight:"Poids",
+  disposition:"Gardé ou remis à l’eau",
+  released:"Remis à l’eau",
+  kept:"Gardé",
+  catchLog:"Journal de pêche",
+  checklist:"Liste de vérification",
+  notes:"Notes",
+  tripSections:"Sections de la sortie",
+  activeTrip:"Sortie en cours",
+  completedTrip:"Terminée",
+  catchOne:"prise",
+  catchMany:"prises",
+  fmz:"ZPP",
+  lakeSnapshot:"Aperçu du lac",
+  stockedWith:"Ensemencé",
+  latestStocking:"Dernier ensemencement",
+  observed:"Observé",
+  checkFmzRegs:"Consulter la réglementation de la ZPP",
+  noCatchesYet:"Aucune prise enregistrée.",
+  noTripsYet:"Aucune sortie de pêche. Ouvrez un lac et touchez « Démarrer une sortie ».",
+  tripEndedNote:"Cette sortie est terminée; aucune prise ne peut être ajoutée.",
+  addCatch:"+ Ajouter une prise",
+  deleteCatch:"Supprimer cette prise",
+  catchSpeciesLabel:"Espèce",
+  choooseSpecies:"Choisir une espèce…",
+  otherSpecies:"Autre…",
+  noSpeciesListNote:"Aucune espèce n’est répertoriée pour ce lac; inscrivez votre prise.",
+  saveCatchLocation:"Enregistrer la position de la prise",
+  checkEatingAdvice:"Consultez les conseils de consommation pour ce lac",
+  checklistNote:"Enregistrée avec cette sortie. Ajoutez vos propres articles — ils restent sur cet appareil.",
+  addItem:"Ajouter",
+  addItemPh:"Ajouter un article…",
+  removeItem:"Retirer cet article",
+  uncheckAll:"Tout décocher",
+  saveTripNotes:"Enregistrer les notes",
+  notesSaved:"Notes enregistrées.",
+  endTrip:"Terminer la sortie",
+  chk_licence:"Permis de pêche / Carte Plein air",
+  chk_rodReel:"Cannes et moulinets",
+  chk_tackle:"Coffre à pêche",
+  chk_lineHooks:"Fil et hameçons de rechange",
+  chk_bait:"Appâts",
+  chk_netPliers:"Épuisette et pinces",
+  chk_measure:"Ruban ou planche à mesurer",
+  chk_pfd:"Gilets de sauvetage",
+  chk_firstAid:"Trousse de premiers soins",
+  chk_sunProtection:"Crème solaire, chapeau et lunettes",
+  chk_rainGear:"Vêtements de pluie",
+  chk_waterFood:"Eau et nourriture",
+  chk_phonePower:"Téléphone et batterie externe",
+  chk_floatPlan:"Dire à quelqu’un où vous allez",
+  chk_garbageBag:"Sac pour vos déchets",
   rightsNote:"Application, conception et textes. Les donn\u00e9es gouvernementales, OpenStreetMap et GeoNames qu'elle utilise demeurent sous leurs propres licences.",
   plateAboutNote:"Elles vous aident \u00e0 visualiser le poisson, mais ne servent pas \u00e0 l'identifier. Plusieurs esp\u00e8ces de l'Ontario se confondent facilement et leurs limites diff\u00e8rent \u2014 v\u00e9rifiez la r\u00e8gle officielle avant de garder une prise.",
   noLakeWithSpecies:"Aucun lac dans un rayon de {r}\u00a0km n'a de {sp} au registre. Essayez une distance plus grande \u2014 ou l'esp\u00e8ce n'a simplement pas fait l'objet d'un relev\u00e9 \u00e0 proximit\u00e9.",
@@ -285,7 +407,7 @@ function translateStaticUI(){
  if(note)note.textContent=t(findMode==="stocked"?"modeNoteStocked":"modeNoteAny");
 }
 
-const APP_VERSION="v2i";
+const APP_VERSION="v2j";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -2025,37 +2147,238 @@ ${presentBlock(l)}
  });
 }
 function saveTrips(){localStorage.setItem("osl-trips",JSON.stringify(trips))}
+
+/* Units. Measurements are stored canonically in centimetres and kilograms and
+   converted only for display, so switching the setting reinterprets nothing —
+   a fish logged at 45 cm reads 17.7 in and still weighs what it weighed. */
+function currentUnits(){return localStorage.getItem("osl-units")==="imperial"?"imperial":"metric"}
+function setUnits(u){localStorage.setItem("osl-units",u==="imperial"?"imperial":"metric")}
+const CM_PER_IN=2.54, LB_PER_KG=2.20462262;
+function lenOut(cm){const n=Number(cm);if(!isFinite(n)||!n)return null;return currentUnits()==="imperial"?n/CM_PER_IN:n}
+function lenIn(v){const n=parseFloat(v);if(!isFinite(n)||n<=0)return null;return currentUnits()==="imperial"?n*CM_PER_IN:n}
+function wtOut(kg){const n=Number(kg);if(!isFinite(n)||!n)return null;return currentUnits()==="imperial"?n*LB_PER_KG:n}
+function wtIn(v){const n=parseFloat(v);if(!isFinite(n)||n<=0)return null;return currentUnits()==="imperial"?n/LB_PER_KG:n}
+function lenUnit(){return currentUnits()==="imperial"?t("unitIn"):t("unitCm")}
+function wtUnit(){return currentUnits()==="imperial"?t("unitLb"):t("unitKg")}
+function num1(n){return n==null?"":(Math.round(n*10)/10).toString()}
+
+/* Trips written before v2j kept length as a free-text string of centimetres
+   and had no weight or checklist. Read them forward rather than dropping the
+   data — someone's logbook is the least disposable thing in the app. */
+function migrateTrips(){
+ let touched=false;
+ trips.forEach(tr=>{
+  if(!Array.isArray(tr.catches))tr.catches=[];
+  tr.catches.forEach(c=>{
+   if(c.lenCm==null&&c.size!=null&&c.size!==""){const n=parseFloat(c.size);if(isFinite(n)&&n>0){c.lenCm=n;touched=true}}
+   if(c.wtKg===undefined){c.wtKg=null;touched=true}
+  });
+  if(!Array.isArray(tr.checklist)){tr.checklist=defaultChecklist();touched=true}
+ });
+ if(touched)saveTrips();
+}
+
+/* Default gear list. Items are stored by key, not by label, so the list still
+   reads correctly after a language switch. Custom items store their own text
+   because there is nothing to translate them against. */
+const CHECKLIST_KEYS=["licence","rodReel","tackle","lineHooks","bait","netPliers","measure",
+ "pfd","firstAid","sunProtection","rainGear","waterFood","phonePower","floatPlan","garbageBag"];
+function defaultChecklist(){return CHECKLIST_KEYS.map((k,i)=>({id:i+1,key:k,done:false}))}
+function checklistLabel(item){return item.key?t("chk_"+item.key):(item.label||"")}
+
+function tripLake(tr){return lakes.find(l=>l.key===tr.lakeKey)}
 function startTrip(l){
- const trip={id:Date.now(),lakeKey:l.key,lakeName:l.name,lat:l.lat,lon:l.lon,fmz:l.fmz||null,started:new Date().toISOString(),ended:null,catches:[],notes:""};
+ const trip={id:Date.now(),lakeKey:l.key,lakeName:l.name,lat:l.lat,lon:l.lon,fmz:l.fmz||null,
+  started:new Date().toISOString(),ended:null,catches:[],notes:"",checklist:defaultChecklist()};
  trips.unshift(trip);saveTrips();$("sheet").classList.add("hidden");openTrip(trip.id);
 }
-function tripLake(t){return lakes.find(l=>l.key===t.lakeKey)}
+
+/* Which tab the trip sheet opens on. Reset per trip rather than kept globally:
+   opening a different trip should start at its catches. */
+let tripTab="catches", tripTabFor=null;
+
+/* Species the angler could plausibly log here: what the lake is stocked with,
+   plus what surveys actually recorded, minus the forage species that are in
+   the data but that nobody is catching on a rod. If that comes to nothing the
+   picker is not shown at all — a blank dropdown would imply the lake holds no
+   fish, which is not what "no data" means. */
+function catchSpeciesOptions(tr){
+ const l=tripLake(tr);if(!l)return [];
+ const set=new Set([...(l.species||[]),...anglerSpecies(l.present||[])]);
+ (tr.catches||[]).forEach(c=>{if(c.species)set.add(c.species)});
+ return [...set].filter(Boolean).sort((a,b)=>a.localeCompare(b));
+}
+
+function catchRowMarkup(c){
+ const len=lenOut(c.lenCm), wt=wtOut(c.wtKg);
+ const bits=[];
+ if(len!=null)bits.push(`${num1(len)} ${lenUnit()}`);
+ if(wt!=null)bits.push(`${num1(wt)} ${wtUnit()}`);
+ const disp=c.disposition==="Kept"?t("kept"):t("released");
+ return `<div class="catchrow"><div><b>${esc(c.species)}</b>
+  <span>${new Date(c.time).toLocaleTimeString(appLang==="fr"?"fr-CA":"en-CA",{hour:"numeric",minute:"2-digit"})} • ${esc(disp)}</span>
+  ${bits.length?`<span>${esc(bits.join(" • "))}</span>`:""}
+  ${c.notes?`<span class="catchNote">${esc(c.notes)}</span>`:""}
+  ${c.disposition==="Kept"?`<span>🍽️ ${t("checkEatingAdvice")}</span>`:""}</div>
+  <button data-delcatch="${c.id}" aria-label="${t("deleteCatch")}">×</button></div>`;
+}
+
+function catchFormMarkup(tr){
+ const opts=catchSpeciesOptions(tr);
+ const picker=opts.length
+  ? `<select id="catchSpecies" aria-label="${t("catchSpeciesLabel")}">
+      <option value="">${t("choooseSpecies")}</option>
+      ${opts.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join("")}
+      <option value="__other">${t("otherSpecies")}</option>
+     </select>
+     <input id="catchSpeciesOther" class="hidden" placeholder="${t("catchSpeciesPh")}" aria-label="${t("catchSpeciesLabel")}">`
+  : `<p class="setNote">${t("noSpeciesListNote")}</p>
+     <input id="catchSpeciesOther" placeholder="${t("catchSpeciesPh")}" aria-label="${t("catchSpeciesLabel")}">`;
+ return `<div class="catchform">
+  ${picker}
+  <div class="formrow">
+   <label class="fieldLabel">${t("length")} (${lenUnit()})<input id="catchSize" type="number" inputmode="decimal" min="0" step="0.1" placeholder="${lenUnit()}"></label>
+   <label class="fieldLabel">${t("weight")} (${wtUnit()})<input id="catchWeight" type="number" inputmode="decimal" min="0" step="0.01" placeholder="${wtUnit()}"></label>
+  </div>
+  <select id="catchDisposition" aria-label="${t("disposition")}">
+   <option value="Released">${t("released")}</option>
+   <option value="Kept">${t("kept")}</option>
+  </select>
+  <textarea id="catchNotes" placeholder="${t("catchNotesPh")}"></textarea>
+  <label class="checkline"><input id="catchLocation" type="checkbox"> ${t("saveCatchLocation")}</label>
+  <button id="addCatch">${t("addCatch")}</button>
+ </div>`;
+}
+
+function checklistMarkup(tr){
+ const list=tr.checklist||[];
+ const done=list.filter(i=>i.done).length;
+ return `<div class="checklistHead"><h3>${t("checklist")}</h3><span class="pill">${done}/${list.length}</span></div>
+ <p class="setNote">${t("checklistNote")}</p>
+ <div class="checklist">${list.map(i=>`<label class="checkItem${i.done?" done":""}">
+   <input type="checkbox" data-chk="${i.id}"${i.done?" checked":""}>
+   <span>${esc(checklistLabel(i))}</span>
+   ${i.key?"":`<button data-delchk="${i.id}" aria-label="${t("removeItem")}">×</button>`}
+  </label>`).join("")}</div>
+ <div class="formrow addItemRow">
+  <input id="newChkItem" placeholder="${t("addItemPh")}" aria-label="${t("addItemPh")}">
+  <button id="addChkItem" class="secondaryAction">${t("addItem")}</button>
+ </div>
+ <button id="resetChk" class="secondaryAction wide">${t("uncheckAll")}</button>`;
+}
+
 function openTrip(id){
- const t=trips.find(x=>x.id===id);if(!t)return;const l=tripLake(t),active=!t.ended;
- $("tripDetail").innerHTML=`<h2>🎣 ${esc(t.lakeName)}</h2><div class="tripmeta">${new Date(t.started).toLocaleString("en-CA")}${t.fmz?` • FMZ ${t.fmz}`:""} • ${active?"Active trip":"Completed"}</div>
- ${l?`<div class="lakeSnapshot"><b>Lake snapshot</b><span>Stocked: ${esc(l.species.join(", ")||"—")}</span><span>Latest stocking: ${esc(l.latestYear||"—")}</span>${l.observedSpecies&&l.observedSpecies.length?`<span>Observed: ${esc(l.observedSpecies.map(s=>s.species).join(", "))}</span>`:""}</div>`:""}
- ${t.fmz?`<a class="zoneAction" target="_blank" rel="noopener" href="${REGS_BASE}${t.fmz}">Check FMZ ${t.fmz} Regulations</a>`:""}
- <h3>Catch Log</h3><div class="catchlist">${t.catches.length?t.catches.map(c=>`<div class="catchrow"><div><b>${esc(c.species)}</b><span>${new Date(c.time).toLocaleTimeString("en-CA",{hour:"numeric",minute:"2-digit"})} • ${esc(c.disposition)}</span>${c.size?`<span>${esc(c.size)} cm</span>`:""}${c.disposition==="Kept"&&c.size?`<span>🍽️ Check lake eating advice</span>`:""}</div><button data-delcatch="${c.id}">×</button></div>`).join(""):`<div class="historynote">No catches logged yet.</div>`}</div>
- ${active?`<div class="catchform"><input id="catchSpecies" placeholder="${t('catchSpeciesPh')}"><div class="formrow"><input id="catchSize" type="number" min="0" step="0.1" placeholder="${t('catchLengthPh')}"><select id="catchDisposition"><option>Released</option><option>Kept</option></select></div><textarea id="catchNotes" placeholder="${t('catchNotesPh')}"></textarea><label class="checkline"><input id="catchLocation" type="checkbox"> Save current catch location</label><button id="addCatch">+ Add Catch</button></div>
- <textarea id="tripNotes" class="tripnotes" placeholder="${t('tripNotesPh')}">${esc(t.notes||"")}</textarea><button id="saveTripNotes" class="secondaryAction">Save Trip Notes</button><button id="endTrip" class="endTrip">End Fishing Trip</button>`:""}
- `;
- $("tripSheet").classList.remove("hidden");
- document.querySelectorAll("[data-delcatch]").forEach(b=>b.onclick=()=>{t.catches=t.catches.filter(c=>c.id!==Number(b.dataset.delcatch));saveTrips();openTrip(t.id)});
- if(active){
-  $("addCatch").onclick=()=>addCatch(t.id);$("saveTripNotes").onclick=()=>{t.notes=$("tripNotes").value;saveTrips()};
-  $("endTrip").onclick=()=>{t.notes=$("tripNotes").value;t.ended=new Date().toISOString();saveTrips();openTrip(t.id)};
+ const trip=trips.find(x=>x.id===id);if(!trip)return;
+ if(!Array.isArray(trip.checklist))trip.checklist=defaultChecklist();
+ const l=tripLake(trip),active=!trip.ended;
+ if(tripTabFor!==id){tripTab="catches";tripTabFor=id}
+ const tab=tripTab;
+
+ const head=`<h2>🎣 ${esc(trip.lakeName)}</h2>
+ <div class="tripmeta">${new Date(trip.started).toLocaleString(appLang==="fr"?"fr-CA":"en-CA")}${trip.fmz?` • ${t("fmz")} ${trip.fmz}`:""} • ${active?t("activeTrip"):t("completedTrip")}</div>
+ ${l?`<div class="lakeSnapshot"><b>${t("lakeSnapshot")}</b>
+   <span>${t("stockedWith")}: ${esc((l.species||[]).join(", ")||"—")}</span>
+   <span>${t("latestStocking")}: ${esc(l.latestYear||"—")}</span>
+   ${l.observedSpecies&&l.observedSpecies.length?`<span>${t("observed")}: ${esc(l.observedSpecies.map(s=>s.species).join(", "))}</span>`:""}</div>`:""}
+ ${trip.fmz?`<a class="zoneAction" target="_blank" rel="noopener" href="${REGS_BASE}${trip.fmz}">${t("checkFmzRegs")} ${trip.fmz}</a>`:""}
+ <div class="tripTabs" role="tablist" aria-label="${t("tripSections")}">
+  <button type="button" role="tab" data-triptab="catches" class="${tab==="catches"?"on":""}">${t("catchLog")} (${trip.catches.length})</button>
+  <button type="button" role="tab" data-triptab="checklist" class="${tab==="checklist"?"on":""}">${t("checklist")}</button>
+  <button type="button" role="tab" data-triptab="notes" class="${tab==="notes"?"on":""}">${t("notes")}</button>
+ </div>`;
+
+ let body="";
+ if(tab==="catches"){
+  body=`<div class="catchlist">${trip.catches.length?trip.catches.map(catchRowMarkup).join(""):`<div class="historynote">${t("noCatchesYet")}</div>`}</div>
+   ${active?catchFormMarkup(trip):`<p class="setNote">${t("tripEndedNote")}</p>`}`;
+ }else if(tab==="checklist"){
+  body=checklistMarkup(trip);
+ }else{
+  body=`<h3>${t("notes")}</h3>
+   <textarea id="tripNotes" class="tripnotes" placeholder="${t("tripNotesPh")}"${active?"":" readonly"}>${esc(trip.notes||"")}</textarea>
+   ${active?`<button id="saveTripNotes" class="secondaryAction wide">${t("saveTripNotes")}</button>`:""}`;
  }
+
+ const foot=active?`<button id="endTrip" class="endTrip">${t("endTrip")}</button>`:"";
+ $("tripDetail").innerHTML=head+body+foot;
+ $("tripSheet").classList.remove("hidden");
+
+ document.querySelectorAll("[data-triptab]").forEach(b=>b.onclick=()=>{tripTab=b.dataset.triptab;openTrip(id)});
+
+ if(tab==="catches"){
+  document.querySelectorAll("[data-delcatch]").forEach(b=>b.onclick=()=>{
+   trip.catches=trip.catches.filter(c=>c.id!==Number(b.dataset.delcatch));saveTrips();openTrip(id);
+  });
+  const sel=$("catchSpecies"),other=$("catchSpeciesOther");
+  if(sel&&other)sel.onchange=()=>{
+   other.classList.toggle("hidden",sel.value!=="__other");
+   if(sel.value==="__other")other.focus();
+  };
+  const ac=$("addCatch");if(ac)ac.onclick=()=>addCatch(id);
+ }else if(tab==="checklist"){
+  document.querySelectorAll("[data-chk]").forEach(b=>b.onchange=()=>{
+   const item=trip.checklist.find(i=>i.id===Number(b.dataset.chk));
+   if(item){item.done=b.checked;saveTrips();openTrip(id)}
+  });
+  document.querySelectorAll("[data-delchk]").forEach(b=>b.onclick=e=>{
+   e.preventDefault();
+   trip.checklist=trip.checklist.filter(i=>i.id!==Number(b.dataset.delchk));saveTrips();openTrip(id);
+  });
+  const add=$("addChkItem"),inp=$("newChkItem");
+  const addItem=()=>{
+   const label=(inp.value||"").trim();if(!label)return;
+   const nextId=trip.checklist.reduce((m,i)=>Math.max(m,i.id),0)+1;
+   trip.checklist.push({id:nextId,label,done:false});saveTrips();openTrip(id);
+  };
+  if(add)add.onclick=addItem;
+  if(inp)inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();addItem()}};
+  const rc=$("resetChk");if(rc)rc.onclick=()=>{trip.checklist.forEach(i=>i.done=false);saveTrips();openTrip(id)};
+ }else{
+  const st=$("saveTripNotes");
+  if(st)st.onclick=()=>{trip.notes=$("tripNotes").value;saveTrips();toast(t("notesSaved"))};
+ }
+
+ const et=$("endTrip");
+ if(et)et.onclick=()=>{
+  const ta=$("tripNotes");if(ta)trip.notes=ta.value;
+  trip.ended=new Date().toISOString();saveTrips();openTrip(id);
+ };
 }
+
 function addCatch(id){
- const t=trips.find(x=>x.id===id),species=$("catchSpecies").value.trim();if(!species)return alert(t("enterSpecies"));
- const finish=(loc)=>{t.catches.unshift({id:Date.now(),species,size:$("catchSize").value,disposition:$("catchDisposition").value,notes:$("catchNotes").value.trim(),time:new Date().toISOString(),location:loc});saveTrips();openTrip(id)};
- if($("catchLocation").checked&&navigator.geolocation)navigator.geolocation.getCurrentPosition(p=>finish({lat:p.coords.latitude,lon:p.coords.longitude}),()=>finish(null),{timeout:8000});else finish(null);
+ const trip=trips.find(x=>x.id===id);if(!trip)return;
+ const sel=$("catchSpecies"),other=$("catchSpeciesOther");
+ let species="";
+ if(sel&&sel.value&&sel.value!=="__other")species=sel.value;
+ else if(other)species=(other.value||"").trim();
+ if(!species)return toast(t("enterSpecies"));
+ const lenCm=lenIn($("catchSize").value), wtKg=wtIn($("catchWeight").value);
+ const finish=(loc)=>{
+  trip.catches.unshift({id:Date.now(),species,lenCm,wtKg,
+   disposition:$("catchDisposition").value,notes:($("catchNotes").value||"").trim(),
+   time:new Date().toISOString(),location:loc});
+  saveTrips();openTrip(id);
+ };
+ if($("catchLocation").checked&&navigator.geolocation)
+  navigator.geolocation.getCurrentPosition(p=>finish({lat:p.coords.latitude,lon:p.coords.longitude}),()=>finish(null),{timeout:8000});
+ else finish(null);
 }
+
 function renderTrips(){
  $("listTitle").textContent=t("myFishingTrips");$("count").textContent=`${trips.length} ${t("tripsCount")}`;markerLayer.clearLayers();
- $("results").innerHTML=trips.length?trips.map(t=>`<article class="record tripcard" data-trip="${t.id}"><div class="topline"><div><h4>${esc(t.lakeName)}</h4><div class="species">${t.ended?"Completed":"Active trip"}</div></div><span class="pill">${t.catches.length} catch${t.catches.length===1?"":"es"}</span></div><div class="meta"><span>🎣 ${new Date(t.started).toLocaleDateString("en-CA")}</span>${t.fmz?`<span>🗺️ FMZ ${t.fmz}</span>`:""}</div></article>`).join(""):`<div class="record empty">No fishing trips yet. Open a lake and tap “Start Fishing Trip.”</div>`;
+ $("results").innerHTML=trips.length?trips.map(tr=>{
+  const done=(tr.checklist||[]).filter(i=>i.done).length,total=(tr.checklist||[]).length;
+  return `<article class="record tripcard" data-trip="${tr.id}"><div class="topline"><div>
+   <h4>${esc(tr.lakeName)}</h4>
+   <div class="species">${tr.ended?t("completedTrip"):t("activeTrip")}</div></div>
+   <span class="pill">${tr.catches.length} ${tr.catches.length===1?t("catchOne"):t("catchMany")}</span></div>
+   <div class="meta"><span>🎣 ${new Date(tr.started).toLocaleDateString(appLang==="fr"?"fr-CA":"en-CA")}</span>
+   ${tr.fmz?`<span>🗺️ ${t("fmz")} ${tr.fmz}</span>`:""}
+   ${total&&!tr.ended?`<span>✅ ${done}/${total}</span>`:""}</div></article>`;
+ }).join(""):`<div class="record empty">${t("noTripsYet")}</div>`;
  document.querySelectorAll("[data-trip]").forEach(e=>e.onclick=()=>openTrip(Number(e.dataset.trip)));
 }
+
 function locate(after){
  const nativeLoc=nativeBridge("requestLocation");
  if(!nativeLoc&&!navigator.geolocation)return toast("This device cannot share a location. Use the search box to find a lake by name.");
@@ -2412,6 +2735,7 @@ function importMyData(file){
    if(Array.isArray(d.favorites))localStorage.setItem("osl-favorites",JSON.stringify(d.favorites));
    if(Array.isArray(d.recent))localStorage.setItem("osl-recent",JSON.stringify(d.recent));
    trips=JSON.parse(localStorage.getItem("osl-trips")||"[]");
+   migrateTrips();
    favoriteKeys=new Set(JSON.parse(localStorage.getItem("osl-favorites")||"[]"));
    recentLakes=JSON.parse(localStorage.getItem("osl-recent")||"[]");
    apply();toast("Restored your backup.");
@@ -2485,6 +2809,15 @@ function settingsMarkup(){
  </section>
 
  <section class="setBlock">
+  <h3>${t("units")}</h3>
+  <p class="setNote">${t("unitsNote")}</p>
+  <div class="segmented" role="group" aria-label="${t("units")}">
+   <button type="button" data-units="metric" class="${currentUnits()==="metric"?"on":""}">${t("metric")}</button>
+   <button type="button" data-units="imperial" class="${currentUnits()==="imperial"?"on":""}">${t("imperial")}</button>
+  </div>
+ </section>
+
+ <section class="setBlock">
   <h3>${t("location")}</h3>
   <p class="setNote">${t("locationNote")}</p>
   <button id="setLocate" class="ghostbtn wide" type="button">${t("useLocation")}</button>
@@ -2533,6 +2866,10 @@ function openSettings(){
  c.innerHTML=settingsMarkup();
  c.querySelectorAll("[data-size]").forEach(b=>b.onclick=()=>{applyTextSize(b.dataset.size);openSettings()});
  c.querySelectorAll("[data-lang]").forEach(b=>b.onclick=()=>{setLanguage(b.dataset.lang);openSettings()});
+ c.querySelectorAll("[data-units]").forEach(b=>b.onclick=()=>{
+  setUnits(b.dataset.units);openSettings();
+  if(tripTabFor!==null&&!$("tripSheet").classList.contains("hidden"))openTrip(tripTabFor);
+ });
  const sl=$("setLocate");if(sl)sl.onclick=()=>{$("settingsSheet").classList.add("hidden");locate(apply)};
  const rs=$("refreshStocking");if(rs)rs.onclick=refreshStockingFromAPI;
  const cl=$("copyLink");if(cl)cl.onclick=()=>{
@@ -2576,6 +2913,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  if(en)en.onclick=()=>setLanguage("en");
  if(fr)fr.onclick=()=>setLanguage("fr");
  restoreLocation();
+ migrateTrips();
  setLanguage(appLang);wireShell();
  refreshLocationQuietly();
 });
