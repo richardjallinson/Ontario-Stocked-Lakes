@@ -3,7 +3,7 @@
    load isn't blocked on ~12 MB. Live government API calls always go to the
    network so regulations and advisories are never served stale. */
 
-const VERSION = "v1z";
+const VERSION = "v2a";
 const SHELL = `osl-shell-${VERSION}`;
 const DATA  = `osl-data-${VERSION}`;
 
@@ -24,7 +24,12 @@ const SHELL_FILES = [
 // Big local datasets: cached the first time they're requested, not on install.
 const DATA_FILES = ["fish-advisories-2025.json", "ontario-regulations-2026.json",
                     "ontario-waterbodies.json", "ontario-nearby.json",
-                    "ontario-places.json", "ontario-stocking.json"];
+                    "ontario-places.json", "ontario-stocking.json",
+                    "species-art/manifest.json"];
+
+// Species plates are small and cached on first sight, the same as the datasets.
+// An angler at the lake with no signal should still see the fish.
+const isPlate = (url) => /\/species-art\/.+\.webp$/.test(url);
 
 self.addEventListener("install", e => {
   e.waitUntil(
@@ -62,8 +67,8 @@ self.addEventListener("fetch", e => {
     return;
   }
 
-  // Large datasets: serve from cache, otherwise fetch and store.
-  if (DATA_FILES.some(f => url.pathname.endsWith(f))) {
+  // Large datasets and species plates: serve from cache, otherwise fetch and store.
+  if (DATA_FILES.some(f => url.pathname.endsWith(f)) || isPlate(url.pathname)) {
     e.respondWith(
       caches.match(req).then(hit => hit || fetch(req).then(res => {
         if (res.ok) {

@@ -37,6 +37,9 @@ const I18N={
   badgeBestMatch:"Best Match",recordedNotStocked:"Recorded here (not stocked)",
   fishStocked:"fish stocked",kmAway:"km away",records:"records",
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
+  plateNote:"Illustration \u2014 not for identification",
+  illustrations:"Fish illustrations",
+  plateAboutNote:"They are shown to help you picture the fish, not to identify one. Several Ontario species are easily confused and their limits differ \u2014 check the official rule before keeping anything.",
   noLakeWithSpecies:"No lake within {r} km has {sp} on record. Try a wider distance — or the species may simply not have been surveyed nearby.",
   noLakesWithin:"No lakes found within {r} km.",
   weatherAlert:"Weather alert",lakeArea:"Lake area",
@@ -147,6 +150,9 @@ const I18N={
   badgeBestMatch:"Meilleure correspondance",recordedNotStocked:"R\u00e9pertori\u00e9 ici (non ensemenc\u00e9)",
   fishStocked:"poissons ensemenc\u00e9s",kmAway:"km",records:"enregistrements",
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
+  plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
+  illustrations:"Illustrations de poissons",
+  plateAboutNote:"Elles vous aident \u00e0 visualiser le poisson, mais ne servent pas \u00e0 l'identifier. Plusieurs esp\u00e8ces de l'Ontario se confondent facilement et leurs limites diff\u00e8rent \u2014 v\u00e9rifiez la r\u00e8gle officielle avant de garder une prise.",
   noLakeWithSpecies:"Aucun lac dans un rayon de {r}\u00a0km n'a de {sp} au registre. Essayez une distance plus grande \u2014 ou l'esp\u00e8ce n'a simplement pas fait l'objet d'un relev\u00e9 \u00e0 proximit\u00e9.",
   noLakesWithin:"Aucun lac trouv\u00e9 dans un rayon de {r}\u00a0km.",
   weatherAlert:"Alerte m\u00e9t\u00e9o",lakeArea:"Secteur du lac",
@@ -261,7 +267,7 @@ function translateStaticUI(){
  if(note)note.textContent=t(findMode==="stocked"?"modeNoteStocked":"modeNoteAny");
 }
 
-const APP_VERSION="v1z";
+const APP_VERSION="v2a";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -824,7 +830,7 @@ async function loadLiveStocking(){
 function afterStockingLoaded(){
  buildLakes();updateDashboard();buildFilters();apply();
  loadFMZ(false).then(()=>apply());
- loadObservedSpecies();loadAdvisories();loadFullRegulations();loadWaterbodies();loadTripData();
+ loadObservedSpecies();loadAdvisories();loadFullRegulations();loadWaterbodies();loadTripData();loadSpeciesArt();
 }
 
 async function load(){
@@ -930,6 +936,47 @@ async function loadTripData(){
   const r=await fetch("ontario-nearby.json");
   if(r.ok){const j=await r.json();nearbyStays=j.stays||[];nearbyLoaded=true}
  }catch(e){ /* not built; the lodging card just does not render */ }
+}
+
+/* ---------------------------------------------------------------------------
+   Species plates.
+
+   Anglers want to see the fish. Everything below is decorative: it makes the
+   app feel like a fishing app rather than a database, and it is deliberately
+   NOT an identification reference. Ontario has pairs that are genuinely hard
+   to tell apart and whose limits differ — lake trout and splake above all —
+   and a pretty watercolour with no distinguishing marks called out is how
+   somebody ends up keeping a fish they should have released. So each plate is
+   captioned as an illustration, and the official rule link does the real work.
+
+   The plate is only shown where the angler has named ONE species: a tapped
+   species chip, or a Find Fish search for a particular fish. The app never
+   picks a "headline" fish for a lake, because it has no honest basis to.
+
+   Optional, like the gazetteer and the lodging data. If species-art has not
+   been built the cards render exactly as before.
+--------------------------------------------------------------------------- */
+let speciesArt={},speciesArtCredit="";
+
+async function loadSpeciesArt(){
+ try{
+  const r=await fetch("species-art/manifest.json");
+  if(!r.ok)return;
+  const j=await r.json();
+  speciesArt=j.species||{};
+  speciesArtCredit=j.credit||"";
+ }catch(e){ /* not built; no plates, everything else unchanged */ }
+}
+
+/* A species with no plate of THAT species gets no plate. Never a stand-in —
+   the same rule the fish-survey wording and the lodging card follow. */
+function plateFor(species,cls){
+ const a=speciesArt[species];
+ if(!a)return "";
+ return `<figure class="${cls}">
+  <img src="species-art/${encodeURIComponent(a.f)}" alt="" width="1200" height="420" loading="lazy" decoding="async">
+  <figcaption class="plateCap"><i>${esc(a.sci||"")}</i><span>${t("plateNote")}</span></figcaption>
+ </figure>`;
 }
 
 /* "About 12 km N of Apsley." Nearest wins, but a town people have heard of
@@ -1820,7 +1867,8 @@ function speciesRuleCard(l,species){
  }
 
  return `<div class="ruleDrawer">
-  <div class="ruleHead"><b>${esc(species)}</b><span>FMZ ${esc(l.fmz)} • 2026</span></div>
+  ${plateFor(species,"plate")}
+  <div class="ruleHead"><b>${esc(speciesLabel(species))}</b><span>FMZ ${esc(l.fmz)} • 2026</span></div>
   ${body}
   <p class="ruleFine">Summary only. Sanctuaries, bait and gear restrictions and in-season variation orders can all change this.</p>
   <a class="ruleLink" target="_blank" rel="noopener" href="${officialRuleSource(l)}">Verify on Ontario's official FMZ ${esc(l.fmz)} page</a>
@@ -2140,6 +2188,9 @@ function runFindFish(){
 
 function renderFindResults(sp,yr){
  $("count").textContent=lakeCount(shown.length);
+ // The plate goes in only when the angler asked for a specific fish. "Any
+ // species" gets none — the app would be choosing one for them.
+ const hero=sp?plateFor(sp,"findPlate"):"";
  $("results").innerHTML=shown.slice(0,250).map((l,i)=>{
   const rs=ruleSummaryForResult(l,sp);
   const access=hasNearbyAccess(l);
@@ -2153,6 +2204,7 @@ function renderFindResults(sp,yr){
    <button class="viewLakeBtn">${t("viewLake")}</button>
   </article>`;
  }).join("")||"";
+ if(hero)$("results").insertAdjacentHTML("afterbegin",hero);
  $("results").insertAdjacentHTML("afterbegin",locationPrompt());
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=()=>{const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
  markerLayer.clearLayers();fitToResults();shown.slice(0,400).forEach(l=>L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${l._findKm.toFixed(1)} km away<br>${l._findPresent?t("recordedNotStocked"):num(l._findQty)+" fish stocked"}`));
@@ -2325,6 +2377,10 @@ function helpMarkup(){
   <a target="_blank" rel="noopener" href="https://data.ontario.ca/en/dataset/recreational-fishing-regulations-data">Ontario Open Data — Fishing Regulations</a>
   <a target="_blank" rel="noopener" href="https://weather.gc.ca/">Environment Canada Weather</a>
  </div>
+ ${speciesArtCredit?`<div class="aboutBlock"><h3>${t("illustrations")}</h3>
+  <p class="helpNote">${esc(speciesArtCredit)} ${t("plateAboutNote")}</p>
+  <a target="_blank" rel="noopener" href="https://www.fws.gov/media">U.S. Fish and Wildlife Service media library</a>
+ </div>`:""}
  <div class="aboutBlock"><h3>${t("yourData")}</h3><p class="helpNote">${t("yourDataText")}</p>
   <div class="dataActions">
    <button id="exportData" type="button">${t("exportData")}</button>

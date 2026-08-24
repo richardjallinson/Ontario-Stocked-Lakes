@@ -600,3 +600,31 @@ body.filtering .sectiontitle{margin-top:14px}
 /* The stocking table is a bundled snapshot, not a live feed. Say so plainly
    under the dashboard, the same way the lodging card names its source. */
 .dataAge{margin:-2px 16px 14px;font-size:.78rem;opacity:.6;text-align:center}
+
+/* --- Species plates (v2a) -------------------------------------------------
+   A field-guide plate, not a photo dropped on a card. The illustration sits
+   on the app's own --cream token rather than white, which is what stops it
+   reading as a pasted-in rectangle, and every plate is identical geometry so
+   the set looks commissioned rather than collected.
+
+   Bleeds to the drawer edge deliberately: an inset image with its own margin
+   looks like an attachment, a full-bleed band looks like part of the card. */
+.plate{margin:-14px -14px 12px;background:var(--cream);border-bottom:1px solid var(--line);
+ border-radius:12px 12px 0 0;overflow:hidden}
+.plate img{display:block;width:100%;height:auto;aspect-ratio:20/7;object-fit:cover}
+.plateCap{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+ padding:7px 12px 8px;background:var(--cream)}
+/* Scientific name in the display serif: a plate carries one, and it is real
+   information about the species rather than ornament. */
+.plateCap i{font-family:var(--display);font-style:italic;font-size:12.5px;color:var(--green2)}
+.plateCap span{font-size:10px;letter-spacing:.3px;color:var(--muted);text-align:right}
+/* Find Fish header plate. Shown only when the angler has named one species,
+   so it is never the app guessing which fish a lake is "about". */
+.findPlate{background:var(--cream);border:1px solid var(--line);border-radius:14px;
+ overflow:hidden;margin:0 0 12px}
+.findPlate img{display:block;width:100%;height:auto;aspect-ratio:20/7;object-fit:cover}
+.findPlate .plateCap{border-top:1px solid #E4DED0}
+@media(prefers-reduced-motion:no-preference){
+ .plate img,.findPlate img{animation:plateIn .32s ease-out both}
+}
+@keyframes plateIn{from{opacity:0;transform:scale(1.015)}to{opacity:1;transform:none}}
