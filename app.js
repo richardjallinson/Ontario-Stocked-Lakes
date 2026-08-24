@@ -6,6 +6,16 @@ const I18N={
   fishPresentSub:"Species recorded in Ontario's Aquatic Resource Area surveys.",
   fishPresentSeparate:"Separate from the stocking history below.",
   fishPresentTap:"Tap one for its limits and season.",
+  // The netting-survey card. It sits next to "Fish species present" and was
+  // reading as the same list twice: same lake, overlapping species, no stated
+  // difference. Presence is Ontario's summary of what lives in the waterbody;
+  // this is what a crew actually pulled out of the water and counted.
+  netHead:"Counted in netting surveys",
+  netSub:"Fish ON-Line records the catch from individual survey nettings, with counts. Fewer species appear here than in the presence list above — a species can live in a lake without turning up in a netting.",
+  netCaught:"caught",
+  netNoCount:"count not recorded",
+  netNone:"No Fish ON-Line netting survey was matched to this waterbody identifier. That means no netting record, not an empty lake.",
+  netLoading:"Netting survey records are loading, or unavailable offline.",
   surveyNone:"No fish survey has been published for this waterbody. That means no data, not an empty lake.",
   surveyForageOnly:"This lake has been surveyed, but the only species recorded were baitfish and forage fish, which this app does not list. That is a record of what the crew netted, not a full picture of the lake.",
   surveyUnidentified:"This lake has been surveyed, but the records are not identified to species — only to a family or genus. There are fish here; Ontario's data does not say which.",
@@ -118,6 +128,12 @@ const I18N={
   fishPresentSub:"Esp\u00e8ces r\u00e9pertori\u00e9es dans les relev\u00e9s des aires de ressources aquatiques de l'Ontario.",
   fishPresentSeparate:"Distinct de l'historique d'ensemencement ci-dessous.",
   fishPresentTap:"Touchez une esp\u00e8ce pour conna\u00eetre ses limites et sa saison.",
+  netHead:"D\u00e9nombr\u00e9s lors de p\u00eaches exp\u00e9rimentales",
+  netSub:"P\u00eache en direct r\u00e9pertorie les prises de chaque p\u00eache exp\u00e9rimentale, avec les d\u00e9nombrements. Moins d'esp\u00e8ces figurent ici que dans la liste des esp\u00e8ces pr\u00e9sentes ci-dessus \u2014 une esp\u00e8ce peut vivre dans un lac sans \u00eatre captur\u00e9e.",
+  netCaught:"captur\u00e9s",
+  netNoCount:"d\u00e9nombrement non consign\u00e9",
+  netNone:"Aucune p\u00eache exp\u00e9rimentale de P\u00eache en direct n'a \u00e9t\u00e9 associ\u00e9e \u00e0 cet identifiant de plan d'eau. Cela signifie qu'il n'y a pas de relev\u00e9 de capture, et non que le lac est vide.",
+  netLoading:"Les relev\u00e9s de p\u00eache exp\u00e9rimentale se chargent ou ne sont pas disponibles hors ligne.",
   surveyNone:"Aucun relev\u00e9 de poissons n'a \u00e9t\u00e9 publi\u00e9 pour ce plan d'eau. Cela signifie qu'il n'y a pas de donn\u00e9es, et non que le lac est vide.",
   surveyForageOnly:"Ce lac a fait l'objet d'un relev\u00e9, mais les seules esp\u00e8ces r\u00e9pertori\u00e9es \u00e9taient des poissons-app\u00e2ts et des poissons fourrages, que cette application ne r\u00e9pertorie pas. Il s'agit du relev\u00e9 des captures de l'\u00e9quipe, et non d'un portrait complet du lac.",
   surveyUnidentified:"Ce lac a fait l'objet d'un relev\u00e9, mais les donn\u00e9es ne pr\u00e9cisent pas l'esp\u00e8ce \u2014 seulement la famille ou le genre. Il y a des poissons ici; les donn\u00e9es de l'Ontario ne disent pas lesquels.",
@@ -267,7 +283,7 @@ function translateStaticUI(){
  if(note)note.textContent=t(findMode==="stocked"?"modeNoteStocked":"modeNoteAny");
 }
 
-const APP_VERSION="v2c";
+const APP_VERSION="v2d";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -1967,8 +1983,8 @@ ${presentBlock(l)}
  <div id="lake-rules" class="tabAnchor"></div>${fullRegCard(l,l.species[0]||"Fish")}
  ${fishingConditionsCard(l)}
  <div id="lake-eating" class="tabAnchor"></div><div class="infoCard"><h3>🍽️ Eating Ontario Fish</h3><p>Ontario consumption advice depends on the exact waterbody, fish species and fish length.</p>${advisoryPanel(l)}</div>
- <div id="lake-species" class="tabAnchor"></div><div class="infoCard"><h3>Fish observed</h3>
- ${speciesLoaded?(l.observedSpecies&&l.observedSpecies.length?`<div class="specieschips">${l.observedSpecies.map(s=>`<span>${esc(s.species)}</span>`).join("")}</div><p class="microcopy">Species shown come from Fish ON-Line survey records and are not a guarantee of current abundance.</p>`:`<p>No Fish ON-Line survey species were matched to this waterbody identifier.</p>`):`<p>Species observations are loading or unavailable.</p>`}
+ <div id="lake-species" class="tabAnchor"></div><div class="infoCard"><h3>${t("netHead")}</h3><p class="microcopy">${t("netSub")}</p>
+ ${speciesLoaded?(l.observedSpecies&&l.observedSpecies.length?`<div class="specieschips netchips">${l.observedSpecies.map(s=>`<span>${esc(s.species)}<em>${s.caught>0?`${Number(s.caught).toLocaleString()} ${t("netCaught")}`:t("netNoCount")}</em></span>`).join("")}</div><p class="microcopy">Species shown come from Fish ON-Line survey records and are not a guarantee of current abundance.</p>`:`<p>${t("netNone")}</p>`):`<p>${t("netLoading")}</p>`}
  </div>
  <div id="lake-depth" class="tabAnchor"></div><div class="infoCard"><h3>🌊 Lake depth</h3><p>Ontario publishes bathymetry contour lines for many lakes. Turn on the depth-contour map layer to view available contours. These data vary in age and accuracy and must never be used for navigation.</p><button class="inlineBtn" id="detailDepth">Show Depth Contours</button></div>
  <div id="lake-stocking" class="tabAnchor"></div><h3>Recent Stocking History</h3><div class="history">${history}</div>

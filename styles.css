@@ -53,6 +53,10 @@ body{padding-bottom:76px}.filters{display:grid;grid-template-columns:1fr 1fr;gap
 
 .specieschips{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}
 .specieschips span{background:#e6f1ed;color:var(--green);border:1px solid #c2d8d1;border-radius:999px;padding:6px 9px;font-size:12px;font-weight:800}
+/* Netting-survey chips carry the count that makes them distinguishable from
+   the presence list: a species name alone reads as the same list twice. */
+.netchips span{display:inline-flex;align-items:baseline;gap:6px}
+.netchips em{font-style:normal;font-weight:600;font-size:11px;opacity:.72;white-space:nowrap}
 .microcopy{font-size:11px!important;margin-top:9px!important}
 .inlineBtn{border:0;background:var(--green);color:white;padding:10px 12px;border-radius:10px;font-weight:800;cursor:pointer}
 
