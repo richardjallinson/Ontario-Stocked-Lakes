@@ -873,10 +873,12 @@ body.filtering .hero{padding-bottom:12px}
    search row is already an input plus a button, and a third control there
    pushes the input below a usable width on a 375pt phone. */
 .searchAlt{display:flex;gap:8px;margin-top:9px}
+/* Gold, like Search: the two are the same kind of act — start a search — and
+   an outlined ghost read as secondary chrome next to the thing it equals. */
 .searchAlt button{
- border:1px solid #5A7699;background:#ffffff14;color:#DCE8F4;
- padding:9px 14px;border-radius:11px;font:inherit;font-weight:800;font-size:13px;
- min-height:38px;cursor:pointer;
+ border:0;background:var(--gold);color:var(--green);
+ padding:10px 16px;border-radius:11px;font:inherit;font-weight:800;font-size:14px;
+ min-height:40px;cursor:pointer;
 }
-.searchAlt button:active{background:#ffffff26}
+.searchAlt button:active{filter:brightness(1.08)}
 body.filtering .searchAlt{display:flex}

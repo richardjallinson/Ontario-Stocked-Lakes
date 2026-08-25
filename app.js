@@ -203,7 +203,7 @@ const I18N={
   footerSources:"Fish stocking, regulations and advisory data: Government of Ontario. Weather alerts: Environment and Climate Change Canada.",
   footerDisclaimer:"Not an official Government of Ontario application. Always confirm the current regulations before you fish.",
   noSpeciesRecorded:"No species recorded",notStocked:"Not stocked",latestStocking:"Latest stocking",speciesUnavailable:"Species unavailable",
-  exploreStocked:"Explore stocked lakes",stockedNearMe:"Stocked lakes near me",recentWithin100:"Recently stocked within 100 km",
+  exploreStocked:"Explore Ontario lakes",stockedNearMe:"Stocked lakes near me",recentWithin100:"Recently stocked within 100 km",
   myFishingTrips:"My Fishing Trips",tripsCount:"trips",
   settings:"Settings",helpAbout:"Help and about",withinKm:"Within {n} km",
   regsEnglishNote:"Ontario publishes its regulations, seasons and limits in English only in this dataset, so that text stays as the province wrote it.",
@@ -412,7 +412,7 @@ const I18N={
   footerSources:"Donn\u00e9es d'ensemencement, de r\u00e9glementation et d'avis de consommation\u00a0: gouvernement de l'Ontario. Alertes m\u00e9t\u00e9o\u00a0: Environnement et Changement climatique Canada.",
   footerDisclaimer:"Application non officielle du gouvernement de l'Ontario. V\u00e9rifiez toujours les r\u00e8glements en vigueur avant de p\u00eacher.",
   noSpeciesRecorded:"Aucune esp\u00e8ce r\u00e9pertori\u00e9e",notStocked:"Non ensemenc\u00e9",latestStocking:"Dernier ensemencement",speciesUnavailable:"Esp\u00e8ce non disponible",
-  exploreStocked:"Explorer les lacs ensemenc\u00e9s",stockedNearMe:"Lacs ensemenc\u00e9s pr\u00e8s de moi",recentWithin100:"Ensemenc\u00e9s r\u00e9cemment dans un rayon de 100\u00a0km",
+  exploreStocked:"Explorer les lacs de l'Ontario",stockedNearMe:"Lacs ensemenc\u00e9s pr\u00e8s de moi",recentWithin100:"Ensemenc\u00e9s r\u00e9cemment dans un rayon de 100\u00a0km",
   myFishingTrips:"Mes sorties de p\u00eache",tripsCount:"sorties",
   settings:"Param\u00e8tres",helpAbout:"Aide et \u00e0 propos",withinKm:"Dans un rayon de {n}\u00a0km",
   regsEnglishNote:"L'Ontario ne publie ce jeu de donn\u00e9es \u2014 r\u00e8glements, saisons et limites \u2014 qu'en anglais. Ce texte demeure donc tel que r\u00e9dig\u00e9 par la province.",
@@ -459,7 +459,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v2s";
+const APP_VERSION="v2t";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -1794,8 +1794,16 @@ function apply(){
   const byDist=(a,b)=>centre?distance(centre[0],centre[1],a.lat,a.lon)-distance(centre[0],centre[1],b.lat,b.lon):0;
   shown.sort((a,b)=>b._nameScore-a._nameScore||byDist(a,b)||a.name.localeCompare(b.name));
  }
- else if((currentView==="recentnear"||radius||townOrigin)&&centre)shown.sort((a,b)=>distance(centre[0],centre[1],a.lat,a.lon)-distance(centre[0],centre[1],b.lat,b.lon));
- else shown.sort((a,b)=>b.latestYear-a.latestYear||a.name.localeCompare(b.name));
+ /* Default order is distance when there is anywhere to measure from, and the
+    alphabet when there is not. It used to be stocking year, which quietly
+    ranked every stocked lake above every unstocked one — and with only the
+    first 250 results rendered, the unstocked lakes were all IN the results
+    and all invisible, sorted behind up to 2,100 stocked lakes. Present but
+    buried is indistinguishable from excluded. Recency ordering still exists;
+    it is just something you ask for — the sort dropdown or the Recently
+    Stocked shortcut — not something applied to people who didn't. */
+ else if(centre)shown.sort((a,b)=>distance(centre[0],centre[1],a.lat,a.lon)-distance(centre[0],centre[1],b.lat,b.lon));
+ else shown.sort((a,b)=>a.name.localeCompare(b.name));
  render();
 }
 function render(){
