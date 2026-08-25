@@ -49,6 +49,12 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
+  lakeDepth:"Lake depth",
+  depthKnown:"Ontario's survey records give a maximum depth of {max} m and a mean of {mean} m.",
+  depthUnknown:"Ontario has no depth on record for this lake. That means no survey figure exists, not that the lake is shallow.",
+  depthNotForNav:"Depth figures vary in age and accuracy and must never be used for navigation.",
+  accessNotLoaded:"Ontario's access-point list has not loaded. It needs a connection, so it may be unavailable at the lake.",
+  lakeMapLabel:"Map of this lake",
   myLocation:"My Location",
   searchHint:"Five ways to search: by fish species, by lake, by town, by township, or from your location.",
   lakesNearTown:"Lakes near {town}",
@@ -258,6 +264,12 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
+  lakeDepth:"Profondeur du lac",
+  depthKnown:"Les relevés de l’Ontario indiquent une profondeur maximale de {max} m et une moyenne de {mean} m.",
+  depthUnknown:"L’Ontario n’a aucune profondeur au dossier pour ce lac. Cela signifie qu’aucun relevé n’existe, non que le lac est peu profond.",
+  depthNotForNav:"Les profondeurs varient en âge et en précision et ne doivent jamais servir à la navigation.",
+  accessNotLoaded:"La liste des accès de pêche de l’Ontario n’est pas chargée. Elle exige une connexion et peut donc être indisponible au lac.",
+  lakeMapLabel:"Carte de ce lac",
   myLocation:"Ma position",
   searchHint:"Cinq façons de chercher : par espèce de poisson, par lac, par ville, par canton, ou à partir de votre position.",
   lakesNearTown:"Lacs près de {town}",
@@ -459,7 +471,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v2u";
+const APP_VERSION="v2v";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -505,6 +517,44 @@ if (!mapAvailable) {
 const map=L.map("map").setView([46.2,-81.0],5);
 
 const markerLayer=L.layerGroup().addTo(map);
+
+/* The lake sheet gets its own map.
+
+   Tapping a lake already panned the main map to it — and then covered that
+   map with the sheet, so nobody ever saw it. A second Leaflet instance,
+   created the first time a sheet needs one and re-pointed at each lake after
+   that, is cheaper than it sounds: it shares the tile cache with the main
+   map, so the tiles for a lake you just looked at are usually already there,
+   which matters on a weak signal at a lake. */
+let detailMap=null,detailMarker=null;
+function showDetailMap(l){
+ if(!mapAvailable||!Number.isFinite(l.lat)||!Number.isFinite(l.lon))return;
+ const host=$("detailMap");if(!host)return;
+ try{
+  /* detail() rebuilds the sheet's innerHTML on every open, which replaces the
+     container this map was bound to. Reusing the instance would leave it
+     drawing into a node no longer in the document — a grey box from the
+     second lake onward. So: if the container has changed, tear the old one
+     down properly and build against the new node. */
+  if(detailMap&&detailMap.getContainer()!==host){
+   try{detailMap.remove()}catch(e){}
+   detailMap=null;detailMarker=null;
+  }
+  if(!detailMap){
+   detailMap=L.map(host,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});
+   const b=BASEMAPS[baseKey]||BASEMAPS.map;
+   L.tileLayer(b.url,b.opts).addTo(detailMap);
+  }
+  detailMap.setView([l.lat,l.lon],12);
+  if(detailMarker)detailMap.removeLayer(detailMarker);
+  detailMarker=L.circleMarker([l.lat,l.lon],
+   {radius:9,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:.95})
+   .addTo(detailMap).bindPopup(`<b>${esc(l.name)}</b>`);
+  // A map created inside a hidden sheet measures itself as zero and renders a
+  // grey box. Re-measure once the sheet is actually on screen.
+  setTimeout(()=>{try{detailMap.invalidateSize()}catch(e){}},60);
+ }catch(e){ /* the map is a bonus here; the sheet's facts are the point */ }
+}
 const accessLayer=L.layerGroup().addTo(map);
 const bathyLayer=L.tileLayer(`${BATHY_URL}/export?bbox={bbox-epsg-3857}&bboxSR=3857&layers=show:${BATHY_LAYER}&size=256,256&imageSR=3857&format=png32&transparent=true&f=image`,{opacity:.72,attribution:"Government of Ontario bathymetry"});
 const fmzLayer=L.geoJSON(null,{
@@ -2292,6 +2342,7 @@ function detail(l){
  const fav=favoriteKeys.has(l.key),history=l.records.map(r=>`<div class="historyrow"><div><b>${esc(r.Stocking_Year||"—")}</b><span>${esc(r.Species?speciesLabel(r.Species):t("speciesUnavailable"))}</span></div><div class="historyright"><b>${num(r.Number_of_Fish_Stocked)}</b><span>${esc(r.Developmental_Stage?stageLabel(r.Developmental_Stage):"")}</span></div></div>`).join("");
  $("detail").innerHTML=`<div class="detailhead"><div><h2>${esc(l.name)}</h2><div class="species">${esc(l.species.join(" • "))}</div></div><button class="bigstar ${fav?"saved":""}" id="detailFav">${fav?"★":"☆"}</button></div>
  ${whereLine(l)}
+ <div class="detailMapWrap"><div id="detailMap" role="img" aria-label="${t('lakeMapLabel')}"></div></div>
  <div class="detailgrid">${l.stocked?`<div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div>`:`<div><small>Stocking</small><b>Not stocked</b></div>`}${l.township?`<div><small>Township</small><b>${esc(townshipLabel(l.township))}</b></div>`:""}${userLoc?`<div><small>Distance from you</small><b>${esc(distanceLabel(l))}</b></div>`:""}${l.district?`<div><small>MNRF district</small><b>${esc(l.district)}</b></div>`:""}
  <div><small>Fisheries Management Zone</small><b>${l.fmz?`FMZ ${l.fmz}`:"Loading / unavailable"}</b></div><div><small>Waterbody ID</small><b>${esc(l.waterbodyId||"—")}</b></div></div>
  ${l.fmz?`<a class="zoneAction" target="_blank" rel="noopener" href="${REGS_BASE}${l.fmz}">View Current FMZ ${l.fmz} Regulations</a>`:""}
@@ -2303,9 +2354,9 @@ ${presentBlock(l)}
  <div id="lake-species" class="tabAnchor"></div><div class="infoCard"><h3>${t("netHead")}</h3><p class="microcopy">${t("netSub")}</p>
  ${speciesLoaded?(l.observedSpecies&&l.observedSpecies.length?`<div class="specieschips netchips">${l.observedSpecies.map(s=>`<span>${esc(s.species)}<em>${s.caught>0?`${Number(s.caught).toLocaleString()} ${t("netCaught")}`:t("netNoCount")}</em></span>`).join("")}</div><p class="microcopy">Species shown come from Fish ON-Line survey records and are not a guarantee of current abundance.</p>`:`<p>${t("netNone")}</p>`):`<p>${t("netLoading")}</p>`}
  </div>
- <div id="lake-depth" class="tabAnchor"></div><div class="infoCard"><h3>🌊 Lake depth</h3><p>Ontario publishes bathymetry contour lines for many lakes. Turn on the depth-contour map layer to view available contours. These data vary in age and accuracy and must never be used for navigation.</p><button class="inlineBtn" id="detailDepth">Show Depth Contours</button></div>
+ <div id="lake-depth" class="tabAnchor"></div><div class="infoCard"><h3>🌊 ${t("lakeDepth")}</h3><p>${l.depthMax?t("depthKnown").replace("{max}",esc(l.depthMax)).replace("{mean}",l.depthMean?esc(l.depthMean):"—"):t("depthUnknown")}</p><p class="helpNote">${t("depthNotForNav")}</p></div>
  <div id="lake-stocking" class="tabAnchor"></div><h3>Recent Stocking History</h3><div class="history">${history}</div>
- <div id="lake-access" class="tabAnchor"></div><div class="infoCard"><h3>🚤 Nearest fishing access</h3><div id="nearestAccess">${accessLoaded?nearestAccess(l).map(a=>`<div class="accessrow"><div><b>${accessIcon(a)} ${esc(a.AccessName||a.WaterBody||"Fishing access")}</b><span>${esc(a.AccessType||"Access point")} • ${a.km.toFixed(1)} km from lake point</span></div><a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lon}">Directions</a></div>`).join(""):"<p>Turn on “Show fishing access points” on the map to load Ontario access data.</p>"}</div></div>
+ <div id="lake-access" class="tabAnchor"></div><div class="infoCard"><h3>🚤 Nearest fishing access</h3><div id="nearestAccess">${accessLoaded?nearestAccess(l).map(a=>`<div class="accessrow"><div><b>${accessIcon(a)} ${esc(a.AccessName||a.WaterBody||"Fishing access")}</b><span>${esc(a.AccessType||"Access point")} • ${a.km.toFixed(1)} km from lake point</span></div><a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lon}">Directions</a></div>`).join(""):`<p>${t("accessNotLoaded")}</p>`}</div></div>
  ${nearbyStaysCard(l)}
  <div class="infoCard"><h3>Fishing information</h3><p>Stocking records are useful planning information, but fishing seasons, limits and exceptions can change. Check Ontario's current regulations before fishing.</p>
  <div class="actionstack">
@@ -2315,7 +2366,7 @@ ${presentBlock(l)}
  <a class="directions" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${l.lat},${l.lon}">Get Directions</a>`;
  wireSpeciesChips();
  $("sheet").classList.remove("hidden");$("detailFav").onclick=()=>{toggleFav(l.key);detail(l)};
- const dd=$("detailDepth");if(dd)dd.onclick=()=>{$("showDepth").checked=true;renderDepth();map.setView([l.lat,l.lon],12);$("sheet").classList.add("hidden")};
+ showDetailMap(l);
  const st=$("startTrip");if(st)st.onclick=()=>startTrip(l);wireAdvisory(l);wireWeather(l);
  document.querySelectorAll("[data-laketab]").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("[data-laketab]").forEach(x=>x.classList.remove("active"));b.classList.add("active");

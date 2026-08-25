@@ -882,3 +882,14 @@ body.filtering .hero{padding-bottom:12px}
 }
 .searchAlt button:active{filter:brightness(1.08)}
 body.filtering .searchAlt{display:flex}
+
+/* The lake sheet's own map.
+
+   Tapping a lake panned the main map behind the sheet, where nobody could see
+   it. 190px is enough to place a lake against its shoreline and neighbours
+   without pushing the facts below the fold — the grid, the regulations link
+   and the species chips are why people opened the sheet. */
+.detailMapWrap{margin:12px 0 4px}
+#detailMap{height:190px;border-radius:14px;background:#DCE5EC;overflow:hidden}
+#detailMap .leaflet-control-attribution{font-size:9px}
+@media(min-width:740px){#detailMap{height:240px}}
