@@ -506,7 +506,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3k";
+const APP_VERSION="v3l";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -1162,8 +1162,10 @@ async function loadLiveStocking(){
    the call, so a slow load is never made slower — the wait is only ever the
    remainder, and is zero when loading already took longer than the floor.
 
-   Three seconds, per Richard: long enough to actually read the artwork. */
-const SPLASH_MIN_MS=3000;
+   Five seconds, per Richard. Long for a splash by most standards, but this
+   one carries a warning worth reading, and the data genuinely is still
+   arriving behind it. */
+const SPLASH_MIN_MS=5000;
 const splashShownAt=Date.now();
 /* A version stamp in the corner of the splash. It exists because "the old
    picture is still showing" and "it is still slow" are the same bug seen

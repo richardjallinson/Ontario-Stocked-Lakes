@@ -934,12 +934,15 @@ body.filtering .searchAlt{display:flex}
  gap:18px;padding:28px;transition:opacity .45s ease}
 /* The artwork now carries its own caption and progress bar, so it is the whole
    splash and gets the whole screen rather than sharing it with live text. */
-#splash img{width:min(92vw,480px);max-height:88vh;object-fit:contain;
+#splash img{width:min(92vw,480px);max-height:80vh;object-fit:contain;
  user-select:none;-webkit-user-select:none}
 #splash .splashMsg{color:#DCE8F4;font-size:16px;font-weight:700;margin:0}
-#splash .splashBar{width:min(64vw,320px);height:6px;border-radius:3px;
+/* Sits directly under the artwork, where the static bar used to be printed.
+   Matched to the image's own width so it reads as part of the design rather
+   than a stray element beneath it. */
+#splash .splashBar{width:min(78vw,400px);height:8px;border-radius:4px;margin-top:-6px;
  background:#ffffff22;overflow:hidden}
-#splash .splashBar i{display:block;height:100%;width:38%;border-radius:3px;
+#splash .splashBar i{display:block;height:100%;width:34%;border-radius:4px;
  background:#3F8CFF;animation:splashSlide 1.15s ease-in-out infinite alternate}
 @keyframes splashSlide{from{transform:translateX(-30%)}to{transform:translateX(220%)}}
 @media (prefers-reduced-motion: reduce){#splash .splashBar i{animation:none;width:100%}}
