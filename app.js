@@ -49,6 +49,7 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
+  loadingSub:"Fetching Ontario's stocking records and lake index. Search will be ready in a moment.",
   splashLoading:"Loading Ontario lakes…",
   emptyWheelsHid:"{n} lakes match your search, but the {what} filter is hiding them.",
   clearThose:"Clear that filter",
@@ -70,7 +71,7 @@ const I18N={
   accessNotLoaded:"Ontario's access-point list has not loaded. It needs a connection, so it may be unavailable at the lake.",
   lakeMapLabel:"Map of this lake",
   myLocation:"My Location",
-  searchHint:"Five ways to search: by fish species, by lake, by town, by township, or from your location.",
+  searchHint:"Four ways to search: by fish species, by lake, by town, or from your location.",
   lakesNearTown:"Lakes near {town}",
   accessDataPending:"The access-point list hasn’t loaded yet, so this search ran without that filter. It will apply automatically once the list arrives.",
   locationOffFallback:"Location is off, so this searched all of Ontario. Turn location on to limit the distance.",
@@ -78,7 +79,7 @@ const I18N={
   onboardStatsNote:"What is in the app right now.",
   readyToSearch:"{n} lakes ready to search",
   searchPromptTitle:"Search {n} Ontario lakes",
-  searchPromptSub:"Search by fish species, lake, town or township — or tap My Location to search around you.",
+  searchPromptSub:"Search by fish species, lake or town — or tap My Location to search around you.",
   turnOnLocation:"Turn on location",
   turnOnLocationSub:"to show how far each lake is from you",
   emptyFavorites:"No saved lakes yet. Tap ☆ on any lake to keep it here.",
@@ -278,6 +279,7 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
+  loadingSub:"Récupération des données d’ensemencement et de l’index des lacs de l’Ontario. La recherche sera prête dans un instant.",
   splashLoading:"Chargement des lacs de l'Ontario…",
   emptyWheelsHid:"{n} lacs correspondent à votre recherche, mais le filtre {what} les masque.",
   clearThose:"Effacer ce filtre",
@@ -299,7 +301,7 @@ const I18N={
   accessNotLoaded:"La liste des accès de pêche de l’Ontario n’est pas chargée. Elle exige une connexion et peut donc être indisponible au lac.",
   lakeMapLabel:"Carte de ce lac",
   myLocation:"Ma position",
-  searchHint:"Cinq façons de chercher : par espèce de poisson, par lac, par ville, par canton, ou à partir de votre position.",
+  searchHint:"Quatre façons de chercher : par espèce de poisson, par lac, par ville, ou à partir de votre position.",
   lakesNearTown:"Lacs près de {town}",
   accessDataPending:"La liste des points d’accès n’est pas encore chargée; la recherche a été faite sans ce filtre. Il s’appliquera automatiquement dès son arrivée.",
   locationOffFallback:"La localisation est désactivée; la recherche a couvert tout l’Ontario. Activez-la pour limiter la distance.",
@@ -307,7 +309,7 @@ const I18N={
   onboardStatsNote:"Ce que contient l’application en ce moment.",
   readyToSearch:"{n} lacs prêts à être cherchés",
   searchPromptTitle:"Chercher parmi {n} lacs de l’Ontario",
-  searchPromptSub:"Cherchez par espèce, lac, ville ou canton — ou touchez Ma position pour chercher autour de vous.",
+  searchPromptSub:"Cherchez par espèce, lac ou ville — ou touchez Ma position pour chercher autour de vous.",
   turnOnLocation:"Activer la localisation",
   turnOnLocationSub:"pour afficher la distance de chaque lac",
   emptyFavorites:"Aucun lac enregistré. Touchez ☆ sur un lac pour le garder ici.",
@@ -499,7 +501,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3e";
+const APP_VERSION="v3f";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -1136,9 +1138,21 @@ function hideSplash(){
   setTimeout(()=>{try{sp.remove()}catch(e){}},600);
  },remaining);
 }
-// Whatever goes wrong, nobody stays behind the splash. Twelve seconds is
-// longer than any honest load and shorter than giving up on the app.
-setTimeout(hideSplash,12000);
+/* The splash comes down on a timer, not when the data is ready.
+
+   It used to wait for afterStockingLoaded(), and v3b awaits both 2 MB
+   datasets before exposing anything — so on a phone that was ten to fifteen
+   seconds behind a fish. Nobody should stare at a splash screen to be told
+   the app is working.
+
+   The app underneath is safe to show empty because it already says so
+   honestly: the count reads "Loading…", and the results area reads
+   "Loading…" too, because searchPrompt falls back to it whenever there are
+   no lakes yet. Searching early returns emptyNoDataYet, which is true. What
+   v3b actually forbade was showing a PARTIAL lake list as if it were
+   complete; showing an empty one that says it is still loading is a
+   different thing, and the honest one. */
+setTimeout(hideSplash,SPLASH_MIN_MS);
 
 function afterStockingLoaded(){
  buildLakes();
@@ -1149,14 +1163,16 @@ function afterStockingLoaded(){
  if(!restoreLastSearch())apply();
  loadFMZ(false).then(()=>apply());
  loadObservedSpecies();loadAdvisories();loadFullRegulations();loadTripData();loadSpeciesArt();
- // The UI below the splash is real now: filters built, first result set
- // rendered. This is the moment "loading" stops being true.
- hideSplash();
- if(waterbodiesLoaded)loadTownshipsForLakes(lakes).then(()=>{assignTownships();apply()});
+
 }
 
 async function load(){
  $("count").textContent=t("loadingData");
+ // The splash leaves after a second, so this screen is what people look at
+ // while the two datasets land. It has to say what it is doing.
+ if($("results"))$("results").innerHTML=`<div class="record searchPrompt">
+  <b>${t("loadingData")}</b><span>${t("loadingSub")}</span>
+  <div class="splashBar mini" aria-hidden="true"><i></i></div></div>`;
  ["statLakes","statRecords","statSpecies","statLatest"].forEach(id=>{const el=$(id);if(el)el.textContent="…"});
  try{
   // Load both core datasets together.  Do not expose a temporary stocked-only
@@ -1254,7 +1270,6 @@ async function loadWaterbodies(){
   // A saved species may only exist in the wheel after the merge, so try the
   // restore again here; restoreLastSearch() runs at most once either way.
   if(!restoreLastSearch())apply();
-  loadTownshipsForLakes(lakes).then(()=>{assignTownships();apply()});
  }catch(e){
   /* Not built, or offline before it was ever cached. This used to fail
      silently, which meant the app quietly held a fifth of Ontario's lakes
@@ -1396,75 +1411,6 @@ const liveTried=new Set();
 let liveBusy=false;
 
 
-/* ---------------------------------------------------------------------------
-   Townships.
-
-   Ontario has several Rice Lakes, several Trout Lakes and a great many Long
-   Lakes. A name on its own is not an answer, so every result carries the
-   township it sits in and how far away it is.
-
-   Stocked lakes already have a township from the stocking table. Survey
-   waterbodies do not — the ARA dataset has no township field — so those are
-   resolved against Geographic Township Improved: one envelope query for the
-   area being searched, then point-in-polygon locally using the same helper
-   the FMZ assignment uses. One request covers every lake in the search.
---------------------------------------------------------------------------- */
-const TOWNSHIP_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open06/MapServer/1/query";
-let townshipFeatures=[];
-const townshipAreasTried=new Set();
-
-/* Resolve townships for a set of lakes, using their own bounding box. The
-   user's position is irrelevant here — these lakes have coordinates. */
-async function loadTownshipsForLakes(list){
- const need=(list||lakes).filter(l=>!l.township&&l.lat&&l.lon);
- if(!need.length)return;
- // Try the cheap way first: a township we already hold may cover them.
- assignTownships();
- const still=need.filter(l=>!l.township);
- if(!still.length)return;
- const lats=still.map(l=>l.lat),lons=still.map(l=>l.lon);
- const minLat=Math.min(...lats),maxLat=Math.max(...lats);
- const minLon=Math.min(...lons),maxLon=Math.max(...lons);
- const cLat=(minLat+maxLat)/2,cLon=(minLon+maxLon)/2;
- // Half-diagonal in km, padded, so one request covers the whole result set.
- const km=Math.max(25,distance(minLat,minLon,maxLat,maxLon)/2+20);
- await loadTownshipsFor(cLat,cLon,Math.min(km,600));
-}
-
-async function loadTownshipsFor(lat,lon,km){
- const tag=`${km}|${lat.toFixed(1)},${lon.toFixed(1)}`;
- if(townshipAreasTried.has(tag))return;
- townshipAreasTried.add(tag);
- const dLat=km/111.32, dLon=km/(111.32*Math.cos(lat*Math.PI/180));
- const env={xmin:lon-dLon,ymin:lat-dLat,xmax:lon+dLon,ymax:lat+dLat,spatialReference:{wkid:4326}};
- try{
-  const p=new URLSearchParams({
-   where:"1=1",
-   geometry:JSON.stringify(env),geometryType:"esriGeometryEnvelope",
-   spatialRel:"esriSpatialRelIntersects",inSR:"4326",outSR:"4326",
-   outFields:"OFFICIAL_NAME",returnGeometry:"true",
-   /* 0.005 degrees is about 550 m of slack in the boundary — enough to walk a
-      township line across a whole lake, which is how Moira Lake came back as
-      Huntingdon rather than Madoc: it sits close to that boundary. The zone
-      layer already uses 0.002 for the same reason. 0.001 is roughly 110 m. */
-   maxAllowableOffset:"0.001",geometryPrecision:"5",
-   f:"geojson",resultRecordCount:"600"
-  });
-  const j=await fetch(TOWNSHIP_API+"?"+p).then(r=>r.json());
-  townshipFeatures=townshipFeatures.concat(j.features||[]);
-  assignTownships();
- }catch(e){ /* township names are a nicety; distance still disambiguates */ }
-}
-
-function assignTownships(){
- if(!townshipFeatures.length)return;
- lakes.forEach(l=>{
-  if(l.township)return;
-  const f=townshipFeatures.find(f=>pointInGeometry(l.lon,l.lat,f.geometry));
-  if(f&&f.properties&&f.properties.OFFICIAL_NAME)l.township=f.properties.OFFICIAL_NAME;
- });
-}
-
 /* "42 km NE" says more than "42 km" when two lakes share a name. */
 function bearingLabel(fromLat,fromLon,toLat,toLon){
  const rad=x=>x*Math.PI/180;
@@ -1475,15 +1421,6 @@ function bearingLabel(fromLat,fromLon,toLat,toLon){
  return ["N","NE","E","SE","S","SW","W","NW"][Math.round(deg/45)%8];
 }
 
-/* Stocking data stores townships shouting: "ADRIAN", "TRAFALGAR". */
-function townshipLabel(t){
- const raw=String(t||"").trim();
- if(!raw)return "";
- const nice=raw.toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase())
-   .replace(/\bMc([a-z])/g,(m,c)=>"Mc"+c.toUpperCase())
-   .replace(/\bO'([a-z])/g,(m,c)=>"O'"+c.toUpperCase());
- return /twp|township/i.test(nice)?nice:nice+" Twp";
-}
 
 function distanceLabel(l){
  const c=searchCentre();
@@ -1752,8 +1689,6 @@ async function searchProvince(q){
   const j=await fetch(ARA_API+"?"+p).then(r=>r.json());
   if(j.error)throw Error(j.error.message);
   const added=mergeLiveResults(j.features||[]);
-  // One township request covers the whole result set.
-  if(added)loadTownshipsForLakes(lakes).then(()=>{assignTownships();apply()});
 
   if(added){buildFilters(true);apply();}
   else if(status)status.textContent=previous;
@@ -1864,7 +1799,6 @@ async function araNearby(lat,lon,km,species){
  const j=await fetch(ARA_API+"?"+p).then(r=>r.json());
  if(j.error)throw Error(j.error.message);
  const n=mergeLiveResults(j.features||[]);
- if(n)await loadTownshipsForLakes(lakes);
  return n;
 }
 
@@ -2071,12 +2005,12 @@ function render(){
    :`<span class="nospecies">${t(headGap==="forage"?"headForageOnly":headGap==="unidentified"?"headUnidentified":"noSpeciesRecorded")}</span>`;
   const pill=l.stocked?`<span class="pill">${esc(l.latestYear||"—")}</span>`
    :`<span class="pill wild">${t("notStocked")}</span>`;
-  // Township and distance come first: with three Rice Lakes on screen they
+  // Zone and distance come first: with three Rice Lakes on screen they
   // are the only things that tell them apart.
-  // Township, zone and distance identify the lake. Everything after them is
+  // Zone and distance identify the lake. Everything after them is
   // detail — with three Rice Lakes on screen these three are the answer.
   const where=[
-   l.township?`<span class="place">${esc(townshipLabel(l.township))}</span>`:"",
+
    l.fmz?`<span class="zone">FMZ ${esc(l.fmz)}</span>`:"",
    searchCentre()?`<span class="dist">${esc(distanceLabel(l))}</span>`:""
   ].join("");
@@ -2124,7 +2058,7 @@ function lakeCount(n){return num(n)+" "+(n===1?"lake":"lakes")}
      "brook tr"   -> Brook Trout
 
    Every token has to match somewhere, in any order, across the lake's name,
-   township, district and species.
+   district and species.
 --------------------------------------------------------------------------- */
 function searchWords(v){
  return String(v||"").toLowerCase()
@@ -2153,16 +2087,16 @@ function phraseIn(words,toks){
 }
 
 /* Fields are matched separately so a phrase cannot straddle two of them —
-   otherwise "trout township" could match a Trout in one field and a Township
+   otherwise "trout district" could match a Trout in one field and a District
    in another and look like a hit. */
 function searchFields(l){
- /* townshipLabel() prints "HUNTINGDON" as "Huntingdon Twp", so every card
-    shows a word that was not in the searchable text. Typing exactly what the
-    card displays returned nothing, because phraseIn() needs all query tokens
-    consecutive in the field and "twp" was in none of them. Both forms are
-    searchable now — people type what they can see. */
- return [l.name,l.township,townshipLabel(l.township),l.district,
-         ...(l.species||[]),...anglerSpecies(l.present)]
+ /* Townships are gone. The boundaries came from a live government layer and
+    could not be trusted — lakes were coming back in the wrong township, and a
+    confidently wrong answer is worse than no answer. The Fisheries Management
+    Zone does the job that mattered (it is what the regulations are written
+    against), and whereLine() says "about 3.3 km SE of Madoc", which is what
+    people actually wanted from a township anyway. */
+ return [l.name,l.district,...(l.species||[]),...anglerSpecies(l.present)]
   .filter(Boolean).map(searchWords);
 }
 
@@ -2544,7 +2478,7 @@ function detail(l){
  $("detail").innerHTML=`<div class="detailhead"><div><h2>${esc(l.name)}</h2><div class="species">${esc(l.species.join(" • "))}</div></div><button class="bigstar ${fav?"saved":""}" id="detailFav">${fav?"★":"☆"}</button></div>
  ${whereLine(l)}
  <div class="detailMapWrap"><div id="detailMap" role="img" aria-label="${t('lakeMapLabel')}"></div></div>
- <div class="detailgrid">${l.stocked?`<div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div>`:`<div><small>Stocking</small><b>Not stocked</b></div>`}${l.township?`<div><small>Township</small><b>${esc(townshipLabel(l.township))}</b></div>`:""}${userLoc?`<div><small>Distance from you</small><b>${esc(distanceLabel(l))}</b></div>`:""}${l.district?`<div><small>MNRF district</small><b>${esc(l.district)}</b></div>`:""}
+ <div class="detailgrid">${l.stocked?`<div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div>`:`<div><small>Stocking</small><b>Not stocked</b></div>`}${userLoc?`<div><small>Distance from you</small><b>${esc(distanceLabel(l))}</b></div>`:""}${l.district?`<div><small>MNRF district</small><b>${esc(l.district)}</b></div>`:""}
  <div><small>Fisheries Management Zone</small><b>${l.fmz?`FMZ ${l.fmz}`:"Loading / unavailable"}</b></div><div><small>Waterbody ID</small><b>${esc(l.waterbodyId||"—")}</b></div></div>
  ${l.fmz?`<a class="zoneAction" target="_blank" rel="noopener" href="${REGS_BASE}${l.fmz}">View Current FMZ ${l.fmz} Regulations</a>`:""}
 ${presentBlock(l)}

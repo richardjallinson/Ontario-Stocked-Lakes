@@ -3,7 +3,7 @@
    load isn't blocked on ~12 MB. Live government API calls always go to the
    network so regulations and advisories are never served stale. */
 
-const VERSION = "v3e";
+const VERSION = "v3f";
 const SHELL = `osl-shell-${VERSION}`;
 const DATA  = `osl-data-${VERSION}`;
 
