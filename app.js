@@ -49,7 +49,7 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
-  splashWarning:"Don’t completely close the app if you are expecting low or no cell reception.",
+  splashWarning:"Ontario Stocked Lakes. Don’t completely close the app if you are expecting low or no cell reception. Loading lakes…",
   loadingSub:"Fetching Ontario's stocking records and lake index. Search will be ready in a moment.",
   splashLoading:"Loading Ontario lakes…",
   emptyWheelsHid:"{n} lakes match your search, but the {what} filter is hiding them.",
@@ -280,7 +280,7 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
-  splashWarning:"Ne fermez pas complètement l’application si vous vous attendez à une réception faible ou nulle.",
+  splashWarning:"Ontario Stocked Lakes. Ne fermez pas complètement l’application si vous vous attendez à une réception faible ou nulle. Chargement des lacs…",
   loadingSub:"Récupération des données d’ensemencement et de l’index des lacs de l’Ontario. La recherche sera prête dans un instant.",
   splashLoading:"Chargement des lacs de l'Ontario…",
   emptyWheelsHid:"{n} lacs correspondent à votre recherche, mais le filtre {what} les masque.",
@@ -506,7 +506,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3h";
+const APP_VERSION="v3j";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -562,6 +562,8 @@ const markerLayer=L.layerGroup().addTo(map);
    map, so the tiles for a lake you just looked at are usually already there,
    which matters on a weak signal at a lake. */
 let detailMap=null,detailMarker=null;
+/* Which lake the detail sheet is currently showing. */
+let detailLakeKey=null;
 function showDetailMap(l){
  if(!mapAvailable||!Number.isFinite(l.lat)||!Number.isFinite(l.lon))return;
  const host=$("detailMap");if(!host)return;
@@ -1043,12 +1045,44 @@ async function loadObservedSpecies(){
  }catch(e){console.warn("Fish ON-Line species observations unavailable",e)}
 }
 function normName(s){return String(s||"").toLowerCase().replace(/\([^)]*\)/g," ").replace(/\b(lake|lac|river|rivière|reservoir|réservoir)\b/g," ").replace(/[^a-z0-9]+/g," ").trim().replace(/\s+/g," ")}
-async function loadAdvisories(){
- try{
-  advisoryLocations=await fetch("fish-advisories-2025.json").then(r=>r.json());advisoriesLoaded=true;
-  lakes.forEach(l=>l.advisoryMatches=advisoryLocations.filter(a=>normName(a.name)===normName(l.name)));
-  apply();
- }catch(e){console.warn("Fish consumption advisory data unavailable",e)}
+/* Fish consumption advisories: 11 MB, and the single most expensive thing the
+   app touches.
+
+   It used to be fetched at startup and then matched like this:
+
+       lakes.forEach(l => l.advisoryMatches =
+         advisoryLocations.filter(a => normName(a.name) === normName(l.name)));
+
+   That is 10,948 lakes × 2,799 advisory locations = 30.6 million normName()
+   calls, each doing string work, all on the main thread immediately after
+   load. On a phone that froze the app for twenty seconds or more — the splash
+   would leave on time and the menus would then be unresponsive, which is
+   exactly what it looked like from the outside.
+
+   Two changes. The matching is now a single Map lookup per lake — O(n+m)
+   rather than O(n×m), about 14,000 operations instead of 30 million. And the
+   file is no longer fetched at startup at all: nothing on the search screen
+   uses it. It is only needed by the advisory panel inside a lake sheet, so it
+   loads the first time someone opens one. */
+let advisoryPromise=null;
+function ensureAdvisories(){
+ if(advisoryPromise)return advisoryPromise;
+ advisoryPromise=fetch("fish-advisories-2025.json")
+  .then(r=>r.json())
+  .then(list=>{
+   advisoryLocations=list;advisoriesLoaded=true;
+   // Index once by normalised name, then one lookup per lake.
+   const byName=new Map();
+   for(const a of advisoryLocations){
+    const k=normName(a.name);
+    if(!byName.has(k))byName.set(k,[]);
+    byName.get(k).push(a);
+   }
+   for(const l of lakes)l.advisoryMatches=byName.get(normName(l.name))||[];
+   return true;
+  })
+  .catch(e=>{console.warn("Fish consumption advisory data unavailable",e);return false});
+ return advisoryPromise;
 }
 function parseRange(s){
  const m=String(s||"").match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/);return m?[Number(m[1]),Number(m[2])]:null;
@@ -1131,6 +1165,14 @@ async function loadLiveStocking(){
    Three seconds, per Richard: long enough to actually read the artwork. */
 const SPLASH_MIN_MS=3000;
 const splashShownAt=Date.now();
+/* A version stamp in the corner of the splash. It exists because "the old
+   picture is still showing" and "it is still slow" are the same bug seen
+   twice — a stale cached app.js — and there was no way to tell from the
+   outside which build was actually running. Now there is: read the corner. */
+document.addEventListener("DOMContentLoaded",()=>{
+ const v=document.getElementById("splashVer");
+ if(v)v.textContent=APP_VERSION;
+});
 let splashHiding=false;
 function hideSplash(){
  const sp=document.getElementById("splash");
@@ -1166,7 +1208,7 @@ function afterStockingLoaded(){
  updateDashboard();buildFilters();
  if(!restoreLastSearch())apply();
  loadFMZ(false).then(()=>apply());
- loadObservedSpecies();loadAdvisories();loadFullRegulations();loadTripData();loadSpeciesArt();
+ loadObservedSpecies();loadFullRegulations();loadTripData();loadSpeciesArt();
 
 }
 
@@ -2504,8 +2546,21 @@ ${presentBlock(l)}
  </div></div>
  <a class="directions" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${l.lat},${l.lon}">Get Directions</a>`;
  wireSpeciesChips();
+ detailLakeKey=l.key;
  $("sheet").classList.remove("hidden");$("detailFav").onclick=()=>{toggleFav(l.key);detail(l)};
  showDetailMap(l);
+
+ /* The advisory panel is the only consumer of the 11 MB advisory file, so it
+    is fetched here rather than at startup. If it was not already in hand, the
+    panel says it is loading; redraw the sheet once it lands so the eating
+    advice appears without the person having to close and reopen the lake. */
+ if(!advisoriesLoaded){
+  const openFor=l.key;
+  ensureAdvisories().then(ok=>{
+   const sheet=$("sheet");
+   if(ok&&sheet&&!sheet.classList.contains("hidden")&&detailLakeKey===openFor)detail(l);
+  });
+ }
  const st=$("startTrip");if(st)st.onclick=()=>startTrip(l);wireAdvisory(l);wireWeather(l);
  document.querySelectorAll("[data-laketab]").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("[data-laketab]").forEach(x=>x.classList.remove("active"));b.classList.add("active");
