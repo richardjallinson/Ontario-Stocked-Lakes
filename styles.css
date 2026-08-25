@@ -893,3 +893,16 @@ body.filtering .searchAlt{display:flex}
 #detailMap{height:190px;border-radius:14px;background:#DCE5EC;overflow:hidden}
 #detailMap .leaflet-control-attribution{font-size:9px}
 @media(min-width:740px){#detailMap{height:240px}}
+
+/* Deleting a trip. Red, and two taps — a trip is a season of someone's
+   fishing, and there is no undo behind it. The card button is quieter than
+   the sheet's: on the list it sits under content you are usually scrolling
+   past, not under a decision you came to make. */
+.deleteTrip{width:100%;border:1px solid #a94442;background:#fff;color:#8a2927;
+ padding:12px;border-radius:10px;font-weight:900;margin-top:8px;font:inherit;
+ font-weight:900;min-height:44px;cursor:pointer}
+.deleteTripCard{margin-top:10px;border:1px solid #E3C4C2;background:#FCF3F2;
+ color:#8a2927;padding:8px 14px;border-radius:10px;font:inherit;font-weight:800;
+ font-size:12.5px;min-height:36px;cursor:pointer}
+.tripConfirm{margin-top:10px}
+.tripcard .confirmRow{margin-top:10px}

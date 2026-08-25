@@ -49,6 +49,15 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
+  onOpening:"When the app opens",
+  onOpeningNote:"Your last search is kept on this device. It is replayed without asking for your location, so a distance filter may come back wider than you set it.",
+  reopenLastSearch:"Reopen my last search",
+  startFresh:"Start fresh",
+  deleteTrip:"Delete this trip",
+  deleteTripAsk:"Delete this trip and its catches?",
+  tripDeleted:"Trip deleted.",
+  checklistLocked:"This trip has ended, so the checklist is kept as it was.",
+  tripAlreadyOpen:"You already have a trip running on this lake — opened it instead.",
   lakeDepth:"Lake depth",
   depthKnown:"Ontario's survey records give a maximum depth of {max} m and a mean of {mean} m.",
   depthUnknown:"Ontario has no depth on record for this lake. That means no survey figure exists, not that the lake is shallow.",
@@ -264,6 +273,15 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
+  onOpening:"À l’ouverture",
+  onOpeningNote:"Votre dernière recherche est conservée sur cet appareil. Elle est relancée sans demander votre position; un filtre de distance peut donc revenir plus large que ce que vous aviez choisi.",
+  reopenLastSearch:"Rouvrir ma dernière recherche",
+  startFresh:"Recommencer à zéro",
+  deleteTrip:"Supprimer cette sortie",
+  deleteTripAsk:"Supprimer cette sortie et ses prises ?",
+  tripDeleted:"Sortie supprimée.",
+  checklistLocked:"Cette sortie est terminée; la liste est conservée telle quelle.",
+  tripAlreadyOpen:"Une sortie est déjà en cours sur ce lac — elle a été ouverte.",
   lakeDepth:"Profondeur du lac",
   depthKnown:"Les relevés de l’Ontario indiquent une profondeur maximale de {max} m et une moyenne de {mean} m.",
   depthUnknown:"L’Ontario n’a aucune profondeur au dossier pour ce lac. Cela signifie qu’aucun relevé n’existe, non que le lac est peu profond.",
@@ -471,7 +489,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v2v";
+const APP_VERSION="v2y";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -860,10 +878,24 @@ function pointInRing(lon,lat,ring){
  }
  return inside;
 }
+/* A GeoJSON Polygon's first ring is its outer boundary; every ring after that
+   is a HOLE punched out of it. This used to test `.some()` across all of them,
+   so a point sitting in a hole counted as inside — and township and zone
+   outlines are full of holes, because a township enclosed by another is
+   exactly that shape. It decided both the township on a lake card and, more
+   seriously, which Fisheries Management Zone a lake is in, which is what the
+   regulations link is built from. */
+function pointInPolygon(lon,lat,rings){
+ if(!rings||!rings.length)return false;
+ if(!pointInRing(lon,lat,rings[0]))return false;      // outside the outer ring
+ for(let i=1;i<rings.length;i++)
+  if(pointInRing(lon,lat,rings[i]))return false;      // inside a hole
+ return true;
+}
 function pointInGeometry(lon,lat,g){
  if(!g)return false;
- if(g.type==="Polygon")return g.coordinates.some(r=>pointInRing(lon,lat,r));
- if(g.type==="MultiPolygon")return g.coordinates.some(poly=>poly.some(r=>pointInRing(lon,lat,r)));
+ if(g.type==="Polygon")return pointInPolygon(lon,lat,g.coordinates);
+ if(g.type==="MultiPolygon")return g.coordinates.some(poly=>pointInPolygon(lon,lat,poly));
  return false;
 }
 function fmzForLake(l){
@@ -1071,7 +1103,8 @@ async function loadLiveStocking(){
 }
 
 function afterStockingLoaded(){
- buildLakes();updateDashboard();buildFilters();apply();
+ buildLakes();updateDashboard();buildFilters();
+ if(!restoreLastSearch())apply();
  loadFMZ(false).then(()=>apply());
  loadObservedSpecies();loadAdvisories();loadFullRegulations();loadWaterbodies();loadTripData();loadSpeciesArt();
 }
@@ -1140,7 +1173,9 @@ async function loadWaterbodies(){
   waterbodiesLoaded=true;
   mergeWaterbodies();
   buildFilters(true);
-  apply();
+  // A saved species may only exist in the wheel after the merge, so try the
+  // restore again here; restoreLastSearch() runs at most once either way.
+  if(!restoreLastSearch())apply();
   loadTownshipsForLakes(lakes).then(()=>{assignTownships();apply()});
  }catch(e){
   // Not built yet, or offline before it was ever cached. The stocking data
@@ -1327,9 +1362,11 @@ async function loadTownshipsFor(lat,lon,km){
    geometry:JSON.stringify(env),geometryType:"esriGeometryEnvelope",
    spatialRel:"esriSpatialRelIntersects",inSR:"4326",outSR:"4326",
    outFields:"OFFICIAL_NAME",returnGeometry:"true",
-   // Township outlines only need to be accurate enough to say which one a
-   // point falls in, so they are heavily generalised.
-   maxAllowableOffset:"0.005",geometryPrecision:"4",
+   /* 0.005 degrees is about 550 m of slack in the boundary — enough to walk a
+      township line across a whole lake, which is how Moira Lake came back as
+      Huntingdon rather than Madoc: it sits close to that boundary. The zone
+      layer already uses 0.002 for the same reason. 0.001 is roughly 110 m. */
+   maxAllowableOffset:"0.001",geometryPrecision:"5",
    f:"geojson",resultRecordCount:"600"
   });
   const j=await fetch(TOWNSHIP_API+"?"+p).then(r=>r.json());
@@ -1504,6 +1541,57 @@ function searchCentre(){return townOrigin?[townOrigin.lat,townOrigin.lon]:userLo
    refused location degrades to a province-wide search rather than to nothing. */
 const DEFAULT_RADIUS="50";
 
+/* Reopening the last search.
+
+   Explore holds its results back until asked (v2m) — but a search you made
+   yourself is something you asked for, so replaying it on launch does not
+   break that rule the way a canned default would. Everything needed is
+   stored, including the town's coordinates rather than just its name, so the
+   restore does not have to wait for the gazetteer to load.
+
+   Deliberately does NOT ask for location on startup. A permission prompt is a
+   bad way to greet someone opening an app, and apply() ignores the distance
+   filter without a position, so the worst case is a wider search than the one
+   that was saved rather than a wrong one. */
+const LAST_SEARCH_KEY="osl-lastsearch";
+const RESTORE_KEY="osl-restore-search";
+function restoreSearchEnabled(){return localStorage.getItem(RESTORE_KEY)!=="0"}
+function setRestoreSearch(on){localStorage.setItem(RESTORE_KEY,on?"1":"0");if(!on)forgetLastSearch()}
+function forgetLastSearch(){localStorage.removeItem(LAST_SEARCH_KEY)}
+
+function saveLastSearch(){
+ if(!restoreSearchEnabled())return;
+ try{
+  localStorage.setItem(LAST_SEARCH_KEY,JSON.stringify({
+   q:$("search")?$("search").value:"",
+   sp:$("species")?$("species").value:"",
+   yr:$("year")?$("year").value:"",
+   radius:$("radius")?$("radius").value:DEFAULT_RADIUS,
+   sort:$("sort")?$("sort").value:"",
+   town:townOrigin?{name:townOrigin.name,lat:townOrigin.lat,lon:townOrigin.lon}:null,
+   at:Date.now()
+  }));
+ }catch(e){ /* storage full or blocked; the app just opens fresh */ }
+}
+
+let lastSearchRestored=false;
+function restoreLastSearch(){
+ if(lastSearchRestored||!restoreSearchEnabled())return false;
+ let v;
+ try{ v=JSON.parse(localStorage.getItem(LAST_SEARCH_KEY)||"null"); }catch(e){ return false }
+ if(!v)return false;
+ lastSearchRestored=true;
+ const set=(id,val)=>{const el=$(id);if(el&&val!=null)el.value=val};
+ set("search",v.q||"");set("species",v.sp||"");set("year",v.yr||"");
+ set("radius",v.radius==null?DEFAULT_RADIUS:v.radius);set("sort",v.sort||"");
+ townOrigin=v.town&&Number.isFinite(v.town.lat)?v.town:null;
+ searched=true;
+ clearFiltersDirty();
+ commitFilters();
+ apply();
+ return true;
+}
+
 let committed={q:"",sp:"",yr:"",radius:0,sort:""};
 function commitFilters(){
  committed.q=$("search")?$("search").value:"";
@@ -1557,6 +1645,7 @@ async function runSearch(){
  else if(sp)await speciesLookupFor(sp);
 
  apply();   // settle the count after any lookup, rather than leaving "Searching…"
+ saveLastSearch();
 }
 
 async function searchProvince(q){
@@ -2416,6 +2505,12 @@ function checklistLabel(item){return item.key?t("chk_"+item.key):(item.label||""
 
 function tripLake(tr){return lakes.find(l=>l.key===tr.lakeKey)}
 function startTrip(l){
+ /* Tapping "Start a fishing trip" twice on the same lake used to make two
+    trips, and nothing on the lake sheet showed one was already running — so
+    a stray tap left an empty duplicate in the logbook forever. If a trip for
+    this lake is still open, that is the trip you meant. */
+ const open=trips.find(x=>!x.ended&&x.lakeKey===l.key);
+ if(open){$("sheet").classList.add("hidden");openTrip(open.id);toast(t("tripAlreadyOpen"));return}
  const trip={id:Date.now(),lakeKey:l.key,lakeName:l.name,lat:l.lat,lon:l.lon,fmz:l.fmz||null,
   started:new Date().toISOString(),ended:null,catches:[],notes:"",checklist:defaultChecklist()};
  trips.unshift(trip);saveTrips();$("sheet").classList.add("hidden");openTrip(trip.id);
@@ -2430,7 +2525,20 @@ let tripTab="catches", tripTabFor=null;
    should not still be open when you come back, and a half-confirmed delete
    should certainly not be. */
 let editingCatchId=null, confirmDeleteId=null;
+/* Which trip is one tap from deletion, in the sheet and in the list. A trip
+   is a season of someone's fishing; it does not go on a single tap. */
+let confirmTripId=null;
 function clearCatchState(){editingCatchId=null;confirmDeleteId=null}
+
+function deleteTrip(id){
+ trips=trips.filter(x=>x.id!==id);
+ saveTrips();
+ confirmTripId=null;
+ if(tripTabFor===id){tripTabFor=null;clearCatchState()}
+ $("tripSheet").classList.add("hidden");
+ if(currentView==="trips")renderTrips();
+ toast(t("tripDeleted"));
+}
 
 /* Species the angler could plausibly log here: what the lake is stocked with,
    plus what surveys actually recorded, minus the forage species that are in
@@ -2510,32 +2618,39 @@ function catchFormMarkup(tr){
 function checklistMarkup(tr){
  const list=tr.checklist||[];
  const done=list.filter(i=>i.done).length;
+ /* An ended trip locked its catch log and made its notes read-only, but left
+    the checklist fully editable — you could still tick "bring the net" for a
+    trip you got home from. Locked now, for the same reason and in the same
+    way as the rest of the sheet. */
+ const locked=!!tr.ended;
  return `<div class="checklistHead"><h3>${t("checklist")}</h3><span class="pill">${done}/${list.length}</span></div>
  <p class="setNote">${t("checklistNote")}</p>
  <div class="checklist">${list.map(i=>`<label class="checkItem${i.done?" done":""}">
-   <input type="checkbox" data-chk="${i.id}"${i.done?" checked":""}>
+   <input type="checkbox" data-chk="${i.id}"${i.done?" checked":""}${locked?" disabled":""}>
    <span>${esc(checklistLabel(i))}</span>
-   ${i.key?"":`<button data-delchk="${i.id}" aria-label="${t("removeItem")}">×</button>`}
+   ${i.key||locked?"":`<button data-delchk="${i.id}" aria-label="${t("removeItem")}">×</button>`}
   </label>`).join("")}</div>
- <div class="formrow addItemRow">
+ ${locked?`<p class="setNote">${t("checklistLocked")}</p>`:`<div class="formrow addItemRow">
   <input id="newChkItem" placeholder="${t("addItemPh")}" aria-label="${t("addItemPh")}">
   <button id="addChkItem" class="secondaryAction">${t("addItem")}</button>
  </div>
- <button id="resetChk" class="secondaryAction wide">${t("uncheckAll")}</button>`;
+ <button id="resetChk" class="secondaryAction wide">${t("uncheckAll")}</button>`}`;
 }
 
 function openTrip(id){
  const trip=trips.find(x=>x.id===id);if(!trip)return;
  if(!Array.isArray(trip.checklist))trip.checklist=defaultChecklist();
  const l=tripLake(trip),active=!trip.ended;
- if(tripTabFor!==id){tripTab="catches";tripTabFor=id;clearCatchState()}
+ if(tripTabFor!==id){tripTab="catches";tripTabFor=id;clearCatchState();confirmTripId=null}
  const tab=tripTab;
 
  const head=`<h2>🎣 ${esc(trip.lakeName)}</h2>
  <div class="tripmeta">${new Date(trip.started).toLocaleString(appLang==="fr"?"fr-CA":"en-CA")}${trip.fmz?` • ${t("fmz")} ${trip.fmz}`:""} • ${active?t("activeTrip"):t("completedTrip")}</div>
  ${l?`<div class="lakeSnapshot"><b>${t("lakeSnapshot")}</b>
-   <span>${t("stockedWith")}: ${esc((l.species||[]).join(", ")||"—")}</span>
-   <span>${t("latestStocking")}: ${esc(l.latestYear||"—")}</span>
+   ${l.stocked&&(l.species||[]).length
+     ?`<span>${t("stockedWith")}: ${esc(l.species.join(", "))}</span>
+       <span>${t("latestStocking")}: ${esc(l.latestYear||"—")}</span>`
+     :`<span>${t("notStocked")}</span>`}
    ${l.observedSpecies&&l.observedSpecies.length?`<span>${t("observed")}: ${esc(l.observedSpecies.map(s=>s.species).join(", "))}</span>`:""}</div>`:""}
  ${trip.fmz?`<a class="zoneAction" target="_blank" rel="noopener" href="${REGS_BASE}${trip.fmz}">${t("checkFmzRegs")} ${trip.fmz}</a>`:""}
  <div class="tripTabs" role="tablist" aria-label="${t("tripSections")}">
@@ -2564,7 +2679,13 @@ function openTrip(id){
    ${active?`<button id="saveTripNotes" class="secondaryAction wide">${t("saveTripNotes")}</button>`:""}`;
  }
 
- const foot=active?`<button id="endTrip" class="endTrip">${t("endTrip")}</button>`:"";
+ const confirmingTrip=confirmTripId===id;
+ const foot=`${active?`<button id="endTrip" class="endTrip">${t("endTrip")}</button>`:""}
+  ${confirmingTrip
+   ?`<div class="confirmRow tripConfirm"><span class="confirmAsk">${t("deleteTripAsk")}</span>
+      <button id="confirmTripDel" class="dangerBtn">${t("delete")}</button>
+      <button id="cancelTripDel" class="secondaryAction">${t("cancel")}</button></div>`
+   :`<button id="deleteTrip" class="deleteTrip">${t("deleteTrip")}</button>`}`;
  $("tripDetail").innerHTML=head+body+foot;
  $("tripSheet").classList.remove("hidden");
 
@@ -2614,6 +2735,10 @@ function openTrip(id){
   const st=$("saveTripNotes");
   if(st)st.onclick=()=>{trip.notes=$("tripNotes").value;saveTrips();toast(t("notesSaved"))};
  }
+
+ const dt=$("deleteTrip");if(dt)dt.onclick=()=>{confirmTripId=id;openTrip(id)};
+ const ctd=$("cancelTripDel");if(ctd)ctd.onclick=()=>{confirmTripId=null;openTrip(id)};
+ const cfd=$("confirmTripDel");if(cfd)cfd.onclick=()=>deleteTrip(id);
 
  const et=$("endTrip");
  if(et)et.onclick=()=>{
@@ -2667,9 +2792,30 @@ function renderTrips(){
    <span class="pill">${tr.catches.length} ${tr.catches.length===1?t("catchOne"):t("catchMany")}</span></div>
    <div class="meta"><span>🎣 ${new Date(tr.started).toLocaleDateString(appLang==="fr"?"fr-CA":"en-CA")}</span>
    ${tr.fmz?`<span>🗺️ ${t("fmz")} ${tr.fmz}</span>`:""}
-   ${total&&!tr.ended?`<span>✅ ${done}/${total}</span>`:""}</div></article>`;
+   ${total&&!tr.ended?`<span>✅ ${done}/${total}</span>`:""}</div>
+   ${confirmTripId===tr.id
+    ?`<div class="confirmRow"><span class="confirmAsk">${t("deleteTripAsk")}</span>
+       <button data-tripdelyes="${tr.id}" class="dangerBtn">${t("delete")}</button>
+       <button data-tripdelno="${tr.id}" class="secondaryAction">${t("cancel")}</button></div>`
+    :`<button data-tripdel="${tr.id}" class="deleteTripCard">${t("deleteTrip")}</button>`}
+   </article>`;
  }).join(""):`<div class="record empty">${t("noTripsYet")}</div>`;
- document.querySelectorAll("[data-trip]").forEach(e=>e.onclick=()=>openTrip(Number(e.dataset.trip)));
+ /* The card opens the trip, so every control inside it has to stop the click
+    reaching the card — otherwise arming a delete would open the sheet on top
+    of the question it just asked. */
+ document.querySelectorAll("[data-trip]").forEach(e=>e.onclick=(ev)=>{
+  if(ev.target.closest("[data-tripdel],[data-tripdelyes],[data-tripdelno]"))return;
+  openTrip(Number(e.dataset.trip));
+ });
+ document.querySelectorAll("[data-tripdel]").forEach(b=>b.onclick=(ev)=>{
+  ev.stopPropagation();confirmTripId=Number(b.dataset.tripdel);renderTrips();
+ });
+ document.querySelectorAll("[data-tripdelno]").forEach(b=>b.onclick=(ev)=>{
+  ev.stopPropagation();confirmTripId=null;renderTrips();
+ });
+ document.querySelectorAll("[data-tripdelyes]").forEach(b=>b.onclick=(ev)=>{
+  ev.stopPropagation();deleteTrip(Number(b.dataset.tripdelyes));
+ });
 }
 
 function locate(after){
@@ -2810,7 +2956,7 @@ setBasemap(baseKey);
 const so=$("sort");if(so)so.onchange=markFiltersDirty;
 // The access filter needs the access-point file loaded before it can mean
 // anything, so asking for it fetches it rather than silently matching nothing.
-$("clearFilters").onclick=()=>{townOrigin=null;$("search").value="";$("species").value="";$("year").value="";$("radius").value=DEFAULT_RADIUS;const so=$("sort");if(so)so.value="";clearFiltersDirty();commitFilters();searched=false;currentView="explore";apply()};
+$("clearFilters").onclick=()=>{townOrigin=null;$("search").value="";$("species").value="";$("year").value="";$("radius").value=DEFAULT_RADIUS;const so=$("sort");if(so)so.value="";clearFiltersDirty();commitFilters();searched=false;currentView="explore";forgetLastSearch();apply()};
 
 
 $("recentNearBtn").onclick=recentNearMe;
@@ -2939,6 +3085,15 @@ function settingsMarkup(){
  </section>
 
  <section class="setBlock">
+  <h3>${t("onOpening")}</h3>
+  <p class="setNote">${t("onOpeningNote")}</p>
+  <div class="segmented" role="group" aria-label="${t("onOpening")}">
+   <button type="button" data-restore="1" class="${restoreSearchEnabled()?"on":""}">${t("reopenLastSearch")}</button>
+   <button type="button" data-restore="0" class="${restoreSearchEnabled()?"":"on"}">${t("startFresh")}</button>
+  </div>
+ </section>
+
+ <section class="setBlock">
   <h3>${t("units")}</h3>
   <p class="setNote">${t("unitsNote")}</p>
   <div class="segmented" role="group" aria-label="${t("units")}">
@@ -2996,6 +3151,13 @@ function openSettings(){
  c.innerHTML=settingsMarkup();
  c.querySelectorAll("[data-size]").forEach(b=>b.onclick=()=>{applyTextSize(b.dataset.size);openSettings()});
  c.querySelectorAll("[data-lang]").forEach(b=>b.onclick=()=>{setLanguage(b.dataset.lang);openSettings()});
+ c.querySelectorAll("[data-restore]").forEach(b=>b.onclick=()=>{
+  setRestoreSearch(b.dataset.restore==="1");
+  // Turning it on from a screen you have already searched should capture
+  // that search, not wait for the next one.
+  if(b.dataset.restore==="1"&&searched)saveLastSearch();
+  openSettings();
+ });
  c.querySelectorAll("[data-units]").forEach(b=>b.onclick=()=>{
   setUnits(b.dataset.units);openSettings();
   if(tripTabFor!==null&&!$("tripSheet").classList.contains("hidden"))openTrip(tripTabFor);
