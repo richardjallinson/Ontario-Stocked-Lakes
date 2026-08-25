@@ -919,3 +919,26 @@ body.filtering .searchAlt{display:flex}
 .inlineClear{display:block;margin:10px auto 0;border:1px solid var(--line);
  background:#fff;color:var(--green);padding:10px 18px;border-radius:11px;
  font:inherit;font-weight:800;font-size:13px;min-height:40px;cursor:pointer}
+
+/* ---------------------------------------------------------------------------
+   The splash.
+
+   Requested after people were tapping half-loaded controls: the artwork
+   holds the screen until the merged lake database is ready, then fades. The
+   image is the header art at full size with the caption cropped off, so the
+   caption underneath can actually change ("Loading" is a lie the moment
+   loading fails) and the bar can actually move.
+   --------------------------------------------------------------------------- */
+#splash{position:fixed;inset:0;z-index:9000;background:#0E1B2E;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ gap:18px;padding:28px;transition:opacity .45s ease}
+#splash img{width:min(78vw,420px);max-height:62vh;object-fit:contain;
+ user-select:none;-webkit-user-select:none}
+#splash .splashMsg{color:#DCE8F4;font-size:16px;font-weight:700;margin:0}
+#splash .splashBar{width:min(64vw,320px);height:6px;border-radius:3px;
+ background:#ffffff22;overflow:hidden}
+#splash .splashBar i{display:block;height:100%;width:38%;border-radius:3px;
+ background:#3F8CFF;animation:splashSlide 1.15s ease-in-out infinite alternate}
+@keyframes splashSlide{from{transform:translateX(-30%)}to{transform:translateX(220%)}}
+@media (prefers-reduced-motion: reduce){#splash .splashBar i{animation:none;width:100%}}
+#splash.done{opacity:0;pointer-events:none}

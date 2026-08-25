@@ -49,6 +49,7 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
+  splashLoading:"Loading Ontario lakes…",
   emptyWheelsHid:"{n} lakes match your search, but the {what} filter is hiding them.",
   clearThose:"Clear that filter",
   lakeIndexLoading:"Still loading Ontario's full lake index — these results are stocked lakes only for the moment, and will fill in on their own.",
@@ -277,6 +278,7 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
+  splashLoading:"Chargement des lacs de l'Ontario…",
   emptyWheelsHid:"{n} lacs correspondent à votre recherche, mais le filtre {what} les masque.",
   clearThose:"Effacer ce filtre",
   lakeIndexLoading:"Chargement de l’index complet des lacs de l’Ontario — ces résultats ne comprennent que les lacs ensemencés pour l’instant; ils se compléteront d’eux-mêmes.",
@@ -497,7 +499,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3b";
+const APP_VERSION="v3c";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -1110,6 +1112,18 @@ async function loadLiveStocking(){
  return all;
 }
 
+/* Fades the splash and then removes it from the layout, so a transparent
+   full-screen layer is not left swallowing every tap. Safe to call twice. */
+function hideSplash(){
+ const sp=document.getElementById("splash");
+ if(!sp||sp.classList.contains("done"))return;
+ sp.classList.add("done");
+ setTimeout(()=>{try{sp.remove()}catch(e){}},600);
+}
+// Whatever goes wrong, nobody stays behind the splash. Twelve seconds is
+// longer than any honest load and shorter than giving up on the app.
+setTimeout(hideSplash,12000);
+
 function afterStockingLoaded(){
  buildLakes();
  // Search must always use one complete lake collection.  Merge Ontario's
@@ -1119,6 +1133,9 @@ function afterStockingLoaded(){
  if(!restoreLastSearch())apply();
  loadFMZ(false).then(()=>apply());
  loadObservedSpecies();loadAdvisories();loadFullRegulations();loadTripData();loadSpeciesArt();
+ // The UI below the splash is real now: filters built, first result set
+ // rendered. This is the moment "loading" stops being true.
+ hideSplash();
  if(waterbodiesLoaded)loadTownshipsForLakes(lakes).then(()=>{assignTownships();apply()});
 }
 
@@ -1144,6 +1161,7 @@ async function load(){
   $("count").textContent="Unavailable";
   ["statLakes","statRecords","statSpecies","statLatest"].forEach(id=>{const el=$(id);if(el)el.textContent="—"});
   toast("Ontario lake database didn't load. Reload the app.");
+  hideSplash();   // the failure screen is the thing to show, not the artwork
  }
 }
 
@@ -2023,7 +2041,6 @@ function render(){
     partial — and a partial list of lakes is the one thing this app must never
     present as complete. The note goes above the results, and disappears by
     itself when the index arrives and apply() runs again. */
- const indexNote="";
 
  $("results").innerHTML=shown.slice(0,250).map((l,i)=>{
   const latest=l.records.filter(r=>Number(r.Stocking_Year)===l.latestYear),latestFish=latest.reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0),fav=favoriteKeys.has(l.key);
@@ -2064,7 +2081,6 @@ function render(){
   if(plate)$("results").insertAdjacentHTML("afterbegin",plate);
  }
  $("results").insertAdjacentHTML("afterbegin",locationPrompt());
- if(indexNote)$("results").insertAdjacentHTML("afterbegin",indexNote);
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=e=>{if(e.target.closest(".star"))return;const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
  document.querySelectorAll(".star").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFav(b.dataset.fav)});
  const dw=$("dropWheels");

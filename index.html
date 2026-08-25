@@ -16,6 +16,16 @@
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css" onerror="window.__leafletCssFailed=1">
 </head>
 <body>
+<!-- The splash. Painted before any script runs, sitting over everything, so
+     there is nothing to mistap while the lake database loads. Dismissed from
+     exactly two places in app.js: the moment the merged index is ready, and
+     the load-failure screen. A belt-and-braces timer clears it regardless,
+     because no artwork is worth stranding someone behind. -->
+<div id="splash" role="status" aria-live="polite">
+  <img src="splash.jpg" alt="" draggable="false">
+  <p class="splashMsg" data-i18n="splashLoading">Loading Ontario lakes…</p>
+  <div class="splashBar" aria-hidden="true"><i></i></div>
+</div>
 <header>
   <div class="headerTop">
     <div class="hCol">
