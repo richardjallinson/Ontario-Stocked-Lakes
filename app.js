@@ -49,6 +49,7 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
+  searchHint:"Four ways to search: a lake (Moira Lake), a fish (Walleye), a town (Belleville) or a township (Huntingdon Twp).",
   lakesNearTown:"Lakes near {town}",
   accessDataPending:"The access-point list hasn’t loaded yet, so this search ran without that filter. It will apply automatically once the list arrives.",
   locationOffFallback:"Location is off, so this searched all of Ontario. Turn location on to limit the distance.",
@@ -56,7 +57,7 @@ const I18N={
   onboardStatsNote:"What is in the app right now.",
   readyToSearch:"{n} lakes ready to search",
   searchPromptTitle:"Search {n} Ontario lakes",
-  searchPromptSub:"By name, township or species. Or tap Recently Stocked or Recent Near Me above.",
+  searchPromptSub:"Try a lake name, a town like Belleville or Madoc, or a species. Or tap Recently Stocked or Recent Near Me above.",
   turnOnLocation:"Turn on location",
   turnOnLocationSub:"to show how far each lake is from you",
   emptyFavorites:"No saved lakes yet. Tap ☆ on any lake to keep it here.",
@@ -172,7 +173,7 @@ const I18N={
   useLocation:"Use my location",
   appLink:"App link",appLinkNote:"Share Ontario Stocked Lakes with someone.",
   copyLink:"Copy link",shareApp:"Share",linkCopied:"Link copied.",
-  heroTitle:"Find your next fishing spot",searchPh:"Search a lake, township or species",search:"Search",
+  heroTitle:"Find your next fishing spot",searchPh:"Lake, town or species",search:"Search",
   statLakesLbl:"Stocked lakes",statRecordsLbl:"Stocking records",statSpeciesLbl:"Species",statLatestLbl:"Latest year",
   recentlyStocked:"Recently Stocked",recentlyStockedSub:"Newest records first",
   recentNear:"Recent Near Me",recentNearSub:"Newest stocked lakes close to you",
@@ -256,6 +257,7 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
+  searchHint:"Quatre façons de chercher : un lac (Moira Lake), un poisson (doré jaune), une ville (Belleville) ou un canton (Huntingdon Twp).",
   lakesNearTown:"Lacs près de {town}",
   accessDataPending:"La liste des points d’accès n’est pas encore chargée; la recherche a été faite sans ce filtre. Il s’appliquera automatiquement dès son arrivée.",
   locationOffFallback:"La localisation est désactivée; la recherche a couvert tout l’Ontario. Activez-la pour limiter la distance.",
@@ -263,7 +265,7 @@ const I18N={
   onboardStatsNote:"Ce que contient l’application en ce moment.",
   readyToSearch:"{n} lacs prêts à être cherchés",
   searchPromptTitle:"Chercher parmi {n} lacs de l’Ontario",
-  searchPromptSub:"Par nom, canton ou espèce. Ou touchez Récemment ensemencés ou Récents près de moi ci-dessus.",
+  searchPromptSub:"Essayez un nom de lac, une ville comme Belleville ou Madoc, ou une espèce. Ou touchez Récemment ensemencés ou Récents près de moi ci-dessus.",
   turnOnLocation:"Activer la localisation",
   turnOnLocationSub:"pour afficher la distance de chaque lac",
   emptyFavorites:"Aucun lac enregistré. Touchez ☆ sur un lac pour le garder ici.",
@@ -379,7 +381,7 @@ const I18N={
   useLocation:"Utiliser ma position",
   appLink:"Lien de l'application",appLinkNote:"Partagez Ontario Stocked Lakes avec quelqu'un.",
   copyLink:"Copier le lien",shareApp:"Partager",linkCopied:"Lien copié.",
-  heroTitle:"Trouvez votre prochain coin de p\u00eache",searchPh:"Rechercher un lac, un canton ou une esp\u00e8ce",search:"Rechercher",
+  heroTitle:"Trouvez votre prochain coin de p\u00eache",searchPh:"Lac, ville ou esp\u00e8ce",search:"Rechercher",
   statLakesLbl:"Lacs ensemenc\u00e9s",statRecordsLbl:"Ensemencements",statSpeciesLbl:"Esp\u00e8ces",statLatestLbl:"Derni\u00e8re ann\u00e9e",
   recentlyStocked:"Ensemenc\u00e9s r\u00e9cemment",recentlyStockedSub:"Les plus r\u00e9cents d'abord",
   recentNear:"R\u00e9cents pr\u00e8s de moi",recentNearSub:"Lacs ensemenc\u00e9s r\u00e9cemment, pr\u00e8s de vous",
@@ -455,7 +457,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v2p";
+const APP_VERSION="v2r";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -1796,7 +1798,14 @@ function apply(){
 }
 function render(){
  $("count").textContent=lakeCount(shown.length);
- const filtering=!!(($("search").value||"").trim()||$("species").value||$("year").value||$("radius").value);
+ /* "Filtering" means the person has narrowed something, which is why it hides
+    the hero copy and the shortcut cards. The distance dropdown counts only
+    when it differs from the default — v2n made 50 km the default and this
+    line kept treating any value as a deliberate narrowing, so `filtering`
+    was true from launch and the two shortcut buttons were hidden for good,
+    while the prompt card went on telling people to tap them. */
+ const radiusNarrowed=!!($("radius")&&$("radius").value&&$("radius").value!==DEFAULT_RADIUS);
+ const filtering=!!(($("search").value||"").trim()||$("species").value||$("year").value||radiusNarrowed);
  document.body.classList.toggle("filtering",filtering&&currentView==="explore");
  const mc=$("mapCount");if(mc)mc.textContent=lakeCount(Math.min(shown.length,400))+" on the map";
  $("listTitle").textContent=currentView==="favorites"?t("myLakes")
@@ -1909,7 +1918,13 @@ function phraseIn(words,toks){
    otherwise "trout township" could match a Trout in one field and a Township
    in another and look like a hit. */
 function searchFields(l){
- return [l.name,l.township,l.district,...(l.species||[]),...anglerSpecies(l.present)]
+ /* townshipLabel() prints "HUNTINGDON" as "Huntingdon Twp", so every card
+    shows a word that was not in the searchable text. Typing exactly what the
+    card displays returned nothing, because phraseIn() needs all query tokens
+    consecutive in the field and "twp" was in none of them. Both forms are
+    searchable now — people type what they can see. */
+ return [l.name,l.township,townshipLabel(l.township),l.district,
+         ...(l.species||[]),...anglerSpecies(l.present)]
   .filter(Boolean).map(searchWords);
 }
 

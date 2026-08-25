@@ -855,3 +855,16 @@ body.filtering .sectiontitle{margin-top:14px}
 .onboardStats{grid-template-columns:1fr 1fr}
 .onboardStats div:last-child{grid-column:auto}
 .onboardStats strong{font-size:17px}
+
+/* The search box does four different jobs and looked like it did one. A
+   placeholder cannot hold four without clipping on a 375pt phone, so the
+   fourth explanation lives under the box instead of inside it.
+
+   It deliberately survives body.filtering, which hides the rest of the hero
+   copy. The moment someone most needs to know they could have searched a town
+   is right after a search that found nothing. */
+.hero p.searchHint{
+ margin:10px 2px 0;font-size:12px;line-height:1.5;color:#C6D8E8;
+}
+body.filtering .hero p.searchHint{display:block}
+body.filtering .hero{padding-bottom:12px}
