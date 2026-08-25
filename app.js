@@ -459,7 +459,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v2t";
+const APP_VERSION="v2u";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -884,9 +884,6 @@ async function loadAccess(){
    return {...a,lat:Number(lat),lon:Number(lon)}
   }).filter(a=>Number.isFinite(a.lat)&&Number.isFinite(a.lon));
   accessLoaded=true;$("accessStatus").textContent=`${num(accessPoints.length)} government access points loaded`;renderAccess();
-  // An armed access filter has been waiting for this list. Re-run the search
-  // so it takes effect, rather than leaving results that ignored it.
-  if(committed.access)apply();
  }catch(e){$("accessStatus").textContent=t("accessUnavailable");$("showAccess").checked=false}
 }
 function accessIcon(a){
@@ -1457,14 +1454,13 @@ function searchCentre(){return townOrigin?[townOrigin.lat,townOrigin.lon]:userLo
    refused location degrades to a province-wide search rather than to nothing. */
 const DEFAULT_RADIUS="50";
 
-let committed={q:"",sp:"",yr:"",radius:0,sort:"",access:false};
+let committed={q:"",sp:"",yr:"",radius:0,sort:""};
 function commitFilters(){
  committed.q=$("search")?$("search").value:"";
  committed.sp=$("species")?$("species").value:"";
  committed.yr=$("year")?$("year").value:"";
  committed.radius=Number($("radius")?$("radius").value:0)||0;
  committed.sort=$("sort")?$("sort").value:"";
- committed.access=!!($("onlyAccess")&&$("onlyAccess").checked);
 }
 
 function markFiltersDirty(){
@@ -1501,11 +1497,6 @@ async function runSearch(){
  // brings its own position, so it never needs to ask for one.
  if(radius&&!userLoc&&!townOrigin){locate(runSearch);return}
  apply();
-
- // The access filter cannot act until the access-point list arrives, so a
- // search made in the meantime runs without it and says so, rather than
- // returning an empty list that blames the person's filters.
- if(committed.access&&!accessLoaded){loadAccess();toast(t("accessDataPending"))}
 
  // One request per request, not two. A bare species name has no business
  // being sent as a lake-name lookup as well, and a town name is a centre,
@@ -1758,12 +1749,6 @@ function apply(){
   if(yr&&!l.records.some(r=>String(r.Stocking_Year)===yr))return false;
   if(q&&!matchesQuery(l,q))return false;
   if(useRadius&&radius&&centre&&distance(centre[0],centre[1],l.lat,l.lon)>radius)return false;
-  // Only filter on access when the access-point list has actually arrived.
-  // hasNearbyAccess() returns false for every lake while the list is empty,
-  // so before this guard a checked box plus a slow or failed fetch returned
-  // "No lakes match these filters" — a lie; the filters were fine and the
-  // filter's own data was what was missing.
-  if(committed.access&&accessLoaded&&!hasNearbyAccess(l))return false;
   return true;
  });
 
@@ -2673,9 +2658,6 @@ function locate(after){
 function lakeQuantityFor(l,sp,yr){
  return l.records.filter(r=>(!sp||r.Species===sp)&&(!yr||String(r.Stocking_Year)===String(yr))).reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0);
 }
-function hasNearbyAccess(l,maxKm=5){
- return accessLoaded&&accessPoints.some(a=>distance(l.lat,l.lon,a.lat,a.lon)<=maxKm);
-}
 
 function windDirection(deg){
  const dirs=["N","NE","E","SE","S","SW","W","NW"];return dirs[Math.round((Number(deg)||0)/45)%8];
@@ -2777,8 +2759,7 @@ setBasemap(baseKey);
 const so=$("sort");if(so)so.onchange=markFiltersDirty;
 // The access filter needs the access-point file loaded before it can mean
 // anything, so asking for it fetches it rather than silently matching nothing.
-const oa=$("onlyAccess");if(oa)oa.onchange=()=>{if(oa.checked&&!accessLoaded)loadAccess();markFiltersDirty()};
-$("clearFilters").onclick=()=>{townOrigin=null;$("search").value="";$("species").value="";$("year").value="";$("radius").value=DEFAULT_RADIUS;const so=$("sort");if(so)so.value="";const oa=$("onlyAccess");if(oa)oa.checked=false;clearFiltersDirty();commitFilters();searched=false;currentView="explore";apply()};
+$("clearFilters").onclick=()=>{townOrigin=null;$("search").value="";$("species").value="";$("year").value="";$("radius").value=DEFAULT_RADIUS;const so=$("sort");if(so)so.value="";clearFiltersDirty();commitFilters();searched=false;currentView="explore";apply()};
 
 
 $("recentNearBtn").onclick=recentNearMe;
