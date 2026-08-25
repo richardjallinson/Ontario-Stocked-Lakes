@@ -497,7 +497,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3a";
+const APP_VERSION="v3b";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -1111,27 +1111,39 @@ async function loadLiveStocking(){
 }
 
 function afterStockingLoaded(){
- buildLakes();updateDashboard();buildFilters();
+ buildLakes();
+ // Search must always use one complete lake collection.  Merge Ontario's
+ // full waterbody index before the first dashboard/filter/search render.
+ if(waterbodiesLoaded)mergeWaterbodies();
+ updateDashboard();buildFilters();
  if(!restoreLastSearch())apply();
  loadFMZ(false).then(()=>apply());
- loadObservedSpecies();loadAdvisories();loadFullRegulations();loadWaterbodies();loadTripData();loadSpeciesArt();
+ loadObservedSpecies();loadAdvisories();loadFullRegulations();loadTripData();loadSpeciesArt();
+ if(waterbodiesLoaded)loadTownshipsForLakes(lakes).then(()=>{assignTownships();apply()});
 }
 
 async function load(){
  $("count").textContent=t("loadingData");
  ["statLakes","statRecords","statSpecies","statLatest"].forEach(id=>{const el=$(id);if(el)el.textContent="…"});
- beginWaterbodies();   // in flight before the stocking file is even parsed
  try{
+  // Load both core datasets together.  Do not expose a temporary stocked-only
+  // lake list: that was the source of the startup/species-search inconsistency.
+  const waterPromise=beginWaterbodies();
   let all;
   try{ all=await loadBundledStocking(); }
-  catch(e){ all=await loadLiveStocking(); }   // file not built: behave as before
+  catch(e){ all=await loadLiveStocking(); }
+  const fullIndex=await waterPromise;
+  if(!fullIndex||!fullIndex.length)throw new Error("Ontario lake database unavailable");
   rows=all.filter(x=>x.Latitude&&x.Longitude);
+  waterbodies=fullIndex;
+  waterbodiesLoaded=true;waterbodiesState="ready";
   afterStockingLoaded();
  }catch(e){
-  $("results").innerHTML=`<div class="error"><b>Ontario stocking data didn't load.</b><br>Check your connection and pull to reload. If you were offline, saved lakes and regulations are still available.<br><small>${esc(e.message)}</small></div>`;
+  waterbodiesLoaded=false;waterbodiesState="unavailable";
+  $("results").innerHTML=`<div class="error"><b>Ontario lake database didn't load.</b><br>Reload the app and try again. Saved lakes and regulations are still available.</div>`;
   $("count").textContent="Unavailable";
   ["statLakes","statRecords","statSpecies","statLatest"].forEach(id=>{const el=$(id);if(el)el.textContent="—"});
-  toast("Ontario stocking data didn't load. Check your connection.");
+  toast("Ontario lake database didn't load. Reload the app.");
  }
 }
 
@@ -2001,8 +2013,6 @@ function render(){
   $("results").innerHTML=`<div class="record searchPrompt">
    <b>${ready?t("searchPromptTitle").replace("{n}",num(ready)):t("loadingData")}</b>
    <span>${t("searchPromptSub")}</span>
-   ${waterbodiesState==="loading"?`<span class="stillLoading">${t("lakeIndexLoading")}</span>`:""}
-   ${waterbodiesState==="unavailable"?`<span class="stillLoading">${t("lakeIndexUnavailable")}</span>`:""}
    </div>`+locationPrompt();
   const dp0=$("distancePrompt");if(dp0)dp0.onclick=()=>locate(apply);
   markerLayer.clearLayers();
@@ -2013,8 +2023,7 @@ function render(){
     partial — and a partial list of lakes is the one thing this app must never
     present as complete. The note goes above the results, and disappears by
     itself when the index arrives and apply() runs again. */
- const indexNote=waterbodiesState==="ready"?""
-  :`<div class="record indexNote">${waterbodiesState==="loading"?t("lakeIndexLoading"):t("lakeIndexUnavailable")}</div>`;
+ const indexNote="";
 
  $("results").innerHTML=shown.slice(0,250).map((l,i)=>{
   const latest=l.records.filter(r=>Number(r.Stocking_Year)===l.latestYear),latestFish=latest.reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0),fav=favoriteKeys.has(l.key);
