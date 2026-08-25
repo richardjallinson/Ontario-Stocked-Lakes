@@ -953,3 +953,9 @@ body.filtering .searchAlt{display:flex}
 .splashBar.mini i{display:block;height:100%;width:38%;border-radius:3px;
  background:var(--gold);animation:splashSlide 1.15s ease-in-out infinite alternate}
 @media (prefers-reduced-motion: reduce){.splashBar.mini i{animation:none;width:100%}}
+
+/* Build stamp on the splash. Small, dim, and out of the way — but readable if
+   you go looking, which is the whole point: it tells you which build is
+   actually running when a stale cache makes an update look like it failed. */
+.splashVer{position:absolute;right:14px;bottom:12px;font-size:11px;
+ color:#ffffff5c;letter-spacing:.04em;font-weight:700}

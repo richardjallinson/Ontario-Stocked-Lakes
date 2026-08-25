@@ -3,7 +3,7 @@
    load isn't blocked on ~12 MB. Live government API calls always go to the
    network so regulations and advisories are never served stale. */
 
-const VERSION = "v3i";
+const VERSION = "v3k";
 const SHELL = `osl-shell-${VERSION}`;
 /* Deliberately NOT versioned. The data cache used to be osl-data-${VERSION},
    and activate deletes every cache that is not current — so every app update
@@ -15,7 +15,7 @@ const DATA  = "osl-data";
 
 const SHELL_FILES = [
   "./",
-  "./index.html", "./splash.jpg",
+  "./index.html",
   "./styles.css",
   "./app.js",
   "./manifest.webmanifest",
@@ -41,7 +41,14 @@ const isPlate = (url) => /\/species-art\/.+\.webp$/.test(url);
 self.addEventListener("install", e => {
   e.waitUntil(
     caches.open(SHELL)
-      .then(c => c.addAll(SHELL_FILES))
+      /* cache:"reload" matters more than it looks.
+         addAll() goes through the browser's ordinary HTTP cache by default, so
+         if Safari still held app.js or splash.jpg from an earlier release it
+         would happily copy that stale file into the brand-new shell cache. The
+         version number would say v3j and the contents would be v3g. That is
+         how an old splash picture kept reappearing after an update — and it
+         means the old JavaScript was being served too. */
+      .then(c => c.addAll(SHELL_FILES.map(u => new Request(u, { cache: "reload" }))))
       .then(() => self.skipWaiting())
   );
 });
