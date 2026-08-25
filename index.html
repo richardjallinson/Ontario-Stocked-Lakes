@@ -39,9 +39,7 @@
   <div class="tabstrip">
     <div class="tabs hscroll" role="tablist" aria-label="Sections" data-i18n-aria="sections">
       <button data-view="explore" type="button" role="tab" data-i18n="explore">Explore</button>
-      <button data-view="findfish" type="button" role="tab" data-i18n="findFish">Find Fish</button>
-      <button data-view="near" type="button" role="tab" data-i18n="nearMe">Near Me</button>
-      <button data-view="favorites" type="button" role="tab" data-i18n="myLakes">My Lakes</button>
+                  <button data-view="favorites" type="button" role="tab" data-i18n="myLakes">My Lakes</button>
       <button data-view="trips" type="button" role="tab" data-i18n="trips">Trips</button>
       <button data-view="resources" type="button" role="tab" data-i18n="regulations">Regulations</button>
     </div>
@@ -74,21 +72,7 @@
 </section>
 
 
-<section class="viewhead" data-show="near" hidden>
-  <h2 data-i18n="lakesNearYou">Lakes near you</h2>
-  <p data-i18n="sortedByDrive">Sorted by how far you'd have to drive.</p>
-  <div class="viewrow">
-    <label class="inlinefield"><span data-i18n="within">Within</span>
-      <select id="nearRadius">
-        <option value="25">25 km</option>
-        <option value="50" selected>50 km</option>
-        <option value="100">100 km</option>
-        <option value="200">200 km</option>
-      </select>
-    </label>
-    <button id="nearLocate" class="ghostbtn" type="button" data-i18n="useLocation">Use my location</button>
-  </div>
-</section>
+
 
 <section class="viewhead" data-show="favorites" hidden>
   <h2 data-i18n="myLakes">My lakes</h2>
@@ -104,36 +88,7 @@
   <p data-i18n="logbookSub">Your logbook, stored on this device.</p>
 </section>
 
-<section id="findPanel" class="findpanel" data-show="findfish">
-  <div class="findhead"><div><h3><span data-i18n="findFishHead">🔎 Find Fish</span></h3><p data-i18n="findFishSub">Find which lakes hold a species, near you.</p></div><button id="closeFind">×</button></div>
-  <div class="modeRow" role="group" aria-label="What to search">
-    <button type="button" id="modeAny" class="on" data-i18n="modeAny">Anywhere the fish are</button>
-    <button type="button" id="modeStocked" data-i18n="modeStocked">Stocked lakes only</button>
-  </div>
-  <p class="panelNote" id="modeNote" data-i18n="modeNoteAny">Searches provincial fish survey records, not just stocking. Most Ontario fish were never stocked.</p>
-  <div class="findgrid">
-    <label><span data-i18n="distance">Distance</span>
-      <select id="findRadius">
-        <option value="25" data-i18n-within="25">Within 25 km</option>
-        <option value="50" selected data-i18n-within="50">Within 50 km</option>
-        <option value="100" data-i18n-within="100">Within 100 km</option>
-        <option value="200" data-i18n-within="200">Within 200 km</option>
-      </select>
-    </label>
-    <label><span data-i18n="species">Species</span><select id="findSpecies"><option value="" data-i18n="anySpecies">Any species</option></select></label>
-    <label class="stockOnlyField"><span data-i18n="stockingYear">Stocking year</span><select id="findYear"><option value="" data-i18n="anyYear">Any year</option></select></label>
-    <label class="stockOnlyField"><span data-i18n="minimumStocked">Minimum fish stocked</span><input id="findMinimum" type="number" min="0" step="100" placeholder="e.g. 2000" data-i18n-ph="minimumPh"></label>
-    <label><span data-i18n="lakeName">Lake name</span><input id="findLake" type="search" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" placeholder="Optional lake name" data-i18n-ph="optionalLakePh"></label>
-    <label><span data-i18n="sortResults">Sort results</span>
-      <select id="findSort"><option value="closest" selected data-i18n="closest">Closest</option><option value="best" data-i18n="bestMatch">Best Match</option><option value="recent" data-i18n="recent">Most recently stocked</option><option value="quantity" data-i18n="quantity">Most fish stocked</option></select>
-    </label>
-  </div>
-  <label class="checkline"><input id="findAccess" type="checkbox"> <span data-i18n="onlyAccess">Only lakes with a nearby fishing access point</span></label>
-  <div class="findActions">
-    <button id="resetFind" class="ghostbtn" type="button" data-i18n="reset">Reset</button>
-    <button id="runFind" class="runfind" data-i18n="findStocked">Find Fish Near Me</button>
-  </div>
-</section>
+
 <section class="filters" data-show="explore favorites">
   <select id="species"><option value="" data-i18n="allSpecies">All species</option></select>
   <select id="year"><option value="" data-i18n="allYears">All years</option></select>
@@ -144,14 +99,23 @@
 </section>
 <section class="filters wideline" data-show="explore favorites">
   <label class="checkline inlinecheck"><input type="checkbox" id="showUnstocked" checked> <span data-i18n="includeUnstocked">Include lakes that aren't stocked</span></label>
-  <p class="filterHint" id="filterHint" hiddendata-i18n="filtersChanged">Filters changed — tap Search to apply.</p>
+  <label class="checkline inlinecheck"><input type="checkbox" id="onlyAccess"> <span data-i18n="onlyAccess">Only lakes with a nearby fishing access point</span></label>
+  <label class="inlinefield sortField"><span data-i18n="sortResults">Sort results</span>
+    <select id="sort">
+      <option value="" data-i18n="sortDefault">Best guess</option>
+      <option value="closest" data-i18n="closest">Closest</option>
+      <option value="recent" data-i18n="recent">Most recently stocked</option>
+      <option value="quantity" data-i18n="quantity">Most fish stocked</option>
+    </select>
+  </label>
+  <p class="filterHint" id="filterHint" hidden data-i18n="filtersChanged">Filters changed — tap Search to apply.</p>
 </section>
 
 
-<div class="sectiontitle" data-show="explore findfish near favorites trips"><h3 id="listTitle">Explore stocked lakes</h3><span id="count" data-i18n="loading">Loading…</span></div>
-<section id="results" class="results" data-show="explore findfish near favorites trips"></section>
+<div class="sectiontitle" data-show="explore favorites trips"><h3 id="listTitle">Explore stocked lakes</h3><span id="count" data-i18n="loading">Loading…</span></div>
+<section id="results" class="results" data-show="explore favorites trips"></section>
 
-<section class="mapcontrols" data-show="explore findfish near">
+<section class="mapcontrols" data-show="explore">
   <div class="accessbar">
     <label><input type="checkbox" id="showAccess"> <i class="ti"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.2 15.6h17.6l-2.2 4H5.4l-2.2-4Z"/><path d="M6 15.6V9.4h9.2l3.4 6.2"/><path d="M10.6 9.4V6.2h3"/></svg></i><b data-i18n="showAccess">Show fishing access points</b></label>
     <span id="accessStatus" data-i18n="accessStatus">Boat launches • shore access • docks/piers</span>
@@ -166,7 +130,7 @@
   </div>
 </section>
 
-<section class="mapcard" data-show="explore findfish near favorites">
+<section class="mapcard" data-show="explore favorites">
   <div class="maphead">
     <b data-i18n="lakeMap">Lake map</b>
     <div class="baseSwitch" role="group" aria-label="Basemap">

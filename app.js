@@ -49,6 +49,7 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
+  sortDefault:"Best guess",
   editCatch:"Edit this catch",
   saveCatch:"Save changes",
   cancel:"Cancel",
@@ -239,6 +240,7 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
+  sortDefault:"Au mieux",
   editCatch:"Modifier cette prise",
   saveCatch:"Enregistrer",
   cancel:"Annuler",
@@ -419,13 +421,9 @@ function translateStaticUI(){
  if(age&&age.textContent.trim())age.textContent=stockingBuilt?`${t("asOf")} ${stockingBuilt}.`:t("liveData");
  const hb=$("helpBtn");if(hb)hb.setAttribute("aria-label",t("help"));
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
- // The Find Fish mode note is rewritten by setMode() on every switch, so it has
- // to be re-rendered here rather than left to the data-i18n default.
- const note=$("modeNote");
- if(note)note.textContent=t(findMode==="stocked"?"modeNoteStocked":"modeNoteAny");
 }
 
-const APP_VERSION="v2k";
+const APP_VERSION="v2l";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -531,7 +529,7 @@ function fitToResults(){
  if(!mapAvailable||!shown.length)return;
  const pts=shown.slice(0,400).filter(l=>l.lat&&l.lon).map(l=>[l.lat,l.lon]);
  if(!pts.length)return;
- if(userLoc&&(currentView==="near"||currentView==="findfish"||currentView==="recentnear"))pts.push(userLoc);
+ if(userLoc&&(currentView==="recentnear"||committed.radius||committed.sort==="closest"))pts.push(userLoc);
  try{
   if(pts.length===1)map.setView(pts[0],11);
   else map.fitBounds(L.latLngBounds(pts),{padding:[28,28],maxZoom:12});
@@ -1383,12 +1381,14 @@ let filtersDirty=false;
    snapshot apply() actually filters against; only commitFilters() advances
    it, and only from a real submission — a Search press, Clear, or an
    intentionally-immediate control like Near Me's own radius picker. */
-let committed={q:"",sp:"",yr:"",radius:0};
+let committed={q:"",sp:"",yr:"",radius:0,sort:"",access:false};
 function commitFilters(){
  committed.q=$("search")?$("search").value:"";
  committed.sp=$("species")?$("species").value:"";
  committed.yr=$("year")?$("year").value:"";
  committed.radius=Number($("radius")?$("radius").value:0)||0;
+ committed.sort=$("sort")?$("sort").value:"";
+ committed.access=!!($("onlyAccess")&&$("onlyAccess").checked);
 }
 
 function markFiltersDirty(){
@@ -1534,7 +1534,6 @@ function mergeLiveResults(features){
    This asks Ontario's survey data for the species directly, inside a box
    around you, then trims the box to a true radius.
 --------------------------------------------------------------------------- */
-let findMode="any";                       // "any" | "stocked"
 const araAreaTried=new Set();
 
 async function araNearby(lat,lon,km,species){
@@ -1621,19 +1620,18 @@ function updateDashboard(){
  if(age)age.textContent=stockingBuilt?`${t("asOf")} ${stockingBuilt}.`:t("liveData");
 }
 function buildFilters(rebuild){
- const sel=$("species"),find=$("findSpecies");
+ const sel=$("species");
  if(rebuild){
-  const keep=sel?sel.value:"",keepFind=find?find.value:"";
+  const keep=sel?sel.value:"";
   if(sel)sel.length=1;
-  if(find)find.length=1;
   fillSpecies();
   if(sel)sel.value=keep;
-  if(find)find.value=keepFind;
   return;
  }
  fillSpecies();
  const yrs=[...new Set(rows.map(x=>x.Stocking_Year).filter(Boolean))].sort((a,b)=>b-a);
- yrs.forEach(v=>{$("year").insertAdjacentHTML("beforeend",`<option>${v}</option>`);$("findYear").insertAdjacentHTML("beforeend",`<option>${v}</option>`)});
+ const yr=$("year");
+ if(yr)yrs.forEach(v=>yr.insertAdjacentHTML("beforeend",`<option>${v}</option>`));
 }
 
 function fillSpecies(){
@@ -1644,9 +1642,8 @@ function fillSpecies(){
  lakes.forEach(l=>anglerSpecies(l.present).forEach(x=>set.add(x)));
  const all=[...set].sort((a,b)=>a.localeCompare(b));
  const opts=all.map(v=>`<option value="${esc(v)}">${esc(speciesLabel(v))}</option>`).join("");
- const sel=$("species"),find=$("findSpecies");
+ const sel=$("species");
  if(sel)sel.insertAdjacentHTML("beforeend",opts);
- if(find)find.insertAdjacentHTML("beforeend",opts);
 }
 
 function apply(){
@@ -1659,8 +1656,30 @@ function apply(){
   if(yr&&!l.records.some(r=>String(r.Stocking_Year)===yr))return false;
   if(q&&!matchesQuery(l,q))return false;
   if(radius&&userLoc&&distance(userLoc[0],userLoc[1],l.lat,l.lon)>radius)return false;
+  if(committed.access&&!hasNearbyAccess(l))return false;
   return true;
  });
+
+ /* An explicit sort wins over everything else, including name relevance: if
+    someone has asked for "most recently stocked", that is what they want to
+    see, not what the search box thinks is the closest name match. */
+ const explicit=committed.sort;
+ if(explicit==="closest"&&userLoc){
+  shown.sort((a,b)=>distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon));
+  render();return;
+ }
+ if(explicit==="recent"){
+  shown.sort((a,b)=>(b.latestYear||0)-(a.latestYear||0)||a.name.localeCompare(b.name));
+  render();return;
+ }
+ if(explicit==="quantity"){
+  // Stocked totals only. An unstocked lake has no number to rank on, so it
+  // sorts to the bottom rather than being silently dropped or counted as 0
+  // alongside a lake that genuinely received no fish.
+  const qty=l=>(l.records||[]).reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0);
+  shown.sort((a,b)=>qty(b)-qty(a)||a.name.localeCompare(b.name));
+  render();return;
+ }
  if(q){
   // With a query typed, closeness of the NAME match beats everything else —
   // "Rice Lake" should not sit below "Big Rice Lake" alphabetically.
@@ -1668,7 +1687,7 @@ function apply(){
   const byDist=(a,b)=>userLoc?distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon):0;
   shown.sort((a,b)=>b._nameScore-a._nameScore||byDist(a,b)||a.name.localeCompare(b.name));
  }
- else if((currentView==="near"||currentView==="recentnear"||radius)&&userLoc)shown.sort((a,b)=>distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon));
+ else if((currentView==="recentnear"||radius)&&userLoc)shown.sort((a,b)=>distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon));
  else shown.sort((a,b)=>b.latestYear-a.latestYear||a.name.localeCompare(b.name));
  render();
 }
@@ -1677,7 +1696,7 @@ function render(){
  const filtering=!!(($("search").value||"").trim()||$("species").value||$("year").value||$("radius").value);
  document.body.classList.toggle("filtering",filtering&&currentView==="explore");
  const mc=$("mapCount");if(mc)mc.textContent=lakeCount(Math.min(shown.length,400))+" on the map";
- $("listTitle").textContent=currentView==="favorites"?t("myLakes"):currentView==="near"?t("stockedNearMe"):currentView==="recentnear"?t("recentWithin100"):currentView==="findfish"?$("listTitle").textContent:t("exploreStocked");
+ $("listTitle").textContent=currentView==="favorites"?t("myLakes"):currentView==="recentnear"?t("recentWithin100"):t("exploreStocked");
  $("results").innerHTML=shown.slice(0,250).map((l,i)=>{
   const latest=l.records.filter(r=>Number(r.Stocking_Year)===l.latestYear),latestFish=latest.reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0),fav=favoriteKeys.has(l.key);
   // An unstocked lake has no year and no stocking totals, so it gets its own
@@ -1705,6 +1724,15 @@ function render(){
    :`<span>${surveyMetaLabel(l)}</span>${l.depthMax?`<span>${l.depthMax} m deep</span>`:""}`);
   return `<article class="record" data-i="${i}"><div class="topline"><div><h4>${esc(l.name)}</h4><div class="species">${head}</div></div><div class="cardactions">${pill}<button class="star ${fav?"saved":""}" data-fav="${esc(l.key)}" aria-label="Favourite">${fav?"★":"☆"}</button></div></div><div class="meta">${meta}</div></article>`;
  }).join("")||`<div class="record empty">${emptyMessage()}</div>`;
+ /* The species plate used to live in Find Fish, which no longer exists. It
+    belongs wherever a single species has been named — the same rule as before:
+    a specific fish gets its plate, "All species" gets none, because the app
+    would otherwise be choosing a fish on the angler's behalf. */
+ const namedSpecies=committed.sp||(committed.q?knownSpeciesName(committed.q):null);
+ if(namedSpecies&&currentView==="explore"){
+  const plate=plateFor(namedSpecies,"findPlate");
+  if(plate)$("results").insertAdjacentHTML("afterbegin",plate);
+ }
  $("results").insertAdjacentHTML("afterbegin",locationPrompt());
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=e=>{if(e.target.closest(".star"))return;const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
  document.querySelectorAll(".star").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFav(b.dataset.fav)});
@@ -1794,7 +1822,7 @@ function locationPrompt(){
 }
 function emptyMessage(){
  if(currentView==="favorites")return "No saved lakes yet. Tap ☆ on any lake to keep it here.";
- if((currentView==="near"||currentView==="recentnear")&&!userLoc)
+ if(currentView==="recentnear"&&!userLoc)
   return "Turn on location to see the lakes closest to you, or search for one by name.";
  if(!lakes.length)return "Stocking data hasn't loaded yet.";
  if(liveBusy)return "Searching every lake in Ontario…";
@@ -2502,56 +2530,6 @@ function hasNearbyAccess(l,maxKm=5){
  return accessLoaded&&accessPoints.some(a=>distance(l.lat,l.lon,a.lat,a.lon)<=maxKm);
 }
 
-function bestMatchScore(l){
- const km=Number(l._findKm)||999, qty=Number(l._findQty)||0, yr=Number(l._findYear)||0;
- // Math.max() of an empty array is -Infinity, which propagated all the way
- // through and rendered as "★ Infinity Best Match" whenever stocking data
- // hadn't loaded.
- const years=rows.map(r=>Number(r.Stocking_Year)||0).filter(Boolean);
- const latest=years.length?Math.max(...years):(new Date()).getFullYear();
-
- let score=Math.max(0,40-(km/5));                       // distance, max ~40
- if(l.stocked){
-  score+=Math.max(0,30-((latest-yr)*7));                // recency, max 30
-  score+=Math.min(20,Math.log10(Math.max(1,qty))*5);    // stocking volume, max 20
- }else{
-  // Stocking recency and volume mean nothing for a lake nobody stocked.
-  // Score it on what is actually known: how thoroughly it has been surveyed
-  // and how big it is.
-  const spp=anglerSpecies(l.present).length;
-  score+=Math.min(28,spp*3);
-  score+=Math.min(12,Math.log10(Math.max(1,Number(l.areaHa)||0))*6);
- }
- if(hasNearbyAccess(l))score+=7;
- if(l.fmz)score+=3;
- return Math.max(0,Math.min(100,Math.round(score)))||0;
-}
-function ruleSummaryForResult(l,sp){
- if(!fullRegsLoaded)return {label:"Rules loading",detail:"Open lake for current regulations",kind:"normal"};
- const r=fullRuleFor(l,sp||l.species[0]||"Fish");
- if(r.exceptions.length){
-  const x=r.exceptions[0];
-  return {label:"⚠ Special lake rule",detail:[x.limit,x.size,x.season].filter(Boolean).join(" • ")||"Waterbody exception applies",kind:"exception"};
- }
- if(r.additional.length){
-  const x=r.additional[0];
-  return {label:"Additional opportunity",detail:[x.limit,x.size,x.season].filter(Boolean).join(" • ")||"Special opportunity applies",kind:"exception"};
- }
- if(r.zone)return {label:`2026 ${r.sp} rules`,detail:`Sport ${r.zone.sport||"—"} • Conservation ${r.zone.conservation||"—"} • ${r.zone.season||"Season unavailable"}`,kind:"verified"};
- return {label:"2026 rules",detail:"Open lake for official current rule",kind:"normal"};
-}
-
-async function weatherAlertsForLake(l){
- try{
-  const delta=.18,bbox=[l.lon-delta,l.lat-delta,l.lon+delta,l.lat+delta].join(",");
-  const u=`${ECCC_ALERTS_API}?f=json&bbox=${bbox}&limit=50`;
-  const j=await fetch(u).then(r=>r.json());
-  return (j.features||[]).filter(f=>{
-   const p=f.properties||{};
-   return String(p.display_status||p.status_en||"").toLowerCase()!=="ended";
-  });
- }catch(e){return []}
-}
 function windDirection(deg){
  const dirs=["N","NE","E","SE","S","SW","W","NW"];return dirs[Math.round((Number(deg)||0)/45)%8];
 }
@@ -2580,93 +2558,6 @@ function lakeOverviewTabs(l){
  ];
  return `<div class="lakeTabs">${sections.map((s,i)=>`<button class="${i===0?"active":""}" data-laketab="${s[0]}">${s[1]}</button>`).join("")}</div>`;
 }
-function runFindFish(){
- const go=async()=>{
-  const radius=Number($("findRadius").value)||50,sp=$("findSpecies").value.trim(),yr=$("findYear").value,
-    min=Number($("findMinimum").value)||0,lname=$("findLake").value.trim().toLowerCase(),
-    sort=$("findSort").value,needAccess=$("findAccess").checked;
-
-  // Ask the province for this species around here before filtering, so lakes
-  // that were never stocked are in the pool at all.
-  if(findMode==="any"&&userLoc){
-   const btn=$("runFind"),label=btn?btn.textContent:"";
-   if(btn){btn.disabled=true;btn.textContent=t("searchingOntario")}
-   try{ await araNearby(userLoc[0],userLoc[1],radius,sp||null); }
-   catch(e){ toast("Couldn't reach the Ontario fish survey. Showing what's already on this device."); }
-   finally{ if(btn){btn.disabled=false;btn.textContent=label} }
-  }
-
-  const execute=()=>{
-   currentView="findfish";
-   const wantStocked=findMode==="stocked";
-   shown=lakes.filter(l=>{
-    const km=distance(userLoc[0],userLoc[1],l.lat,l.lon);
-    if(km>radius)return false;                       // the box was square; this is the circle
-    if(lname&&!matchesQuery({name:l.name,species:[],present:[]},lname))return false;
-    if(needAccess&&!hasNearbyAccess(l))return false;
-
-    const relevant=l.records.filter(r=>(!sp||r.Species===sp)&&(!yr||String(r.Stocking_Year)===yr));
-    const qty=relevant.reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0);
-    const presentMatch=!sp||anglerSpecies(l.present).some(x=>x.toLowerCase()===sp.toLowerCase());
-
-    if(wantStocked){
-     if(!relevant.length||qty<min)return false;
-    }else{
-     // Either the species has been stocked here, or a survey recorded it here.
-     if(!relevant.length&&!presentMatch)return false;
-     // A minimum-stocked figure is meaningless for a lake nobody stocked, so
-     // it only filters lakes that actually have stocking records.
-     if(min&&relevant.length&&qty<min)return false;
-     if(min&&!relevant.length)return false;
-    }
-    l._findQty=qty;l._findKm=km;
-    l._findYear=relevant.length?Math.max(...relevant.map(r=>Number(r.Stocking_Year)||0)):0;
-    l._findPresent=presentMatch&&!relevant.length;
-    return true;
-   });
-   shown.forEach(l=>l._bestScore=bestMatchScore(l));
-   if(sort==="best")shown.sort((a,b)=>b._bestScore-a._bestScore||a._findKm-b._findKm);
-   if(sort==="closest")shown.sort((a,b)=>a._findKm-b._findKm);
-   if(sort==="recent")shown.sort((a,b)=>b._findYear-a._findYear||a._findKm-b._findKm);
-   if(sort==="quantity")shown.sort((a,b)=>b._findQty-a._findQty||a._findKm-b._findKm);
-   const what=sp?esc(sp):"lakes";
-   $("listTitle").textContent=`${what} within ${radius} km`;
-   $("count").textContent=lakeCount(shown.length);
-   renderFindResults(sp,yr);$("findPanel").classList.remove("open");
-   if(!shown.length){
-    $("results").innerHTML=`<div class="record empty">${sp
-     ?t("noLakeWithSpecies").replace("{r}",radius).replace("{sp}",esc(speciesLabel(sp)))
-     :t("noLakesWithin").replace("{r}",radius)}</div>`;
-   }
-  };
-  if(needAccess&&!accessLoaded)loadAccess().then(execute);else execute();
- };
- if(!userLoc)locate(go);else go();
-}
-
-function renderFindResults(sp,yr){
- $("count").textContent=lakeCount(shown.length);
- // The plate goes in only when the angler asked for a specific fish. "Any
- // species" gets none — the app would be choosing one for them.
- const hero=sp?plateFor(sp,"findPlate"):"";
- $("results").innerHTML=shown.slice(0,250).map((l,i)=>{
-  const rs=ruleSummaryForResult(l,sp);
-  const access=hasNearbyAccess(l);
-  return `<article class="record finder2" data-i="${i}">
-   <div class="finderTop"><div><div class="matchBadge">★ ${Number.isFinite(l._bestScore)?l._bestScore:0} ${t("badgeBestMatch")}</div><h4>${esc(l.name)}</h4><div class="species">${esc(sp||(l.stocked?l.species:anglerSpecies(l.present)).slice(0,3).map(speciesLabel).join(" • "))}</div></div><span class="distancebadge">${l._findKm<10?l._findKm.toFixed(1):Math.round(l._findKm)} km<small>${esc(bearingLabel(userLoc[0],userLoc[1],l.lat,l.lon))}</small></span></div>
-   ${l._findPresent
-     ?`<div class="heroStock present"><div><small>Recorded in this lake</small><b>${esc(sp||"Surveyed")}</b></div><div><small>Stocking</small><b>Not stocked</b></div></div>`
-     :`<div class="heroStock"><div><small>${t("matchingStocked")}</small><b>${num(l._findQty)}</b></div><div><small>${t("mostRecent")}</small><b>${l._findYear||"—"}</b></div></div>`}
-   <div class="rulePreview ${rs.kind}"><b>${esc(rs.label)}</b><span>${esc(rs.detail)}</span></div>
-   <div class="featureRow">${l.township?`<span class="place">${esc(townshipLabel(l.township))}</span>`:""}<span class="zone">FMZ ${l.fmz||"—"}</span>${access?`<span>🚤 Access ≤5 km</span>`:""}${l.observedSpecies&&l.observedSpecies.length?`<span>Species data</span>`:""}<span>🌊 Depth layer</span><span>🌤️ Weather</span></div>
-   <button class="viewLakeBtn">${t("viewLake")}</button>
-  </article>`;
- }).join("")||"";
- if(hero)$("results").insertAdjacentHTML("afterbegin",hero);
- $("results").insertAdjacentHTML("afterbegin",locationPrompt());
- document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=()=>{const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
- markerLayer.clearLayers();fitToResults();shown.slice(0,400).forEach(l=>L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${l._findKm.toFixed(1)} km away<br>${l._findPresent?t("recordedNotStocked"):num(l._findQty)+" fish stocked"}`));
-}
 function recentNearMe(){
  const run=()=>{
   currentView="recentnear";$("search").value="";$("species").value="";$("year").value="";$("radius").value="100";
@@ -2694,30 +2585,19 @@ function setView(v){
   el.hidden=!el.dataset.show.split(" ").includes(v);
  });
 
- const find=$("findPanel");
- if(find)find.classList.toggle("open",v==="findfish");
  window.scrollTo({top:0,behavior:"smooth"});
 
  if(v==="resources")return;
  if(v==="trips")return renderTrips();
- if(v==="near"){
-  // #radius is one shared setting between Explore and Near Me — Near Me's own
-  // selector writes into the same field, so the committed snapshot has to
-  // follow this sync too, or a later Search press on Explore would silently
-  // pick up whatever radius Near Me last set rather than what Explore's own
-  // dropdown shows.
-  const r=$("nearRadius");if(r){$("radius").value=r.value;committed.radius=Number(r.value)||0;}
-  if(!userLoc)locate(apply);
- }
  apply();
 }
 
 function syncTabs(){
- const map={recentnear:"near",findfish:"findfish"};
+ // "Recent Near Me" is a shortcut on Explore, not a view of its own, so it
+ // reports back as Explore rather than as a tab that no longer exists.
+ const map={recentnear:"explore",findfish:"explore",near:"explore"};
  setView(map[currentView]||currentView);
 }
-const nr=$("nearRadius");if(nr)nr.onchange=()=>{$("radius").value=nr.value;committed.radius=Number(nr.value)||0;if(!userLoc)locate(apply);else apply()};
-const nl=$("nearLocate");if(nl)nl.onclick=()=>locate(apply);
 const fs2=$("favSearch");if(fs2)fs2.oninput=()=>{clearTimeout(fs2._t);fs2._t=setTimeout(apply,200)};
 $("showAccess").onchange=()=>{$("showAccess").checked?loadAccess():renderAccess()};
 $("showFMZ").onchange=()=>{$("showFMZ").checked?loadFMZ(true):renderFMZ()};
@@ -2728,44 +2608,19 @@ $("search").oninput=markFiltersDirty;
 $("species").onchange=markFiltersDirty;
 $("year").onchange=markFiltersDirty;
 $("radius").onchange=markFiltersDirty;
-const rf=$("resetFind");
-if(rf)rf.onclick=()=>{
- $("findSpecies").value="";$("findYear").value="";$("findMinimum").value="";
- $("findLake").value="";$("findRadius").value="50";$("findSort").value="closest";
- $("findAccess").checked=false;
- const a=$("modeAny");if(a)a.click();
- toast("Filters reset.");
-};
 document.addEventListener("click",e=>{
  if(e.target.closest("#distancePrompt"))locate(apply);
 });
 document.querySelectorAll(".baseSwitch button").forEach(b=>b.onclick=()=>setBasemap(b.dataset.base));
 setBasemap(baseKey);
 const su=$("showUnstocked");if(su)su.onchange=markFiltersDirty;
-{
- const any=$("modeAny"),stk=$("modeStocked"),note=$("modeNote"),minRow=$("findMinimum");
- const setMode=m=>{
-  findMode=m;
-  if(any)any.classList.toggle("on",m==="any");
-  if(stk)stk.classList.toggle("on",m==="stocked");
-  if(note)note.textContent=t(m==="any"?"modeNoteAny":"modeNoteStocked");
-  // "Minimum fish stocked" cannot apply to a lake nobody stocked.
-  // Stocking year and minimum-stocked are meaningless for a lake nobody
-  // stocked, so they are dimmed rather than silently ignored.
-  const off=m==="any";
-  document.querySelectorAll(".stockOnlyField").forEach(el=>el.classList.toggle("disabledField",off));
-  if(minRow)minRow.disabled=off;
-  const yr=$("findYear");if(yr)yr.disabled=off;
- };
- if(any)any.onclick=()=>setMode("any");
- if(stk)stk.onclick=()=>setMode("stocked");
- setMode("any");
-}
-$("clearFilters").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";const u=$("showUnstocked");if(u)u.checked=true;clearFiltersDirty();commitFilters();apply()};
+const so=$("sort");if(so)so.onchange=markFiltersDirty;
+// The access filter needs the access-point file loaded before it can mean
+// anything, so asking for it fetches it rather than silently matching nothing.
+const oa=$("onlyAccess");if(oa)oa.onchange=()=>{if(oa.checked&&!accessLoaded)loadAccess();markFiltersDirty()};
+$("clearFilters").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";const u=$("showUnstocked");if(u)u.checked=true;const so=$("sort");if(so)so.value="";const oa=$("onlyAccess");if(oa)oa.checked=false;clearFiltersDirty();commitFilters();apply()};
 
 
-$("closeFind").onclick=()=>{$("findPanel").classList.remove("open");setView("explore")};
-$("runFind").onclick=runFindFish;
 $("recentNearBtn").onclick=recentNearMe;
 $("recentBtn").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";commitFilters();currentView="explore";shown=[...lakes].sort((a,b)=>b.latestYear-a.latestYear);render()};
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
@@ -2987,7 +2842,7 @@ function wireShell(){
  if(hb)hb.onclick=openHelp;if(ch)ch.onclick=()=>hs.classList.add("hidden");
  if(hs)hs.onclick=e=>{if(e.target===hs)hs.classList.add("hidden")};
  const closeOnboard=()=>{if(ob)ob.classList.add("hidden");localStorage.setItem("osl-onboarded-v1t","1")};
- if(co)co.onclick=closeOnboard;if(se)se.onclick=()=>{closeOnboard();setView("findfish")};
+ if(co)co.onclick=closeOnboard;if(se)se.onclick=()=>{closeOnboard();setView("explore")};
  if(ob&&!localStorage.getItem("osl-onboarded-v1t"))ob.classList.remove("hidden");
 }
 

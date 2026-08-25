@@ -99,11 +99,16 @@ The app calls these at runtime; nothing is proxied and no API keys are needed.
 
 ## Features
 
-- Search every named Ontario lake by name, township or species — stocked or not
-- Find Fish: distance, species, stocking year, minimum quantity, access filter, Best Match ranking
+- Search every named Ontario lake by name, township or species — stocked or not.
+  Typing or picking a species also queries Ontario's fish survey API, so lakes
+  that are not in the bundled data can still turn up
+- Explore filters: species, stocking year, distance, access-point-only, and an
+  explicit sort (closest, most recently stocked, most fish stocked)
 - Map layers: fishing access points, Fisheries Management Zones, depth contours
 - Per-lake detail: stocking history, observed species, regulations, access, depth, consumption advice, weather alerts
-- Saved lakes, trip notes and catch logs — stored on device, with backup export/restore in **Help**
+- Saved lakes, and a trip logbook with a gear checklist, editable catches
+  (species, length, weight, notes) and metric or imperial units — stored on
+  device, with backup export/restore in **Settings**
 - Works offline after first load
 - English / French throughout
 
@@ -140,5 +145,5 @@ licences, above, and nothing here restricts your rights in that material.
 
 ---
 
-**Version v2k.** `APP_VERSION` in `app.js` and `VERSION` in `sw.js` both read
-`v2k` and must always match. See [CHANGELOG.md](CHANGELOG.md) for what changed.
+**Version v2l.** `APP_VERSION` in `app.js` and `VERSION` in `sw.js` both read
+`v2l` and must always match. See [CHANGELOG.md](CHANGELOG.md) for what changed.

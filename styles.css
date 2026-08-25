@@ -802,3 +802,23 @@ body.filtering .sectiontitle{margin-top:14px}
    one — it is a shortcut, not the primary control. */
 .unitToggle{margin-bottom:12px}
 .unitToggle button{padding:9px 6px;font-size:13px;min-height:38px}
+
+/* ---------------------------------------------------------------------------
+   Explore absorbs the last two Find Fish controls.
+
+   Sort and the access-point filter join the checkbox row rather than the
+   select row above, which already carries three dropdowns and Clear. Find
+   Fish's own panel styles (.findpanel, .findgrid, .modeRow, .runfind,
+   .stockOnlyField) are left in place: they cost nothing, and .findPlate is
+   still used — the species plate moved into Explore's results rather than
+   leaving with the view it was born in.
+   --------------------------------------------------------------------------- */
+.filters.wideline{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.filters.wideline .inlinecheck{flex:0 1 auto}
+.sortField{margin-left:auto}
+.sortField select{min-height:38px}
+.filters.wideline .filterHint{flex:1 0 100%;margin:2px 2px 0}
+@media(max-width:520px){
+  .sortField{margin-left:0;flex:1 0 100%}
+  .sortField select{width:100%}
+}
