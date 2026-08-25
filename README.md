@@ -145,5 +145,5 @@ licences, above, and nothing here restricts your rights in that material.
 
 ---
 
-**Version v2r.** `APP_VERSION` in `app.js` and `VERSION` in `sw.js` both read
-`v2r` and must always match. See [CHANGELOG.md](CHANGELOG.md) for what changed.
+**Version v2s.** `APP_VERSION` in `app.js` and `VERSION` in `sw.js` both read
+`v2s` and must always match. See [CHANGELOG.md](CHANGELOG.md) for what changed.

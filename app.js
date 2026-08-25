@@ -49,7 +49,8 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
-  searchHint:"Four ways to search: a lake (Moira Lake), a fish (Walleye), a town (Belleville) or a township (Huntingdon Twp).",
+  myLocation:"My Location",
+  searchHint:"Five ways to search: by fish species, by lake, by town, by township, or from your location.",
   lakesNearTown:"Lakes near {town}",
   accessDataPending:"The access-point list hasn’t loaded yet, so this search ran without that filter. It will apply automatically once the list arrives.",
   locationOffFallback:"Location is off, so this searched all of Ontario. Turn location on to limit the distance.",
@@ -57,7 +58,7 @@ const I18N={
   onboardStatsNote:"What is in the app right now.",
   readyToSearch:"{n} lakes ready to search",
   searchPromptTitle:"Search {n} Ontario lakes",
-  searchPromptSub:"Try a lake name, a town like Belleville or Madoc, or a species. Or tap Recently Stocked or Recent Near Me above.",
+  searchPromptSub:"Search by fish species, lake, town or township — or tap My Location to search around you.",
   turnOnLocation:"Turn on location",
   turnOnLocationSub:"to show how far each lake is from you",
   emptyFavorites:"No saved lakes yet. Tap ☆ on any lake to keep it here.",
@@ -257,7 +258,8 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
-  searchHint:"Quatre façons de chercher : un lac (Moira Lake), un poisson (doré jaune), une ville (Belleville) ou un canton (Huntingdon Twp).",
+  myLocation:"Ma position",
+  searchHint:"Cinq façons de chercher : par espèce de poisson, par lac, par ville, par canton, ou à partir de votre position.",
   lakesNearTown:"Lacs près de {town}",
   accessDataPending:"La liste des points d’accès n’est pas encore chargée; la recherche a été faite sans ce filtre. Il s’appliquera automatiquement dès son arrivée.",
   locationOffFallback:"La localisation est désactivée; la recherche a couvert tout l’Ontario. Activez-la pour limiter la distance.",
@@ -265,7 +267,7 @@ const I18N={
   onboardStatsNote:"Ce que contient l’application en ce moment.",
   readyToSearch:"{n} lacs prêts à être cherchés",
   searchPromptTitle:"Chercher parmi {n} lacs de l’Ontario",
-  searchPromptSub:"Essayez un nom de lac, une ville comme Belleville ou Madoc, ou une espèce. Ou touchez Récemment ensemencés ou Récents près de moi ci-dessus.",
+  searchPromptSub:"Cherchez par espèce, lac, ville ou canton — ou touchez Ma position pour chercher autour de vous.",
   turnOnLocation:"Activer la localisation",
   turnOnLocationSub:"pour afficher la distance de chaque lac",
   emptyFavorites:"Aucun lac enregistré. Touchez ☆ sur un lac pour le garder ici.",
@@ -457,7 +459,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v2r";
+const APP_VERSION="v2s";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -2740,6 +2742,20 @@ $("showAccess").onchange=()=>{$("showAccess").checked?loadAccess():renderAccess(
 $("showFMZ").onchange=()=>{$("showFMZ").checked?loadFMZ(true):renderFMZ()};
 $("showDepth").onchange=renderDepth;
 $("searchBtn").onclick=runSearch;
+
+/* The fifth way to search. Near Me carried "Use my location" until v2l folded
+   it into Explore, and the control left with the tab — so after a town search
+   there was no way back to your own position except pressing Clear, which
+   also threw away the species and the distance. This clears only the centre.
+   The search box is emptied because a town name left sitting in it would
+   re-establish the town as the centre on the very next search. */
+const uml=$("useMyLocation");
+if(uml)uml.onclick=()=>{
+ townOrigin=null;
+ const box=$("search");if(box)box.value="";
+ commitFilters();
+ if(!userLoc)locate(runSearch);else runSearch();
+};
 $("search").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("search").blur();runSearch()}};
 $("search").oninput=markFiltersDirty;
 $("species").onchange=markFiltersDirty;
