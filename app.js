@@ -499,7 +499,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3c";
+const APP_VERSION="v3d";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -1113,12 +1113,25 @@ async function loadLiveStocking(){
 }
 
 /* Fades the splash and then removes it from the layout, so a transparent
-   full-screen layer is not left swallowing every tap. Safe to call twice. */
+   full-screen layer is not left swallowing every tap. Safe to call twice.
+
+   The floor exists because the data usually arrives in well under a second on
+   a warm cache, and the artwork was flashing past faster than it could be
+   read. This holds it for a minimum, measured from page load rather than from
+   the call, so a slow load is never made slower — the wait is only ever the
+   remainder, and is zero when loading already took longer than the floor. */
+const SPLASH_MIN_MS=3000;
+const splashShownAt=Date.now();
+let splashHiding=false;
 function hideSplash(){
  const sp=document.getElementById("splash");
- if(!sp||sp.classList.contains("done"))return;
- sp.classList.add("done");
- setTimeout(()=>{try{sp.remove()}catch(e){}},600);
+ if(!sp||splashHiding)return;
+ splashHiding=true;
+ const remaining=Math.max(0,SPLASH_MIN_MS-(Date.now()-splashShownAt));
+ setTimeout(()=>{
+  sp.classList.add("done");
+  setTimeout(()=>{try{sp.remove()}catch(e){}},600);
+ },remaining);
 }
 // Whatever goes wrong, nobody stays behind the splash. Twelve seconds is
 // longer than any honest load and shorter than giving up on the app.
