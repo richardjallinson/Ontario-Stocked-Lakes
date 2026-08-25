@@ -49,6 +49,8 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
+  lakesNearTown:"Lakes near {town}",
+  accessDataPending:"The access-point list hasn’t loaded yet, so this search ran without that filter. It will apply automatically once the list arrives.",
   locationOffFallback:"Location is off, so this searched all of Ontario. Turn location on to limit the distance.",
   locationUnavailableFallback:"Your location could not be found, so this searched all of Ontario. Try again outdoors.",
   onboardStatsNote:"What is in the app right now.",
@@ -254,6 +256,8 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
+  lakesNearTown:"Lacs près de {town}",
+  accessDataPending:"La liste des points d’accès n’est pas encore chargée; la recherche a été faite sans ce filtre. Il s’appliquera automatiquement dès son arrivée.",
   locationOffFallback:"La localisation est désactivée; la recherche a couvert tout l’Ontario. Activez-la pour limiter la distance.",
   locationUnavailableFallback:"Votre position est introuvable; la recherche a couvert tout l’Ontario. Réessayez à l’extérieur.",
   onboardStatsNote:"Ce que contient l’application en ce moment.",
@@ -451,7 +455,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v2n";
+const APP_VERSION="v2o";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -557,7 +561,8 @@ function fitToResults(){
  if(!mapAvailable||!shown.length)return;
  const pts=shown.slice(0,400).filter(l=>l.lat&&l.lon).map(l=>[l.lat,l.lon]);
  if(!pts.length)return;
- if(userLoc&&(currentView==="recentnear"||committed.radius||committed.sort==="closest"))pts.push(userLoc);
+ const c=searchCentre();
+ if(c&&(currentView==="recentnear"||committed.radius||committed.sort==="closest"||townOrigin))pts.push(c);
  try{
   if(pts.length===1)map.setView(pts[0],11);
   else map.fitBounds(L.latLngBounds(pts),{padding:[28,28],maxZoom:12});
@@ -875,6 +880,9 @@ async function loadAccess(){
    return {...a,lat:Number(lat),lon:Number(lon)}
   }).filter(a=>Number.isFinite(a.lat)&&Number.isFinite(a.lon));
   accessLoaded=true;$("accessStatus").textContent=`${num(accessPoints.length)} government access points loaded`;renderAccess();
+  // An armed access filter has been waiting for this list. Re-run the search
+  // so it takes effect, rather than leaving results that ignored it.
+  if(committed.access)apply();
  }catch(e){$("accessStatus").textContent=t("accessUnavailable");$("showAccess").checked=false}
 }
 function accessIcon(a){
@@ -1309,10 +1317,11 @@ function townshipLabel(t){
 }
 
 function distanceLabel(l){
- if(!userLoc)return "";
- const km=distance(userLoc[0],userLoc[1],l.lat,l.lon);
+ const c=searchCentre();
+ if(!c)return "";
+ const km=distance(c[0],c[1],l.lat,l.lon);
  const n=km<10?km.toFixed(1):Math.round(km);
- return `${n} km ${bearingLabel(userLoc[0],userLoc[1],l.lat,l.lon)}`;
+ return `${n} km ${bearingLabel(c[0],c[1],l.lat,l.lon)}`;
 }
 
 function ringCentre(geom){
@@ -1372,11 +1381,12 @@ function explorerRadius(){
 
 async function speciesLookupFor(q){
  const sp=knownSpeciesName(q);
- if(!sp||!userLoc)return 0;
+ const c=searchCentre();
+ if(!sp||!c)return 0;
  const status=$("count"),previous=status?status.textContent:"";
  if(status)status.textContent=t("searchingFor").replace("{sp}",speciesLabel(sp));
  try{
-  const n=await araNearby(userLoc[0],userLoc[1],explorerRadius(),sp);
+  const n=await araNearby(c[0],c[1],explorerRadius(),sp);
   if(n){buildFilters(true);apply()}
   else if(status)status.textContent=previous;
   return n;
@@ -1417,6 +1427,25 @@ let filtersDirty=false;
    loads in the background exactly as before; only the rendering waits. */
 let searched=false;
 
+/* A search can be centred on a town instead of on the person. The bundled
+   GeoNames gazetteer has 5,430 Ontario places with coordinates, so "Belleville"
+   is answerable entirely offline: the query becomes the centre, the radius
+   applies from there, and distances are measured from there. Exact-name match
+   only — "Rice" must keep finding Rice Lake, not the hamlet of Rice Point. */
+let townOrigin=null;
+function placeByName(q){
+ const norm=x=>x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g," ").trim();
+ const n=norm(q);if(!n)return null;
+ let best=null;
+ for(const p of gazetteer){
+  if(norm(p.name)===n&&(!best||(p.pop||0)>(best.pop||0)))best=p;
+ }
+ return best;
+}
+/* The point a search measures from: a named town if one was typed, otherwise
+   the person. */
+function searchCentre(){return townOrigin?[townOrigin.lat,townOrigin.lon]:userLoc}
+
 /* Explore opens at 50 km rather than the whole province. 10,900 lakes in no
    particular order are not a useful answer, and an angler asking about
    walleye almost always means near here. "Any distance" is still one tap
@@ -1453,19 +1482,32 @@ async function runSearch(){
  clearFiltersDirty();
  commitFilters();
  searched=true;
- const radius=$("radius")?$("radius").value:"";
- // A distance filter is meaningless without a position, so ask once, here,
- // rather than the moment the dropdown changed.
- if(radius&&!userLoc){locate(runSearch);return}
- apply();
 
  const q=$("search").value.trim();
  const sp=$("species")?$("species").value:"";
  const speciesTyped=q.length>=3?knownSpeciesName(q):null;
 
- // One request per search, not two. A bare species name has no business
- // being sent as a lake-name lookup as well.
- if(speciesTyped)await speciesLookupFor(q);
+ // A typed town name moves the centre of the search. Species names win the
+ // tie — "Splake" the fish must never become a place — and only an exact
+ // gazetteer match counts, so lake names keep working as lake names.
+ townOrigin=(q&&!speciesTyped)?placeByName(q):null;
+
+ const radius=$("radius")?$("radius").value:"";
+ // A distance filter is meaningless without a position — but a town search
+ // brings its own position, so it never needs to ask for one.
+ if(radius&&!userLoc&&!townOrigin){locate(runSearch);return}
+ apply();
+
+ // The access filter cannot act until the access-point list arrives, so a
+ // search made in the meantime runs without it and says so, rather than
+ // returning an empty list that blames the person's filters.
+ if(committed.access&&!accessLoaded){loadAccess();toast(t("accessDataPending"))}
+
+ // One request per request, not two. A bare species name has no business
+ // being sent as a lake-name lookup as well, and a town name is a centre,
+ // not something to ask the province's lake index about.
+ if(townOrigin){if(sp)await speciesLookupFor(sp)}
+ else if(speciesTyped)await speciesLookupFor(q);
  else if(q.length>=3&&shown.length<5)await searchProvince(q);
  else if(sp)await speciesLookupFor(sp);
 
@@ -1692,7 +1734,12 @@ function fillSpecies(){
 
 function apply(){
  if(currentView==="trips"){renderTrips();return}
- const q=(currentView==="favorites"&&$("favSearch")?$("favSearch").value:committed.q).trim().toLowerCase(),sp=committed.sp,yr=committed.yr,radius=committed.radius;
+ let q=(currentView==="favorites"&&$("favSearch")?$("favSearch").value:committed.q).trim().toLowerCase();
+ const sp=committed.sp,yr=committed.yr,radius=committed.radius;
+ // A town query is a centre, not a text to match — "belleville" matches no
+ // lake, so leaving it in the text filter would guarantee zero results.
+ const centre=currentView==="favorites"?userLoc:searchCentre();
+ if(townOrigin&&currentView!=="favorites")q="";
  shown=lakes.filter(l=>{
   if(currentView==="favorites"&&!favoriteKeys.has(l.key))return false;
   // My Lakes is exempt from the distance filter. #radius is shared with
@@ -1703,8 +1750,13 @@ function apply(){
   if(sp&&!(l.species.includes(sp)||anglerSpecies(l.present).includes(sp)))return false;
   if(yr&&!l.records.some(r=>String(r.Stocking_Year)===yr))return false;
   if(q&&!matchesQuery(l,q))return false;
-  if(useRadius&&radius&&userLoc&&distance(userLoc[0],userLoc[1],l.lat,l.lon)>radius)return false;
-  if(committed.access&&!hasNearbyAccess(l))return false;
+  if(useRadius&&radius&&centre&&distance(centre[0],centre[1],l.lat,l.lon)>radius)return false;
+  // Only filter on access when the access-point list has actually arrived.
+  // hasNearbyAccess() returns false for every lake while the list is empty,
+  // so before this guard a checked box plus a slow or failed fetch returned
+  // "No lakes match these filters" — a lie; the filters were fine and the
+  // filter's own data was what was missing.
+  if(committed.access&&accessLoaded&&!hasNearbyAccess(l))return false;
   return true;
  });
 
@@ -1712,8 +1764,8 @@ function apply(){
     someone has asked for "most recently stocked", that is what they want to
     see, not what the search box thinks is the closest name match. */
  const explicit=committed.sort;
- if(explicit==="closest"&&userLoc){
-  shown.sort((a,b)=>distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon));
+ if(explicit==="closest"&&centre){
+  shown.sort((a,b)=>distance(centre[0],centre[1],a.lat,a.lon)-distance(centre[0],centre[1],b.lat,b.lon));
   render();return;
  }
  if(explicit==="recent"){
@@ -1732,10 +1784,10 @@ function apply(){
   // With a query typed, closeness of the NAME match beats everything else —
   // "Rice Lake" should not sit below "Big Rice Lake" alphabetically.
   shown.forEach(l=>l._nameScore=nameScore(l,q));
-  const byDist=(a,b)=>userLoc?distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon):0;
+  const byDist=(a,b)=>centre?distance(centre[0],centre[1],a.lat,a.lon)-distance(centre[0],centre[1],b.lat,b.lon):0;
   shown.sort((a,b)=>b._nameScore-a._nameScore||byDist(a,b)||a.name.localeCompare(b.name));
  }
- else if((currentView==="recentnear"||radius)&&userLoc)shown.sort((a,b)=>distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon));
+ else if((currentView==="recentnear"||radius||townOrigin)&&centre)shown.sort((a,b)=>distance(centre[0],centre[1],a.lat,a.lon)-distance(centre[0],centre[1],b.lat,b.lon));
  else shown.sort((a,b)=>b.latestYear-a.latestYear||a.name.localeCompare(b.name));
  render();
 }
@@ -1744,7 +1796,10 @@ function render(){
  const filtering=!!(($("search").value||"").trim()||$("species").value||$("year").value||$("radius").value);
  document.body.classList.toggle("filtering",filtering&&currentView==="explore");
  const mc=$("mapCount");if(mc)mc.textContent=lakeCount(Math.min(shown.length,400))+" on the map";
- $("listTitle").textContent=currentView==="favorites"?t("myLakes"):currentView==="recentnear"?t("recentWithin100"):t("exploreStocked");
+ $("listTitle").textContent=currentView==="favorites"?t("myLakes")
+  :currentView==="recentnear"?t("recentWithin100")
+  :townOrigin?t("lakesNearTown").replace("{town}",townOrigin.name)
+  :t("exploreStocked");
 
  // Nothing asked for yet: say what is available and how to reach it, rather
  // than showing an arbitrary 250 of it. My Lakes and Trips are exempt — those
@@ -1781,7 +1836,7 @@ function render(){
   const where=[
    l.township?`<span class="place">${esc(townshipLabel(l.township))}</span>`:"",
    l.fmz?`<span class="zone">FMZ ${esc(l.fmz)}</span>`:"",
-   userLoc?`<span class="dist">${esc(distanceLabel(l))}</span>`:""
+   searchCentre()?`<span class="dist">${esc(distanceLabel(l))}</span>`:""
   ].join("");
   const meta=where+(l.stocked
    ?`<span>${num(latestFish)} stocked</span><span>${l.records.length} record${l.records.length===1?"":"s"}</span>`
@@ -2628,7 +2683,7 @@ function lakeOverviewTabs(l){
 }
 function recentNearMe(){
  const run=()=>{
-  currentView="recentnear";searched=true;$("search").value="";$("species").value="";$("year").value="";$("radius").value="100";
+  currentView="recentnear";searched=true;townOrigin=null;$("search").value="";$("species").value="";$("year").value="";$("radius").value="100";
   commitFilters();
   shown=[...lakes].filter(l=>distance(userLoc[0],userLoc[1],l.lat,l.lon)<=100)
     .sort((a,b)=>b.latestYear-a.latestYear || distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon));
@@ -2671,7 +2726,7 @@ $("showAccess").onchange=()=>{$("showAccess").checked?loadAccess():renderAccess(
 $("showFMZ").onchange=()=>{$("showFMZ").checked?loadFMZ(true):renderFMZ()};
 $("showDepth").onchange=renderDepth;
 $("searchBtn").onclick=runSearch;
-$("search").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("search").blur();searched=true;commitFilters();apply();const q=$("search").value.trim();if(q.length>=3&&shown.length<5)searchProvince(q)}};
+$("search").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("search").blur();runSearch()}};
 $("search").oninput=markFiltersDirty;
 $("species").onchange=markFiltersDirty;
 $("year").onchange=markFiltersDirty;
@@ -2686,11 +2741,11 @@ const so=$("sort");if(so)so.onchange=markFiltersDirty;
 // The access filter needs the access-point file loaded before it can mean
 // anything, so asking for it fetches it rather than silently matching nothing.
 const oa=$("onlyAccess");if(oa)oa.onchange=()=>{if(oa.checked&&!accessLoaded)loadAccess();markFiltersDirty()};
-$("clearFilters").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value=DEFAULT_RADIUS;const u=$("showUnstocked");if(u)u.checked=true;const so=$("sort");if(so)so.value="";const oa=$("onlyAccess");if(oa)oa.checked=false;clearFiltersDirty();commitFilters();searched=false;currentView="explore";apply()};
+$("clearFilters").onclick=()=>{townOrigin=null;$("search").value="";$("species").value="";$("year").value="";$("radius").value=DEFAULT_RADIUS;const u=$("showUnstocked");if(u)u.checked=true;const so=$("sort");if(so)so.value="";const oa=$("onlyAccess");if(oa)oa.checked=false;clearFiltersDirty();commitFilters();searched=false;currentView="explore";apply()};
 
 
 $("recentNearBtn").onclick=recentNearMe;
-$("recentBtn").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";commitFilters();searched=true;currentView="explore";shown=[...lakes].sort((a,b)=>b.latestYear-a.latestYear);render()};
+$("recentBtn").onclick=()=>{townOrigin=null;$("search").value="";$("species").value="";$("year").value="";$("radius").value="";commitFilters();searched=true;currentView="explore";shown=[...lakes].sort((a,b)=>b.latestYear-a.latestYear);render()};
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
 $("closeSheet").onclick=()=>$("sheet").classList.add("hidden");
 $("closeTrip").onclick=()=>$("tripSheet").classList.add("hidden");$("tripSheet").onclick=e=>{if(e.target===$("tripSheet"))$("tripSheet").classList.add("hidden")};$("sheet").onclick=e=>{if(e.target===$("sheet"))$("sheet").classList.add("hidden")};
