@@ -49,6 +49,20 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
+  locationOffFallback:"Location is off, so this searched all of Ontario. Turn location on to limit the distance.",
+  locationUnavailableFallback:"Your location could not be found, so this searched all of Ontario. Try again outdoors.",
+  onboardStatsNote:"What is in the app right now.",
+  readyToSearch:"{n} lakes ready to search",
+  searchPromptTitle:"Search {n} Ontario lakes",
+  searchPromptSub:"By name, township or species. Or tap Recently Stocked or Recent Near Me above.",
+  turnOnLocation:"Turn on location",
+  turnOnLocationSub:"to show how far each lake is from you",
+  emptyFavorites:"No saved lakes yet. Tap ☆ on any lake to keep it here.",
+  emptyNeedLocation:"Turn on location to see the lakes closest to you, or search for one by name.",
+  emptyNoDataYet:"Stocking data hasn’t loaded yet.",
+  emptySearchingProvince:"Searching every lake in Ontario…",
+  emptySpeciesNeedsLocation:"Turn on location to search the whole province for this species — a species search needs somewhere to search from.",
+  emptyNoMatch:"No lakes match these filters. Try widening the distance or clearing the species.",
   sortDefault:"Best guess",
   editCatch:"Edit this catch",
   saveCatch:"Save changes",
@@ -240,6 +254,20 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
+  locationOffFallback:"La localisation est désactivée; la recherche a couvert tout l’Ontario. Activez-la pour limiter la distance.",
+  locationUnavailableFallback:"Votre position est introuvable; la recherche a couvert tout l’Ontario. Réessayez à l’extérieur.",
+  onboardStatsNote:"Ce que contient l’application en ce moment.",
+  readyToSearch:"{n} lacs prêts à être cherchés",
+  searchPromptTitle:"Chercher parmi {n} lacs de l’Ontario",
+  searchPromptSub:"Par nom, canton ou espèce. Ou touchez Récemment ensemencés ou Récents près de moi ci-dessus.",
+  turnOnLocation:"Activer la localisation",
+  turnOnLocationSub:"pour afficher la distance de chaque lac",
+  emptyFavorites:"Aucun lac enregistré. Touchez ☆ sur un lac pour le garder ici.",
+  emptyNeedLocation:"Activez la localisation pour voir les lacs les plus proches, ou cherchez-en un par son nom.",
+  emptyNoDataYet:"Les données d’ensemencement ne sont pas encore chargées.",
+  emptySearchingProvince:"Recherche dans tous les lacs de l’Ontario…",
+  emptySpeciesNeedsLocation:"Activez la localisation pour chercher cette espèce dans toute la province — une recherche par espèce doit partir d’un endroit.",
+  emptyNoMatch:"Aucun lac ne correspond à ces filtres. Essayez d’élargir la distance ou d’effacer l’espèce.",
   sortDefault:"Au mieux",
   editCatch:"Modifier cette prise",
   saveCatch:"Enregistrer",
@@ -423,7 +451,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v2l";
+const APP_VERSION="v2n";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -1381,6 +1409,21 @@ let filtersDirty=false;
    snapshot apply() actually filters against; only commitFilters() advances
    it, and only from a real submission — a Search press, Clear, or an
    intentionally-immediate control like Near Me's own radius picker. */
+/* Explore holds its results back until asked.
+
+   Loading the app used to paint 250 result cards and drop 400 markers on the
+   map before anyone had searched for anything — the slowest thing at startup,
+   and 10,900 lakes in no particular order answer no question. The data still
+   loads in the background exactly as before; only the rendering waits. */
+let searched=false;
+
+/* Explore opens at 50 km rather than the whole province. 10,900 lakes in no
+   particular order are not a useful answer, and an angler asking about
+   walleye almost always means near here. "Any distance" is still one tap
+   away, and the filter is ignored entirely when there is no position, so a
+   refused location degrades to a province-wide search rather than to nothing. */
+const DEFAULT_RADIUS="50";
+
 let committed={q:"",sp:"",yr:"",radius:0,sort:"",access:false};
 function commitFilters(){
  committed.q=$("search")?$("search").value:"";
@@ -1409,6 +1452,7 @@ function clearFiltersDirty(){
 async function runSearch(){
  clearFiltersDirty();
  commitFilters();
+ searched=true;
  const radius=$("radius")?$("radius").value:"";
  // A distance filter is meaningless without a position, so ask once, here,
  // rather than the moment the dropdown changed.
@@ -1651,11 +1695,15 @@ function apply(){
  const q=(currentView==="favorites"&&$("favSearch")?$("favSearch").value:committed.q).trim().toLowerCase(),sp=committed.sp,yr=committed.yr,radius=committed.radius;
  shown=lakes.filter(l=>{
   if(currentView==="favorites"&&!favoriteKeys.has(l.key))return false;
+  // My Lakes is exempt from the distance filter. #radius is shared with
+  // Explore, and since v2n it defaults to 50 km — without this, saving a lake
+  // and driving home would make it vanish from your own saved list.
+  const useRadius=currentView!=="favorites";
   if(!showUnstocked()&&!l.stocked)return false;
   if(sp&&!(l.species.includes(sp)||anglerSpecies(l.present).includes(sp)))return false;
   if(yr&&!l.records.some(r=>String(r.Stocking_Year)===yr))return false;
   if(q&&!matchesQuery(l,q))return false;
-  if(radius&&userLoc&&distance(userLoc[0],userLoc[1],l.lat,l.lon)>radius)return false;
+  if(useRadius&&radius&&userLoc&&distance(userLoc[0],userLoc[1],l.lat,l.lon)>radius)return false;
   if(committed.access&&!hasNearbyAccess(l))return false;
   return true;
  });
@@ -1697,6 +1745,22 @@ function render(){
  document.body.classList.toggle("filtering",filtering&&currentView==="explore");
  const mc=$("mapCount");if(mc)mc.textContent=lakeCount(Math.min(shown.length,400))+" on the map";
  $("listTitle").textContent=currentView==="favorites"?t("myLakes"):currentView==="recentnear"?t("recentWithin100"):t("exploreStocked");
+
+ // Nothing asked for yet: say what is available and how to reach it, rather
+ // than showing an arbitrary 250 of it. My Lakes and Trips are exempt — those
+ // views ARE their contents, and holding them back would just be broken.
+ if(currentView==="explore"&&!searched){
+  const ready=lakes.length;
+  $("count").textContent=ready?t("readyToSearch").replace("{n}",num(ready)):t("loadingData");
+  const mc0=$("mapCount");if(mc0)mc0.textContent="";
+  $("results").innerHTML=`<div class="record searchPrompt">
+   <b>${ready?t("searchPromptTitle").replace("{n}",num(ready)):t("loadingData")}</b>
+   <span>${t("searchPromptSub")}</span></div>`+locationPrompt();
+  const dp0=$("distancePrompt");if(dp0)dp0.onclick=()=>locate(apply);
+  markerLayer.clearLayers();
+  return;
+ }
+
  $("results").innerHTML=shown.slice(0,250).map((l,i)=>{
   const latest=l.records.filter(r=>Number(r.Stocking_Year)===l.latestYear),latestFish=latest.reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0),fav=favoriteKeys.has(l.key);
   // An unstocked lake has no year and no stocking totals, so it gets its own
@@ -1818,17 +1882,20 @@ function showUnstocked(){
 function locationPrompt(){
  if(userLoc)return "";
  return `<button type="button" id="distancePrompt" class="distPrompt">
-  <b>Turn on location</b><span>to show how far each lake is from you</span></button>`;
+  <b>${t("turnOnLocation")}</b><span>${t("turnOnLocationSub")}</span></button>`;
 }
+/* Every one of these was hardcoded English until v2m, so the empty states —
+   the moments the app most needs to explain itself — were the least
+   translated part of it. They also stay distinct rather than collapsing into
+   one "nothing here": no saved lakes, no location, no data yet and no match
+   are four different situations. */
 function emptyMessage(){
- if(currentView==="favorites")return "No saved lakes yet. Tap ☆ on any lake to keep it here.";
- if(currentView==="recentnear"&&!userLoc)
-  return "Turn on location to see the lakes closest to you, or search for one by name.";
- if(!lakes.length)return "Stocking data hasn't loaded yet.";
- if(liveBusy)return "Searching every lake in Ontario…";
- if(!userLoc&&knownSpeciesName($("search").value))
-  return "Turn on location to search the whole province for this species — a species search needs somewhere to search from.";
- return "No stocked lakes match these filters. Try widening the distance or clearing the species.";
+ if(currentView==="favorites")return t("emptyFavorites");
+ if(currentView==="recentnear"&&!userLoc)return t("emptyNeedLocation");
+ if(!lakes.length)return t("emptyNoDataYet");
+ if(liveBusy)return t("emptySearchingProvince");
+ if(!userLoc&&knownSpeciesName($("search").value))return t("emptySpeciesNeedsLocation");
+ return t("emptyNoMatch");
 }
 function toggleFav(key){favoriteKeys.has(key)?favoriteKeys.delete(key):favoriteKeys.add(key);localStorage.setItem("osl-favorites",JSON.stringify([...favoriteKeys]));apply()}
 
@@ -2517,10 +2584,11 @@ function locate(after){
   if(after)after();else apply();
  }
  function onLocateFailed(denied){
-  $("count").textContent=t("locationUnavailable");
-  toast(denied
-   ?"Location is off. Turn it on in Settings, or search for a lake by name."
-   :"Your location could not be found right now. Try again outdoors, or search for a lake by name.");
+  // Falling back rather than dead-ending. apply() ignores the distance filter
+  // when there is no position, so this runs the search province-wide instead
+  // of leaving the person looking at a stale screen and a toast.
+  toast(denied?t("locationOffFallback"):t("locationUnavailableFallback"));
+  apply();
  }
 }
 function lakeQuantityFor(l,sp,yr){
@@ -2560,7 +2628,7 @@ function lakeOverviewTabs(l){
 }
 function recentNearMe(){
  const run=()=>{
-  currentView="recentnear";$("search").value="";$("species").value="";$("year").value="";$("radius").value="100";
+  currentView="recentnear";searched=true;$("search").value="";$("species").value="";$("year").value="";$("radius").value="100";
   commitFilters();
   shown=[...lakes].filter(l=>distance(userLoc[0],userLoc[1],l.lat,l.lon)<=100)
     .sort((a,b)=>b.latestYear-a.latestYear || distance(userLoc[0],userLoc[1],a.lat,a.lon)-distance(userLoc[0],userLoc[1],b.lat,b.lon));
@@ -2603,7 +2671,7 @@ $("showAccess").onchange=()=>{$("showAccess").checked?loadAccess():renderAccess(
 $("showFMZ").onchange=()=>{$("showFMZ").checked?loadFMZ(true):renderFMZ()};
 $("showDepth").onchange=renderDepth;
 $("searchBtn").onclick=runSearch;
-$("search").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("search").blur();apply();const q=$("search").value.trim();if(q.length>=3&&shown.length<5)searchProvince(q)}};
+$("search").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("search").blur();searched=true;commitFilters();apply();const q=$("search").value.trim();if(q.length>=3&&shown.length<5)searchProvince(q)}};
 $("search").oninput=markFiltersDirty;
 $("species").onchange=markFiltersDirty;
 $("year").onchange=markFiltersDirty;
@@ -2618,11 +2686,11 @@ const so=$("sort");if(so)so.onchange=markFiltersDirty;
 // The access filter needs the access-point file loaded before it can mean
 // anything, so asking for it fetches it rather than silently matching nothing.
 const oa=$("onlyAccess");if(oa)oa.onchange=()=>{if(oa.checked&&!accessLoaded)loadAccess();markFiltersDirty()};
-$("clearFilters").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";const u=$("showUnstocked");if(u)u.checked=true;const so=$("sort");if(so)so.value="";const oa=$("onlyAccess");if(oa)oa.checked=false;clearFiltersDirty();commitFilters();apply()};
+$("clearFilters").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value=DEFAULT_RADIUS;const u=$("showUnstocked");if(u)u.checked=true;const so=$("sort");if(so)so.value="";const oa=$("onlyAccess");if(oa)oa.checked=false;clearFiltersDirty();commitFilters();searched=false;currentView="explore";apply()};
 
 
 $("recentNearBtn").onclick=recentNearMe;
-$("recentBtn").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";commitFilters();currentView="explore";shown=[...lakes].sort((a,b)=>b.latestYear-a.latestYear);render()};
+$("recentBtn").onclick=()=>{$("search").value="";$("species").value="";$("year").value="";$("radius").value="";commitFilters();searched=true;currentView="explore";shown=[...lakes].sort((a,b)=>b.latestYear-a.latestYear);render()};
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
 $("closeSheet").onclick=()=>$("sheet").classList.add("hidden");
 $("closeTrip").onclick=()=>$("tripSheet").classList.add("hidden");$("tripSheet").onclick=e=>{if(e.target===$("tripSheet"))$("tripSheet").classList.add("hidden")};$("sheet").onclick=e=>{if(e.target===$("sheet"))$("sheet").classList.add("hidden")};

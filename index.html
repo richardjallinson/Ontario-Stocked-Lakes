@@ -56,19 +56,14 @@
   </div>
 </section>
 
-<section class="dashboard" id="dashboard" data-show="explore" aria-label="Dataset summary" aria-live="polite">
-  <div><strong id="statLakes">—</strong><span data-i18n="statLakesLbl">Stocked lakes</span></div>
-  <div><strong id="statRecords">—</strong><span data-i18n="statRecordsLbl">Stocking records</span></div>
-  <div><strong id="statSpecies">—</strong><span data-i18n="statSpeciesLbl">Species</span></div>
-  <div><strong id="statLatest">—</strong><span data-i18n="statLatestLbl">Latest year</span></div>
-</section>
+
 <p class="dataAge" id="dataAge" data-show="explore"></p>
 
 <section class="quick" data-show="explore">
   <button id="recentBtn" type="button"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.2 12c0 2.8-3 5.1-6.3 5.1-2.4 0-4.7-1.3-5.9-2.8a.6.6 0 0 1 0-.8c1.2-1.5 3.5-2.8 5.9-2.8 3.3 0 6.3 2.4 6.3 5.1Z" transform="translate(0 -2.4)"/><path d="m15.1 10.9 5-3.1v9.4l-5-3.1"/><circle cx="6.7" cy="10.4" r=".95" stroke="none" fill="currentColor"/></svg></i><b data-i18n="recentlyStocked">Recently Stocked</b><span data-i18n="recentlyStockedSub">Newest records first</span></button>
   <button id="recentNearBtn" type="button"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></i><b data-i18n="recentNear">Recent Near Me</b><span data-i18n="recentNearSub">Newest stocked lakes close to you</span></button>
-  <a id="regsBtn" href="https://www.ontario.ca/document/ontario-fishing-regulations-summary" target="_blank" rel="noopener"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.2A1.6 1.6 0 0 1 5.6 3.6H19a.8.8 0 0 1 .8.8v13.8a.8.8 0 0 1-.8.8H5.6A1.6 1.6 0 0 0 4 20.6V5.2Z"/><path d="M4 18.9a1.6 1.6 0 0 1 1.6-1.6h14.2"/><path d="M8.2 8h7.4M8.2 11.4h5.2"/></svg></i><b data-i18n="regs2026">2026 Regulations</b><span data-i18n="regs2026Sub">Official Ontario fishing rules</span></a>
-  <a id="fishOnlineBtn" href="https://www.ontario.ca/fishonline" target="_blank" rel="noopener"><i class="qi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 20.5h17"/><path d="M5.5 20.5V10M18.5 20.5V10M9.8 20.5V10M14.2 20.5V10"/><path d="m12 3.2 8.5 4.6h-17L12 3.2Z"/></svg></i><b>Fish ON-Line</b><span data-i18n="fishOnlineSub">Government lake information</span></a>
+  
+  
 </section>
 
 
@@ -93,7 +88,7 @@
   <select id="species"><option value="" data-i18n="allSpecies">All species</option></select>
   <select id="year"><option value="" data-i18n="allYears">All years</option></select>
   <select id="radius">
-    <option value="" data-i18n="anyDistance">Any distance</option><option value="25" data-i18n-within="25">Within 25 km</option><option value="50" data-i18n-within="50">Within 50 km</option><option value="100" data-i18n-within="100">Within 100 km</option><option value="200" data-i18n-within="200">Within 200 km</option>
+    <option value="" data-i18n="anyDistance">Any distance</option><option value="25" data-i18n-within="25">Within 25 km</option><option value="50" selected data-i18n-within="50">Within 50 km</option><option value="100" data-i18n-within="100">Within 100 km</option><option value="200" data-i18n-within="200">Within 200 km</option>
   </select>
   <button id="clearFilters" class="clearbtn" data-i18n="clear">Clear</button>
 </section>
@@ -180,6 +175,12 @@
     <img class="onboardIcon" src="icons/icon-192.png" alt="" width="60" height="60">
     <h2 id="onboardTitle" data-i18n="onboardTitle">Find your next Ontario fishing lake</h2>
     <p id="onboardText">Search by distance, species and stocking history, then check regulations, access, weather and eating advice before you go.</p>
+    <div class="dashboard onboardStats" id="dashboard" aria-label="Dataset summary" aria-live="polite">
+      <div><strong id="statLakes">—</strong><span data-i18n="statLakesLbl">Stocked lakes</span></div>
+      <div><strong id="statRecords">—</strong><span data-i18n="statRecordsLbl">Stocking records</span></div>
+      <div><strong id="statSpecies">—</strong><span data-i18n="statSpeciesLbl">Species</span></div>
+      <div><strong id="statLatest">—</strong><span data-i18n="statLatestLbl">Latest year</span></div>
+    </div>
     <div class="onboardSteps">
       <div><b>1</b><span id="onboardStep1" data-i18n="onboard1">Choose a distance and species</span></div>
       <div><b>2</b><span id="onboardStep2" data-i18n="onboard2">Compare stocked lakes</span></div>

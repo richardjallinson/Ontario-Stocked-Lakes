@@ -822,3 +822,36 @@ body.filtering .sectiontitle{margin-top:14px}
   .sortField{margin-left:0;flex:1 0 100%}
   .sortField select{width:100%}
 }
+
+/* The pre-search state. Explore holds its list back until asked, so this card
+   is the first thing in the results area on a cold launch — it has to say
+   what is available and how to reach it, not just sit there being empty. */
+.searchPrompt{display:grid;gap:6px;text-align:center;padding:26px 18px;
+ background:#F7FAFD;border-style:dashed}
+.searchPrompt b{font-family:var(--display);font-size:18px;color:var(--green)}
+.searchPrompt span{font-size:13px;color:var(--muted);line-height:1.5;
+ max-width:32em;margin:0 auto}
+
+/* ---------------------------------------------------------------------------
+   Explore gets its screen back.
+
+   The dataset stats and the two government shortcut links left Explore in
+   v2n. The stats are a first-impression device — interesting exactly once —
+   so they belong on the onboarding card, which is shown exactly once. The two
+   links were already in Help and in the Regulations tab, verbatim, so they
+   were spending prime real estate duplicating a tab one tap away.
+   --------------------------------------------------------------------------- */
+.onboardStats{margin:14px 0 4px;gap:7px}
+.onboardStats div{background:#F2F6FA;border-radius:12px;padding:9px 6px;text-align:center}
+.onboardStats strong{display:block;font-size:17px;color:var(--green);line-height:1.15}
+.onboardStats span{display:block;font-size:9.5px;color:var(--muted);margin-top:2px;line-height:1.25}
+
+/* Two shortcut cards, not four, so they sit on one row rather than two. */
+.quick{grid-template-columns:1fr 1fr}
+.dataAge{margin-top:10px}
+/* The .dashboard rules carry a stale repeat(5,1fr) and a last-child span from
+   when this sat full-width in Explore. Inside a 440px card it wants a plain
+   2x2 for four stats. */
+.onboardStats{grid-template-columns:1fr 1fr}
+.onboardStats div:last-child{grid-column:auto}
+.onboardStats strong{font-size:17px}
