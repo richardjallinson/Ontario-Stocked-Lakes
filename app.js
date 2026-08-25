@@ -499,7 +499,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3d";
+const APP_VERSION="v3e";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -1119,8 +1119,11 @@ async function loadLiveStocking(){
    a warm cache, and the artwork was flashing past faster than it could be
    read. This holds it for a minimum, measured from page load rather than from
    the call, so a slow load is never made slower — the wait is only ever the
-   remainder, and is zero when loading already took longer than the floor. */
-const SPLASH_MIN_MS=3000;
+   remainder, and is zero when loading already took longer than the floor.
+
+   One second: long enough to register the artwork, short enough that nobody
+   is waiting on it. Three felt like being held up once the novelty wore off. */
+const SPLASH_MIN_MS=1000;
 const splashShownAt=Date.now();
 let splashHiding=false;
 function hideSplash(){
