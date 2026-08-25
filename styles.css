@@ -913,3 +913,9 @@ body.filtering .searchAlt{display:flex}
 .indexNote{background:#FFF9E8;border:1px solid #E6D3A3;color:#6B5510;
  font-size:12.5px;line-height:1.5;font-weight:700;padding:12px 14px;cursor:default}
 .searchPrompt .stillLoading{font-size:12px;color:#6B5510;font-weight:700;margin-top:4px}
+
+/* "N lakes match your search, but the Brook Trout filter is hiding them."
+   The fix is one tap away rather than something to go hunting for. */
+.inlineClear{display:block;margin:10px auto 0;border:1px solid var(--line);
+ background:#fff;color:var(--green);padding:10px 18px;border-radius:11px;
+ font:inherit;font-weight:800;font-size:13px;min-height:40px;cursor:pointer}

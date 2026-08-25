@@ -49,6 +49,8 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
+  emptyWheelsHid:"{n} lakes match your search, but the {what} filter is hiding them.",
+  clearThose:"Clear that filter",
   lakeIndexLoading:"Still loading Ontario's full lake index — these results are stocked lakes only for the moment, and will fill in on their own.",
   lakeIndexUnavailable:"Ontario's full lake index has not loaded, so these results are stocked lakes only. It needs a connection the first time. Reconnect and reopen the app to get the rest.",
   onOpening:"When the app opens",
@@ -275,6 +277,8 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
+  emptyWheelsHid:"{n} lacs correspondent à votre recherche, mais le filtre {what} les masque.",
+  clearThose:"Effacer ce filtre",
   lakeIndexLoading:"Chargement de l’index complet des lacs de l’Ontario — ces résultats ne comprennent que les lacs ensemencés pour l’instant; ils se compléteront d’eux-mêmes.",
   lakeIndexUnavailable:"L’index complet des lacs de l’Ontario n’est pas chargé; ces résultats ne comprennent que les lacs ensemencés. Une connexion est requise la première fois. Reconnectez-vous et rouvrez l’application.",
   onOpening:"À l’ouverture",
@@ -493,7 +497,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v2z";
+const APP_VERSION="v3a";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -1171,6 +1175,8 @@ let waterbodies=[],waterbodiesLoaded=false;
 /* "loading" until the index resolves either way. Drives the note that stops a
    half-loaded search from looking like a complete one. */
 let waterbodiesState="loading";
+/* Lakes the text and distance matched but the species or year wheel removed. */
+let suppressedByWheels=0;
 
 /* The 2.2 MB lake index used to be requested only after the stocking file had
    arrived and been built into lakes. Until it landed the app held about 2,100
@@ -1903,6 +1909,14 @@ function apply(){
  // lake, so leaving it in the text filter would guarantee zero results.
  const centre=currentView==="favorites"?userLoc:searchCentre();
  if(townOrigin&&currentView!=="favorites")q="";
+ /* How many lakes the text and distance would have matched if the species and
+    year wheels were not also applied. When that is more than zero and the
+    result is zero, the wheels are the reason — and saying which one is the
+    difference between "no lakes match these filters" and "Moira Lake is
+    right there, but you have Brook Trout selected". This became a real trap
+    in v2y, when the species wheel started persisting across launches: you
+    can now arrive at a search carrying a filter you set yesterday. */
+ suppressedByWheels=0;
  shown=lakes.filter(l=>{
   if(currentView==="favorites"&&!favoriteKeys.has(l.key))return false;
   // My Lakes is exempt from the distance filter. #radius is shared with
@@ -1913,10 +1927,11 @@ function apply(){
   // what it is. There used to be an "Include lakes that aren't stocked"
   // checkbox; it shipped checked, unchecking it hid four fifths of Ontario,
   // and the pills already tell the two apart at a glance.
-  if(sp&&!(l.species.includes(sp)||anglerSpecies(l.present).includes(sp)))return false;
-  if(yr&&!l.records.some(r=>String(r.Stocking_Year)===yr))return false;
   if(q&&!matchesQuery(l,q))return false;
   if(useRadius&&radius&&centre&&distance(centre[0],centre[1],l.lat,l.lon)>radius)return false;
+  const okSpecies=!sp||l.species.includes(sp)||anglerSpecies(l.present).includes(sp);
+  const okYear=!yr||l.records.some(r=>String(r.Stocking_Year)===yr);
+  if(!okSpecies||!okYear){suppressedByWheels++;return false}
   return true;
  });
 
@@ -2032,7 +2047,9 @@ function render(){
     belongs wherever a single species has been named — the same rule as before:
     a specific fish gets its plate, "All species" gets none, because the app
     would otherwise be choosing a fish on the angler's behalf. */
- const namedSpecies=committed.sp||(committed.q?knownSpeciesName(committed.q):null);
+ // No plate over an empty list: a big confident fish above "0 lakes" reads as
+ // a result rather than as decoration.
+ const namedSpecies=shown.length?(committed.sp||(committed.q?knownSpeciesName(committed.q):null)):null;
  if(namedSpecies&&currentView==="explore"){
   const plate=plateFor(namedSpecies,"findPlate");
   if(plate)$("results").insertAdjacentHTML("afterbegin",plate);
@@ -2041,6 +2058,12 @@ function render(){
  if(indexNote)$("results").insertAdjacentHTML("afterbegin",indexNote);
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=e=>{if(e.target.closest(".star"))return;const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
  document.querySelectorAll(".star").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFav(b.dataset.fav)});
+ const dw=$("dropWheels");
+ if(dw)dw.onclick=()=>{
+  const sel=$("species");if(sel)sel.value="";
+  const yr=$("year");if(yr)yr.value="";
+  clearFiltersDirty();commitFilters();saveLastSearch();apply();
+ };
  markerLayer.clearLayers();
  fitToResults();
  shown.slice(0,400).forEach(l=>{const m=L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${esc((l.stocked?l.species:anglerSpecies(l.present)).slice(0,4).map(speciesLabel).join(", "))}<br>${l.stocked?(t("latestStocking")+": "+esc(l.latestYear||"—")):t("notStocked")}`);m.on("click",()=>detail(l))});
@@ -2138,6 +2161,14 @@ function emptyMessage(){
  if(!lakes.length)return t("emptyNoDataYet");
  if(liveBusy)return t("emptySearchingProvince");
  if(!userLoc&&knownSpeciesName($("search").value))return t("emptySpeciesNeedsLocation");
+ /* The wheels removed everything the text and distance found. Name them, and
+    offer to drop them, rather than blaming "these filters" in general. */
+ if(suppressedByWheels>0){
+  const sp=committed.sp,yr=committed.yr;
+  const what=sp&&yr?`${speciesLabel(sp)} + ${yr}`:sp?speciesLabel(sp):yr;
+  return `${t("emptyWheelsHid").replace("{n}",num(suppressedByWheels)).replace("{what}",esc(what))}
+   <button id="dropWheels" class="inlineClear">${t("clearThose")}</button>`;
+ }
  return t("emptyNoMatch");
 }
 function toggleFav(key){favoriteKeys.has(key)?favoriteKeys.delete(key):favoriteKeys.add(key);localStorage.setItem("osl-favorites",JSON.stringify([...favoriteKeys]));apply()}
