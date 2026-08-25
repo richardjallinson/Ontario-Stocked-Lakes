@@ -455,7 +455,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v2o";
+const APP_VERSION="v2p";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -1746,7 +1746,10 @@ function apply(){
   // Explore, and since v2n it defaults to 50 km — without this, saving a lake
   // and driving home would make it vanish from your own saved list.
   const useRadius=currentView!=="favorites";
-  if(!showUnstocked()&&!l.stocked)return false;
+  // Stocked and unstocked lakes always appear together, each labelled for
+  // what it is. There used to be an "Include lakes that aren't stocked"
+  // checkbox; it shipped checked, unchecking it hid four fifths of Ontario,
+  // and the pills already tell the two apart at a glance.
   if(sp&&!(l.species.includes(sp)||anglerSpecies(l.present).includes(sp)))return false;
   if(yr&&!l.records.some(r=>String(r.Stocking_Year)===yr))return false;
   if(q&&!matchesQuery(l,q))return false;
@@ -1928,10 +1931,6 @@ function nameScore(l,q){
  return 1;                                         // matched on species or township
 }
 
-function showUnstocked(){
- const el=$("showUnstocked");
- return el?el.checked:true;
-}
 /* Distance was simply absent with no location granted, which reads as a
    missing feature rather than a missing permission. Ask for it instead. */
 function locationPrompt(){
@@ -2736,12 +2735,11 @@ document.addEventListener("click",e=>{
 });
 document.querySelectorAll(".baseSwitch button").forEach(b=>b.onclick=()=>setBasemap(b.dataset.base));
 setBasemap(baseKey);
-const su=$("showUnstocked");if(su)su.onchange=markFiltersDirty;
 const so=$("sort");if(so)so.onchange=markFiltersDirty;
 // The access filter needs the access-point file loaded before it can mean
 // anything, so asking for it fetches it rather than silently matching nothing.
 const oa=$("onlyAccess");if(oa)oa.onchange=()=>{if(oa.checked&&!accessLoaded)loadAccess();markFiltersDirty()};
-$("clearFilters").onclick=()=>{townOrigin=null;$("search").value="";$("species").value="";$("year").value="";$("radius").value=DEFAULT_RADIUS;const u=$("showUnstocked");if(u)u.checked=true;const so=$("sort");if(so)so.value="";const oa=$("onlyAccess");if(oa)oa.checked=false;clearFiltersDirty();commitFilters();searched=false;currentView="explore";apply()};
+$("clearFilters").onclick=()=>{townOrigin=null;$("search").value="";$("species").value="";$("year").value="";$("radius").value=DEFAULT_RADIUS;const so=$("sort");if(so)so.value="";const oa=$("onlyAccess");if(oa)oa.checked=false;clearFiltersDirty();commitFilters();searched=false;currentView="explore";apply()};
 
 
 $("recentNearBtn").onclick=recentNearMe;
