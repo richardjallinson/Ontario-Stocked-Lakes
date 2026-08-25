@@ -49,6 +49,7 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
+  splashWarning:"Don’t completely close the app if you are expecting low or no cell reception.",
   loadingSub:"Fetching Ontario's stocking records and lake index. Search will be ready in a moment.",
   splashLoading:"Loading Ontario lakes…",
   emptyWheelsHid:"{n} lakes match your search, but the {what} filter is hiding them.",
@@ -279,6 +280,7 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
+  splashWarning:"Ne fermez pas complètement l’application si vous vous attendez à une réception faible ou nulle.",
   loadingSub:"Récupération des données d’ensemencement et de l’index des lacs de l’Ontario. La recherche sera prête dans un instant.",
   splashLoading:"Chargement des lacs de l'Ontario…",
   emptyWheelsHid:"{n} lacs correspondent à votre recherche, mais le filtre {what} les masque.",
@@ -479,6 +481,9 @@ function translateStaticUI(){
  document.querySelectorAll("[data-i18n]").forEach(el=>{el.textContent=t(el.dataset.i18n)});
  document.querySelectorAll("[data-i18n-ph]").forEach(el=>{el.placeholder=t(el.dataset.i18nPh)});
  document.querySelectorAll("[data-i18n-aria]").forEach(el=>{el.setAttribute("aria-label",t(el.dataset.i18nAria))});
+ // The splash image now carries an instruction, not just branding, so a
+ // screen reader has to hear it — alt="" would make it invisible.
+ document.querySelectorAll("[data-i18n-alt]").forEach(el=>{el.setAttribute("alt",t(el.dataset.i18nAlt))});
  document.querySelectorAll("[data-i18n-within]").forEach(el=>{
   el.textContent=t("withinKm").replace("{n}",el.dataset.i18nWithin);
  });
@@ -501,7 +506,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3f";
+const APP_VERSION="v3h";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -1123,9 +1128,8 @@ async function loadLiveStocking(){
    the call, so a slow load is never made slower — the wait is only ever the
    remainder, and is zero when loading already took longer than the floor.
 
-   One second: long enough to register the artwork, short enough that nobody
-   is waiting on it. Three felt like being held up once the novelty wore off. */
-const SPLASH_MIN_MS=1000;
+   Three seconds, per Richard: long enough to actually read the artwork. */
+const SPLASH_MIN_MS=3000;
 const splashShownAt=Date.now();
 let splashHiding=false;
 function hideSplash(){

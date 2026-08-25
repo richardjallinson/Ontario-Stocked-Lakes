@@ -3,9 +3,15 @@
    load isn't blocked on ~12 MB. Live government API calls always go to the
    network so regulations and advisories are never served stale. */
 
-const VERSION = "v3f";
+const VERSION = "v3g";
 const SHELL = `osl-shell-${VERSION}`;
-const DATA  = `osl-data-${VERSION}`;
+/* Deliberately NOT versioned. The data cache used to be osl-data-${VERSION},
+   and activate deletes every cache that is not current — so every app update
+   threw away ~4 MB of cached lake data and the next launch re-downloaded all
+   of it. Twenty-odd versions in, that was the recurring fifteen-second start.
+   The app code changes constantly; the datasets change rarely. They get
+   different lifetimes now. */
+const DATA  = "osl-data";
 
 const SHELL_FILES = [
   "./",
@@ -68,16 +74,21 @@ self.addEventListener("fetch", e => {
     return;
   }
 
-  // Large datasets and species plates: serve from cache, otherwise fetch and store.
+  // Large datasets and species plates: stale-while-revalidate. The cached
+  // copy answers immediately — that is the fast start — and a background
+  // fetch refreshes it, so a new stocking snapshot is at most one launch
+  // behind. The dataAge line in the app shows which snapshot is on screen,
+  // and Settings has a manual "Check for new stockings" for the impatient.
   if (DATA_FILES.some(f => url.pathname.endsWith(f)) || isPlate(url.pathname)) {
     e.respondWith(
-      caches.match(req).then(hit => hit || fetch(req).then(res => {
-        if (res.ok) {
-          const copy = res.clone();
-          caches.open(DATA).then(c => c.put(req, copy));
-        }
-        return res;
-      }))
+      caches.open(DATA).then(async c => {
+        const hit = await c.match(req);
+        const refresh = fetch(req).then(res => {
+          if (res.ok) c.put(req, res.clone());
+          return res;
+        }).catch(() => hit);
+        return hit || refresh;
+      })
     );
     return;
   }
