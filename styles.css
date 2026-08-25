@@ -906,3 +906,10 @@ body.filtering .searchAlt{display:flex}
  font-size:12.5px;min-height:36px;cursor:pointer}
 .tripConfirm{margin-top:10px}
 .tripcard .confirmRow{margin-top:10px}
+
+/* "These results are stocked lakes only, for now." A partial list of lakes is
+   the one thing this app must never present as complete, so the note is amber
+   and sits above the results rather than under them. */
+.indexNote{background:#FFF9E8;border:1px solid #E6D3A3;color:#6B5510;
+ font-size:12.5px;line-height:1.5;font-weight:700;padding:12px 14px;cursor:default}
+.searchPrompt .stillLoading{font-size:12px;color:#6B5510;font-weight:700;margin-top:4px}

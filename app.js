@@ -49,8 +49,10 @@ const I18N={
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
   illustrations:"Fish illustrations",
+  lakeIndexLoading:"Still loading Ontario's full lake index — these results are stocked lakes only for the moment, and will fill in on their own.",
+  lakeIndexUnavailable:"Ontario's full lake index has not loaded, so these results are stocked lakes only. It needs a connection the first time. Reconnect and reopen the app to get the rest.",
   onOpening:"When the app opens",
-  onOpeningNote:"Your last search is kept on this device. It is replayed without asking for your location, so a distance filter may come back wider than you set it.",
+  onOpeningNote:"Your last search is kept on this device. It replays as soon as the app opens; if a distance was set, it narrows again the moment your position arrives.",
   reopenLastSearch:"Reopen my last search",
   startFresh:"Start fresh",
   deleteTrip:"Delete this trip",
@@ -273,8 +275,10 @@ const I18N={
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
   illustrations:"Illustrations de poissons",
+  lakeIndexLoading:"Chargement de l’index complet des lacs de l’Ontario — ces résultats ne comprennent que les lacs ensemencés pour l’instant; ils se compléteront d’eux-mêmes.",
+  lakeIndexUnavailable:"L’index complet des lacs de l’Ontario n’est pas chargé; ces résultats ne comprennent que les lacs ensemencés. Une connexion est requise la première fois. Reconnectez-vous et rouvrez l’application.",
   onOpening:"À l’ouverture",
-  onOpeningNote:"Votre dernière recherche est conservée sur cet appareil. Elle est relancée sans demander votre position; un filtre de distance peut donc revenir plus large que ce que vous aviez choisi.",
+  onOpeningNote:"Votre dernière recherche est conservée sur cet appareil. Elle est relancée dès l’ouverture; si une distance était choisie, elle se resserre dès que votre position arrive.",
   reopenLastSearch:"Rouvrir ma dernière recherche",
   startFresh:"Recommencer à zéro",
   deleteTrip:"Supprimer cette sortie",
@@ -489,7 +493,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v2y";
+const APP_VERSION="v2z";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
@@ -1112,6 +1116,7 @@ function afterStockingLoaded(){
 async function load(){
  $("count").textContent=t("loadingData");
  ["statLakes","statRecords","statSpecies","statLatest"].forEach(id=>{const el=$(id);if(el)el.textContent="…"});
+ beginWaterbodies();   // in flight before the stocking file is even parsed
  try{
   let all;
   try{ all=await loadBundledStocking(); }
@@ -1163,14 +1168,35 @@ async function refreshStockingFromAPI(){
    before rather than failing.
 --------------------------------------------------------------------------- */
 let waterbodies=[],waterbodiesLoaded=false;
+/* "loading" until the index resolves either way. Drives the note that stops a
+   half-loaded search from looking like a complete one. */
+let waterbodiesState="loading";
+
+/* The 2.2 MB lake index used to be requested only after the stocking file had
+   arrived and been built into lakes. Until it landed the app held about 2,100
+   stocked lakes and nothing else, so any search in that window came back
+   stocked-only — and on a phone over cellular that window is seconds, not
+   milliseconds. Reported by Trevor, who searched inside it.
+
+   The request now starts at the same moment as the stocking one and is
+   awaited when there is something to merge it into. Two parallel fetches
+   instead of two sequential ones, for no extra work. */
+let waterbodiesPromise=null;
+function beginWaterbodies(){
+ if(waterbodiesPromise)return waterbodiesPromise;
+ waterbodiesPromise=fetch("ontario-waterbodies.json")
+  .then(r=>{if(!r.ok)throw new Error("not built");return r.json()})
+  .then(j=>j.waterbodies||[])
+  .catch(()=>null);
+ return waterbodiesPromise;
+}
 
 async function loadWaterbodies(){
  try{
-  const r=await fetch("ontario-waterbodies.json");
-  if(!r.ok)throw new Error("not built");
-  const j=await r.json();
-  waterbodies=j.waterbodies||[];
-  waterbodiesLoaded=true;
+  const list=await beginWaterbodies();
+  if(!list)throw new Error("not built");
+  waterbodies=list;
+  waterbodiesLoaded=true;waterbodiesState="ready";
   mergeWaterbodies();
   buildFilters(true);
   // A saved species may only exist in the wheel after the merge, so try the
@@ -1178,10 +1204,13 @@ async function loadWaterbodies(){
   if(!restoreLastSearch())apply();
   loadTownshipsForLakes(lakes).then(()=>{assignTownships();apply()});
  }catch(e){
-  // Not built yet, or offline before it was ever cached. The stocking data
-  // still works on its own; say nothing rather than raising an error about a
-  // file most users will never know exists.
-  waterbodiesLoaded=false;
+  /* Not built, or offline before it was ever cached. This used to fail
+     silently, which meant the app quietly held a fifth of Ontario's lakes
+     with nothing on screen to say why — the same "present but invisible"
+     failure as the sort bug, and just as indistinguishable from "these lakes
+     do not exist". It says so now. */
+  waterbodiesLoaded=false;waterbodiesState="unavailable";
+  apply();
  }
 }
 
@@ -1956,11 +1985,21 @@ function render(){
   const mc0=$("mapCount");if(mc0)mc0.textContent="";
   $("results").innerHTML=`<div class="record searchPrompt">
    <b>${ready?t("searchPromptTitle").replace("{n}",num(ready)):t("loadingData")}</b>
-   <span>${t("searchPromptSub")}</span></div>`+locationPrompt();
+   <span>${t("searchPromptSub")}</span>
+   ${waterbodiesState==="loading"?`<span class="stillLoading">${t("lakeIndexLoading")}</span>`:""}
+   ${waterbodiesState==="unavailable"?`<span class="stillLoading">${t("lakeIndexUnavailable")}</span>`:""}
+   </div>`+locationPrompt();
   const dp0=$("distancePrompt");if(dp0)dp0.onclick=()=>locate(apply);
   markerLayer.clearLayers();
   return;
  }
+
+ /* A search that ran before the lake index landed is not wrong, it is
+    partial — and a partial list of lakes is the one thing this app must never
+    present as complete. The note goes above the results, and disappears by
+    itself when the index arrives and apply() runs again. */
+ const indexNote=waterbodiesState==="ready"?""
+  :`<div class="record indexNote">${waterbodiesState==="loading"?t("lakeIndexLoading"):t("lakeIndexUnavailable")}</div>`;
 
  $("results").innerHTML=shown.slice(0,250).map((l,i)=>{
   const latest=l.records.filter(r=>Number(r.Stocking_Year)===l.latestYear),latestFish=latest.reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0),fav=favoriteKeys.has(l.key);
@@ -1999,6 +2038,7 @@ function render(){
   if(plate)$("results").insertAdjacentHTML("afterbegin",plate);
  }
  $("results").insertAdjacentHTML("afterbegin",locationPrompt());
+ if(indexNote)$("results").insertAdjacentHTML("afterbegin",indexNote);
  document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=e=>{if(e.target.closest(".star"))return;const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
  document.querySelectorAll(".star").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFav(b.dataset.fav)});
  markerLayer.clearLayers();
@@ -3196,7 +3236,27 @@ function wireShell(){
  if(hb)hb.onclick=openHelp;if(ch)ch.onclick=()=>hs.classList.add("hidden");
  if(hs)hs.onclick=e=>{if(e.target===hs)hs.classList.add("hidden")};
  const closeOnboard=()=>{if(ob)ob.classList.add("hidden");localStorage.setItem("osl-onboarded-v1t","1")};
- if(co)co.onclick=closeOnboard;if(se)se.onclick=()=>{closeOnboard();setView("explore")};
+ if(co)co.onclick=closeOnboard;
+ /* "Start Exploring" asks for location, once, on first run.
+
+    v2y refused to prompt at startup on the grounds that a permission dialog
+    is a poor greeting. Trevor pointed out that anyone opening a
+    find-me-a-lake app expects to be asked, and he is right — the mistake was
+    treating "never prompt at startup" as the rule instead of "never prompt
+    without context". This is a tap on a button reading Start Exploring, on
+    the one screen that has just explained what the app does. That is context,
+    and a user gesture, which is what the permission API wants anyway.
+
+    Declining costs nothing: every distance feature already degrades to a
+    province-wide search, and the button behaves the same either way. */
+ if(se)se.onclick=()=>{
+  closeOnboard();setView("explore");
+  const askedKey="osl-asked-location";
+  if(!localStorage.getItem(askedKey)&&(navigator.geolocation||nativeBridge("requestLocation"))){
+   localStorage.setItem(askedKey,"1");
+   if(!userLoc)locate(apply);
+  }
+ };
  if(ob&&!localStorage.getItem("osl-onboarded-v1t"))ob.classList.remove("hidden");
 }
 
