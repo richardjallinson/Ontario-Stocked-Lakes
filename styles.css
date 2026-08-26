@@ -24,13 +24,9 @@ main{max-width:850px;margin:auto;padding:16px}/* The hero is a raised card now, 
    actually visible. The green gradient stays as the base layer, so this is
    photo-on-top-of-colour rather than photo-instead-of-colour — if the image
    fails to decode the card is still the v3y card, not a white box. */
+/* Base geometry only. The background lives in the later .hero rule further
+   down this file — putting it here as well is what broke v3z. */
 .hero{position:relative;overflow:hidden;
- background-image:linear-gradient(95deg,#0B2A1BE6 0%,#0B2A1BD9 42%,#10305096 68%,#1030504D 100%),
-                  url(img/card-lake.webp),
-                  linear-gradient(135deg,var(--accent-deep),var(--green));
- background-size:cover,cover,cover;
- background-position:center,right center,center;
- background-repeat:no-repeat,no-repeat,no-repeat;
  color:white;padding:24px 22px 22px;border-radius:24px;box-shadow:0 14px 34px #0B182B33;margin-bottom:4px}
 /* v3z: the trout watermark is gone from the hero. It existed because there
    was no photo to put here; now there is one, and two overlapping textures
@@ -438,8 +434,19 @@ h1,h2,h3,.hero h2,.headerBrand h1,.onboardCard h2,.record h4,.detailhead h2,
 .sectiontitle h3{font-size:19px;color:var(--green)}
 .eyebrow{color:#C4941F;letter-spacing:3px}
 
-/* Signature: bathymetry contours behind the hero, echoing the app icon. */
-.hero{position:relative;overflow:hidden;background:linear-gradient(150deg,#1D3A57,#13263C)}
+/* Signature: bathymetry contours behind the hero, echoing the app icon.
+   v4b: this rule used to set `background` wholesale, which silently wiped the
+   lake plate declared 400 lines earlier — same class, same specificity, later
+   in the file, so it won. The plate is declared here now, with the navy
+   gradient kept as the bottom layer so a failed decode still degrades to the
+   old card rather than to a white box. */
+.hero{position:relative;overflow:hidden;
+ background-image:linear-gradient(95deg,#08251AE6 0%,#0A2A1FD6 40%,#0E2C4699 66%,#0E2C4640 100%),
+                  url(img/card-lake.webp),
+                  linear-gradient(150deg,#1D3A57,#13263C);
+ background-size:cover,cover,cover;
+ background-position:center,right center,center;
+ background-repeat:no-repeat,no-repeat,no-repeat}
 .hero::before{content:"";position:absolute;right:-70px;top:-45px;width:280px;height:200px;
  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 280 200'%3E%3Cg fill='none' stroke='%237FA0BE' stroke-opacity='.28'%3E%3Cellipse cx='140' cy='100' rx='130' ry='86' stroke-width='1.4'/%3E%3Cellipse cx='140' cy='100' rx='96' ry='62' stroke-width='1.4'/%3E%3Cellipse cx='140' cy='100' rx='64' ry='40' stroke-width='1.4'/%3E%3Cellipse cx='140' cy='100' rx='34' ry='20' stroke-width='1.4'/%3E%3C/g%3E%3C/svg%3E");
  background-repeat:no-repeat;pointer-events:none}
@@ -779,11 +786,14 @@ body.filtering .sectiontitle{margin-top:14px}
    water, so contrast is not cosmetic. */
 .headerActions .round,
 .langSwitch button{
- width:32px;height:32px;min-width:32px;padding:0;
- border-radius:10px;
- background:transparent;
- border:1px solid #7691B2;
- color:#B4C9DC;
+ width:38px;height:38px;min-width:38px;padding:0;
+ border-radius:11px;
+ /* v4b: filled, not outlined. A hairline border over the lake plate read as
+    noise and the glyphs sat on whatever pixels happened to be behind them. */
+ background:#0C2138D9;
+ border:1px solid #FFFFFF2E;
+ color:#EAF2FA;
+ box-shadow:0 2px 8px #04101F55;
  display:inline-flex;align-items:center;justify-content:center;
  cursor:pointer;
 }
@@ -791,10 +801,12 @@ body.filtering .sectiontitle{margin-top:14px}
 .round svg{width:16px;height:16px}
 .langSwitch button{font-size:11.5px;font-weight:700}
 /* The active language is marked, not spotlit. */
+/* The active language is the one filled-green control in the header, as in
+   the reference — navy on green, the same grammar as Search. */
 .langSwitch button.active{
- background:#ffffff1c;
- border-color:#B4C9DC;
- color:#F2F6FA;
+ background:var(--accent);
+ border-color:var(--accent);
+ color:#0B2018;
 }
 
 /* Narrow phones cannot carry a 120px mark and a 28px wordmark side by side.
@@ -822,7 +834,7 @@ body.filtering .sectiontitle{margin-top:14px}
   .headerActions{gap:8px}
   .langSwitch{gap:8px}
   .headerActions .round,
-  .langSwitch button{width:38px;height:38px;min-width:38px;border-radius:12px}
+  .langSwitch button{width:44px;height:44px;min-width:44px;border-radius:13px}
   .headerActions .round{font-size:19px}
   .round svg{width:19px;height:19px}
   .langSwitch button{font-size:13px}
