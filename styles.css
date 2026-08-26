@@ -1036,9 +1036,7 @@ body.filtering .searchAlt{display:flex}
    ========================================================================== */
 :root{--accent:#7ED321;--accent-dark:#4EA817;--water:#008BD0;--line:#C7E4F4}
 body{background:linear-gradient(180deg,#04A9EA 0,#0A9FE0 44%,#F1FAFF 100%) fixed;color:#071B38}
-header{background:
- linear-gradient(180deg,rgba(0,35,90,.02),rgba(0,30,70,.06)),
- url('icons/header-lake.jpg') center/cover no-repeat;
+header{background:url('icons/header-lake.jpg') center/cover no-repeat;
  box-shadow:0 4px 16px #003E7C55}
 .headerTop{min-height:176px;padding:14px 28px 10px;align-items:center}
 .headerBrand h1{font-size:32px;color:#fff;text-shadow:0 3px 5px #001A3D99;letter-spacing:-.4px}
