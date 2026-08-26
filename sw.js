@@ -3,7 +3,7 @@
    load isn't blocked on ~12 MB. Live government API calls always go to the
    network so regulations and advisories are never served stale. */
 
-const VERSION = "v3q";
+const VERSION = "v3r";
 const SHELL = `osl-shell-${VERSION}`;
 /* Deliberately NOT versioned. The data cache used to be osl-data-${VERSION},
    and activate deletes every cache that is not current — so every app update
@@ -31,7 +31,7 @@ const SHELL_FILES = [
 // Big local datasets: cached the first time they're requested, not on install.
 const DATA_FILES = ["fish-advisories-2025.json", "ontario-regulations-2026.json",
                     "ontario-waterbodies.json", "ontario-nearby.json",
-                    "ontario-places.json", "ontario-stocking.json",
+                    "ontario-places.json", "ontario-stocking.json", "ontario-access.json",
                     "species-art/manifest.json"];
 
 // Species plates are small and cached on first sight, the same as the datasets.

@@ -52,6 +52,16 @@ const I18N={
   viewCurrentRegs:"View Current FMZ {zone} Regulations",
   checkRegsFor:"Check current FMZ {zone} regulations",
   illustrations:"Fish illustrations",
+  nearestAccess:"Nearest fishing access",
+  accPoint:"Access point",
+  accParking:"parking",
+  accAccessible:"accessible",
+  accFee:"user fee",
+  accNoFee:"no fee",
+  accVerified:"last verified {year}",
+  accessNoneNearby:"No access point within {km} km appears in Ontario's index. That means no record for this area, not that there is nowhere to launch.",
+  accessNotBuilt:"Access-point data has not been built into this copy of the app yet.",
+  accessNote:"Ontario Fishing Access Point data. Sites change — check locally before towing a boat.",
   offlineNote:"Don’t completely close the app if you are expecting low or no cell reception — it keeps everything you need for the lake ready to go.",
   splashWarning:"Ontario Stocked Lakes. Don’t completely close the app if you are expecting low or no cell reception. Loading lakes…",
   loadingSub:"Fetching Ontario's stocking records and lake index. Search will be ready in a moment.",
@@ -287,6 +297,16 @@ const I18N={
   viewCurrentRegs:"Voir les règlements actuels de la ZGP {zone}",
   checkRegsFor:"Vérifiez les règlements actuels de la ZGP {zone}",
   illustrations:"Illustrations de poissons",
+  nearestAccess:"Accès de pêche le plus proche",
+  accPoint:"Point d’accès",
+  accParking:"stationnement",
+  accAccessible:"accessible",
+  accFee:"frais d’utilisation",
+  accNoFee:"sans frais",
+  accVerified:"vérifié en {year}",
+  accessNoneNearby:"Aucun point d’accès à moins de {km} km ne figure dans l’index de l’Ontario. Cela signifie qu’il n’y a aucune donnée pour ce secteur, non qu’il n’y a nulle part où mettre à l’eau.",
+  accessNotBuilt:"Les données des points d’accès ne sont pas encore intégrées à cette version de l’application.",
+  accessNote:"Données des points d’accès de pêche de l’Ontario. Les sites changent — vérifiez sur place avant de remorquer un bateau.",
   offlineNote:"Ne fermez pas complètement l’application si vous vous attendez à une réception faible ou nulle — elle garde tout ce qu’il vous faut pour le lac à portée de main.",
   splashWarning:"Ontario Stocked Lakes. Ne fermez pas complètement l’application si vous vous attendez à une réception faible ou nulle. Chargement des lacs…",
   loadingSub:"Récupération des données d’ensemencement et de l’index des lacs de l’Ontario. La recherche sera prête dans un instant.",
@@ -518,7 +538,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3q";
+const APP_VERSION="v3r";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -1315,6 +1335,14 @@ async function loadWaterbodies(){
 --------------------------------------------------------------------------- */
 const NEARBY_KM=10;
 let gazetteer=[],nearbyStays=[],nearbyLoaded=false;
+/* Fishing access points, bundled by tools/build-access.py.
+
+   This was a live ArcGIS call until v3o, which meant it answered only with a
+   signal — and "where do I launch?" is asked standing at a lake. Now it is a
+   file, so it works in airplane mode like the rest of the app. Optional: if
+   the build tool has not been run, the card says the data has not been built
+   rather than implying the lake has no access. */
+let accessPoints=[],accessLoaded=false;
 
 async function loadTripData(){
  try{
@@ -1325,6 +1353,10 @@ async function loadTripData(){
   const r=await fetch("ontario-nearby.json");
   if(r.ok){const j=await r.json();nearbyStays=j.stays||[];nearbyLoaded=true}
  }catch(e){ /* not built; the lodging card just does not render */ }
+ try{
+  const r=await fetch("ontario-access.json");
+  if(r.ok){const j=await r.json();accessPoints=j.access||[];accessLoaded=true}
+ }catch(e){ /* not built yet; the access card says so rather than guessing */ }
 }
 
 /* ---------------------------------------------------------------------------
@@ -1389,6 +1421,50 @@ function whereLine(l){
 
 function stayIcon(kind){
  return /camp|rv|trailer|caravan|hut/i.test(kind||"")?"🏕️":"🛏️";
+}
+
+/* Nearest fishing access, from the bundled LIO index.
+
+   Built by tools/build-access.py. Everything here is offline: the whole point
+   is that "where do I put the boat in" gets asked at the lake, where there is
+   no signal. That is why the live version was removed in v3o rather than
+   repaired.
+
+   The flags distinguish three states, not two. "No parking" and "nobody
+   recorded whether there is parking" are different answers, and only the first
+   is worth printing — an omitted flag says nothing rather than guessing. */
+const ACCESS_KM=15;
+function accessFacts(a){
+ const bits=[];
+ if(a.park===true)bits.push(t("accParking"));
+ if(a.acc===true)bits.push(t("accAccessible"));
+ if(a.fee===true)bits.push(t("accFee"));
+ else if(a.fee===false)bits.push(t("accNoFee"));
+ if(a.mat)bits.push(esc(a.mat));
+ return bits;
+}
+function accessCard(l){
+ if(!accessLoaded)
+  return `<div class="infoCard"><h3>🚤 ${t("nearestAccess")}</h3>
+   <p class="setNote">${t("accessNotBuilt")}</p></div>`;
+ const within=accessPoints
+  .filter(a=>Math.abs(a.lat-l.lat)<0.2&&Math.abs(a.lon-l.lon)<0.3)   // cheap prefilter
+  .map(a=>({...a,km:distance(l.lat,l.lon,a.lat,a.lon)}))
+  .filter(a=>a.km<=ACCESS_KM)
+  .sort((a,b)=>a.km-b.km)
+  .slice(0,6);
+ const rows=within.length
+  ?within.map(a=>{
+    const facts=accessFacts(a);
+    const ver=a.ver?` • ${t("accVerified").replace("{year}",a.ver)}`:"";
+    return `<div class="accessrow"><div><b>🚤 ${esc(a.n)}</b><span>${
+      esc(a.t||t("accPoint"))} • ${a.km.toFixed(1)} km ${bearingLabel(l.lat,l.lon,a.lat,a.lon)}${
+      facts.length?` • ${facts.join(" • ")}`:""}${ver}</span></div>`+
+     `<a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lon}">Directions</a></div>`;
+   }).join("")
+  :`<p class="setNote">${t("accessNoneNearby").replace("{km}",ACCESS_KM)}</p>`;
+ return `<div class="infoCard"><h3>🚤 ${t("nearestAccess")}</h3>${rows}
+  <p class="microcopy">${t("accessNote")}</p></div>`;
 }
 
 /* Camping & lodging near the lake, from the bundled OSM index. OSM coverage
@@ -2550,6 +2626,7 @@ ${presentBlock(l)}
  </div>
  <div id="lake-depth" class="tabAnchor"></div><div class="infoCard"><h3>🌊 ${t("lakeDepth")}</h3><p>${l.depthMax?t("depthKnown").replace("{max}",esc(l.depthMax)).replace("{mean}",l.depthMean?esc(l.depthMean):"—"):t("depthUnknown")}</p><p class="helpNote">${t("depthNotForNav")}</p></div>
  <div id="lake-stocking" class="tabAnchor"></div><h3>Recent Stocking History</h3><div class="history">${history}</div>
+ ${accessCard(l)}
  ${nearbyStaysCard(l)}
  <div class="infoCard"><h3>Fishing information</h3><p>Stocking records are useful planning information, but fishing seasons, limits and exceptions can change. Check Ontario's current regulations before fishing.</p>
  <div class="actionstack">
