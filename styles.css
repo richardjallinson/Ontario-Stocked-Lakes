@@ -3,10 +3,38 @@
 *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#EEF4F9;color:var(--ink)}
 header{background:var(--green);color:white;padding:calc(14px + env(safe-area-inset-top)) 18px 15px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000}
 header h1{margin:0;font-size:24px}.eyebrow{font-size:11px;letter-spacing:2px;color:#A8C2DA;font-weight:700}.round{border:1px solid #4A6B94;background:#ffffff12;color:white;width:42px;height:42px;border-radius:50%;font-size:24px}
-main{max-width:850px;margin:auto;padding:16px}.hero{background:linear-gradient(135deg,var(--green2),var(--green));color:white;padding:22px;border-radius:20px;box-shadow:0 8px 25px #13263C22}
-.hero h2{font-size:25px;margin:0 0 7px}.hero p{margin:0 0 17px;color:#C6D8E8}.searchrow{display:flex;gap:8px}.searchrow input{flex:1;border:0;padding:14px;border-radius:12px;font-size:16px;min-width:0}.searchrow button,#searchBtn{border:0;background:var(--gold);padding:0 17px;border-radius:12px;font-weight:800}
-.quick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.quick button{background:white;border:1px solid var(--line);border-radius:16px;text-align:left;padding:15px}.quick b,.quick span{display:block}.quick span{font-size:12px;color:var(--muted);margin-top:4px}
-.filters{display:flex;gap:8px;margin-bottom:12px}.filters select{flex:1;background:white;border:1px solid var(--line);border-radius:12px;padding:11px;font-size:14px}
+main{max-width:850px;margin:auto;padding:16px}/* The hero is a raised card now, with the app's own trout artwork sunk into
+   the corner at low opacity. Reusing icons/header-mark.png rather than adding
+   a photo keeps this to zero new bytes and keeps the app offline-first: a
+   bundled mark cannot fail to load at a lake. */
+.hero{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--green2),var(--green));
+ color:white;padding:24px 22px 22px;border-radius:24px;box-shadow:0 14px 34px #0B182B33;margin-bottom:4px}
+.hero::after{content:"";position:absolute;right:-26px;bottom:-30px;width:190px;height:180px;
+ background:url(icons/header-mark.png) no-repeat center/contain;opacity:.13;pointer-events:none}
+.hero>*{position:relative;z-index:1}
+.hero h2{font-size:1.6rem;line-height:1.15;margin-bottom:6px}
+.hero h2{font-size:25px;margin:0 0 7px}.hero p{margin:0 0 17px;color:#C6D8E8}.searchrow{display:flex;gap:10px;margin-top:14px}
+.searchrow input{border-radius:14px;padding:15px 16px;font-size:15px;border:0}
+.searchrow button{border-radius:14px;padding:0 22px;font-weight:800;font-size:15px}
+.searchAlt{margin-top:10px}
+.searchAlt button{border-radius:14px;padding:13px 20px;font-weight:800}.searchrow input{flex:1;border:0;padding:14px;border-radius:12px;font-size:16px;min-width:0}.searchrow button,#searchBtn{border:0;background:var(--gold);padding:0 17px;border-radius:12px;font-weight:800}
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.quick{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+.quick button{background:white;border:1px solid var(--line);border-radius:20px;text-align:left;
+ padding:17px 16px;box-shadow:0 4px 14px #13263C10}
+/* The icon sits in a filled rounded tile, as in the mockup, rather than
+   floating loose against the card. */
+.quick button .qi{display:flex;align-items:center;justify-content:center;width:42px;height:42px;
+ border-radius:13px;background:var(--green);color:#fff;margin-bottom:11px}
+.quick button .qi svg{width:22px;height:22px}
+.quick button b{display:block;font-size:1rem;line-height:1.2;margin-bottom:3px}.quick b,.quick span{display:block}.quick span{font-size:12px;color:var(--muted);margin-top:4px}
+.filters{display:flex;gap:10px;margin-bottom:12px}/* Pills: the icon is a sibling of the <select>, absolutely placed, because a
+   <select> cannot contain markup. Left padding on the select makes room. */
+.fpill{position:relative;flex:1;display:flex}
+.fpill .fi{position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--green);opacity:.85}
+.fpill .fi svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.filters select{flex:1;width:100%;background:white;border:1px solid var(--line);
+ border-radius:16px;padding:14px 12px 14px 37px;font-size:14px;font-weight:600;
+ box-shadow:0 2px 8px #13263C0D}
 .mapcard{background:white;padding:5px;border-radius:18px;box-shadow:0 3px 12px #0000000b}.mapcard #map{height:310px;border-radius:14px}
 .sectiontitle{display:flex;justify-content:space-between;align-items:center;margin:20px 2px 8px}.sectiontitle h3{margin:0}.sectiontitle span{font-size:13px;color:var(--muted)}
 .results{display:grid;gap:10px}.record{background:white;border:1px solid var(--line);border-radius:16px;padding:15px;cursor:pointer}.topline{display:flex;justify-content:space-between;gap:10px}.record h4{font-size:18px;margin:0 0 3px}.pill{white-space:nowrap;background:#E7EFF7;color:var(--green);font-weight:800;font-size:12px;border-radius:20px;padding:6px 9px;height:max-content}.species{font-weight:700;color:var(--green2)}.meta{display:flex;flex-wrap:wrap;gap:7px 14px;margin-top:10px;font-size:13px;color:var(--muted)}
@@ -19,7 +47,10 @@ footer{text-align:center;padding:25px 15px 40px;color:var(--muted);font-size:12p
 .historyrow{display:flex;justify-content:space-between;gap:15px;padding:12px 13px;border-bottom:1px solid var(--line);background:#fff}
 .historyrow:last-child{border-bottom:0}.historyrow span{display:block;font-size:12px;color:var(--muted);margin-top:3px}.historyright{text-align:right}
 
-body{padding-bottom:76px}.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}.clearbtn{background:white;border:1px solid var(--line);border-radius:12px;font-weight:700;color:var(--green)}
+body{padding-bottom:76px}.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}.clearbtn{display:flex;align-items:center;justify-content:center;gap:7px;background:white;
+ border:1px solid var(--line);border-radius:16px;font-weight:800;color:var(--green);
+ padding:14px 16px;box-shadow:0 2px 8px #13263C0D}
+.clearbtn .fi svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round}
 .cardactions{display:flex;align-items:center;gap:7px}.star,.bigstar{border:0;background:transparent;color:#8494A5;font-size:29px;line-height:1;cursor:pointer}.star.saved,.bigstar.saved{color:#C4941F}.bigstar{font-size:38px}
 .detailhead{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.detailhead h2{margin-bottom:5px}.empty{text-align:center;color:var(--muted);padding:28px}
 .bottomnav{position:fixed;bottom:0;left:0;right:0;height:calc(64px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:#fff;border-top:1px solid var(--line);display:flex;z-index:2000;box-shadow:0 -4px 18px #0000000d}
@@ -603,7 +634,15 @@ body.filtering .sectiontitle{margin-top:14px}
 
 /* The stocking table is a bundled snapshot, not a live feed. Say so plainly
    under the dashboard, the same way the lodging card names its source. */
-.dataAge{margin:-2px 16px 14px;font-size:.78rem;opacity:.6;text-align:center}
+.dataAge{display:flex;align-items:center;justify-content:center;gap:7px;
+ margin:12px 16px 14px;font-size:.8rem;opacity:.72;text-align:center}
+.dataAge .fi svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;
+ stroke-linecap:round;stroke-linejoin:round;color:var(--gold)}
+.searchHint{display:flex;align-items:flex-start;gap:9px}
+.searchHint .fi{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+ width:26px;height:26px;border-radius:9px;background:#FFFFFF1F;margin-top:1px}
+.searchHint .fi svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;
+ stroke-linecap:round;stroke-linejoin:round}
 
 /* --- Species plates (v2a) -------------------------------------------------
    A field-guide plate, not a photo dropped on a card. The illustration sits
@@ -650,7 +689,7 @@ body.filtering .sectiontitle{margin-top:14px}
 .eyebrow{font-size:10px;letter-spacing:2.4px;margin-bottom:3px}
 .headerActions{display:flex;gap:6px;flex:0 0 auto;align-items:center}
 .langSwitch{display:flex;gap:6px;flex:0 0 auto}
-.oslMark{height:120px;width:auto;flex:0 0 auto;display:block}
+.oslMark{height:150px;width:auto;flex:0 0 auto;display:block;margin:-8px -4px -10px 0}
 
 /* The wordmark is 28px. v2g set 24px, which fell to 22px under the narrow-
    phone rule — and 375pt is a live width, so on an iPhone X/11 Pro the app's
@@ -815,7 +854,12 @@ body.filtering .sectiontitle{margin-top:14px}
    --------------------------------------------------------------------------- */
 .filters.wideline{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
 .filters.wideline .inlinecheck{flex:0 1 auto}
-.sortField{margin-left:auto}
+/* Sort gets its own full-width card so the label and the value read as one
+   row, rather than a select crammed against the right edge. */
+.sortField{margin-left:0;flex:1;display:flex;align-items:center;gap:12px;background:white;
+ border:1px solid var(--line);border-radius:16px;padding:6px 14px;box-shadow:0 2px 8px #13263C0D}
+.sortField>span{flex:0 0 auto;font-weight:700;color:var(--green);font-size:.86rem}
+.sortField select{flex:1;border:0;background:transparent;font-weight:800;padding:11px 0;font-size:14px}
 .sortField select{min-height:38px}
 .filters.wideline .filterHint{flex:1 0 100%;margin:2px 2px 0}
 @media(max-width:520px){
