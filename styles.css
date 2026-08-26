@@ -978,7 +978,7 @@ body.filtering .searchAlt{display:flex}
 /* #071426 is not a design choice: it is the sampled mean of the artwork's own
    edge pixels, so the image's rectangle disappears into the page instead of
    sitting on it. Resample if the artwork is ever regenerated. */
-#splash{position:fixed;inset:0;z-index:9000;background:#071426;
+#splash{position:fixed;inset:0;z-index:9000;background:radial-gradient(circle at 50% 34%,#0755B8 0%,#043B89 38%,#03255E 70%,#021B49 100%);
  display:flex;flex-direction:column;align-items:center;justify-content:center;
  gap:18px;padding:28px;transition:opacity .45s ease}
 /* The artwork now carries its own caption and progress bar, so it is the whole
@@ -1037,7 +1037,7 @@ body.filtering .searchAlt{display:flex}
 :root{--accent:#7ED321;--accent-dark:#4EA817;--water:#008BD0;--line:#C7E4F4}
 body{background:linear-gradient(180deg,#04A9EA 0,#0A9FE0 44%,#F1FAFF 100%) fixed;color:#071B38}
 header{background:
- linear-gradient(180deg,rgba(0,55,133,.10),rgba(0,39,92,.24)),
+ linear-gradient(180deg,rgba(0,35,90,.02),rgba(0,30,70,.06)),
  url('icons/header-lake.jpg') center/cover no-repeat;
  box-shadow:0 4px 16px #003E7C55}
 .headerTop{min-height:176px;padding:14px 28px 10px;align-items:center}
@@ -1047,7 +1047,7 @@ header{background:
 .headerActions .round,.langSwitch button{width:46px;height:46px;min-width:46px;border-radius:13px;border:1px solid #83BDEB;background:#062A5CCC;color:#fff;box-shadow:0 3px 7px #001D46AA}
 .langSwitch button{font-size:15px}.langSwitch button.active{background:linear-gradient(#8DDD2B,#58B718);border-color:#A6F044;color:#fff}
 .headerActions{gap:8px}.langSwitch{gap:8px}.round svg{width:21px;height:21px}
-.tabstrip{background:#04346FCC;border-top:1px solid #4B91C888;backdrop-filter:blur(3px)}
+.tabstrip{background:#04346F;border-top:1px solid #4B91C888;backdrop-filter:none}
 .tabs{justify-content:space-between;padding:0 28px}.tabs button{font-size:16px;color:#fff;padding:16px 10px 12px;text-shadow:0 2px 3px #001E46}.tabs button.active{color:#8BDD31;border-bottom-color:#8BDD31}
 .tabfade{display:none}
 main{padding:28px 28px 48px;max-width:850px}
