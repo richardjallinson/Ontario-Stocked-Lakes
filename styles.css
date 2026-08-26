@@ -1029,3 +1029,43 @@ body.filtering .searchAlt{display:flex}
 .offlineNote{background:#13263C;border:1px solid #2C4A6E;color:#E8C77A;
  border-radius:14px;padding:14px 16px;margin:14px 0 4px;font-size:13px;
  line-height:1.55;font-weight:700;text-align:center}
+
+/* ========================================================================== 
+   v3z visual rebuild — matches the approved bright lake concept.
+   Functional markup and data behavior are unchanged from v3y.
+   ========================================================================== */
+:root{--accent:#7ED321;--accent-dark:#4EA817;--water:#008BD0;--line:#C7E4F4}
+body{background:linear-gradient(180deg,#04A9EA 0,#0A9FE0 44%,#F1FAFF 100%) fixed;color:#071B38}
+header{background:
+ linear-gradient(180deg,rgba(0,55,133,.10),rgba(0,39,92,.24)),
+ url('icons/header-lake.jpg') center/cover no-repeat;
+ box-shadow:0 4px 16px #003E7C55}
+.headerTop{min-height:176px;padding:14px 28px 10px;align-items:center}
+.headerBrand h1{font-size:32px;color:#fff;text-shadow:0 3px 5px #001A3D99;letter-spacing:-.4px}
+.eyebrow{font-size:11px;color:#8BDD31;text-shadow:0 2px 4px #00204A;letter-spacing:3.2px}
+.oslMark{height:150px;filter:drop-shadow(0 4px 4px #00162D88)}
+.headerActions .round,.langSwitch button{width:46px;height:46px;min-width:46px;border-radius:13px;border:1px solid #83BDEB;background:#062A5CCC;color:#fff;box-shadow:0 3px 7px #001D46AA}
+.langSwitch button{font-size:15px}.langSwitch button.active{background:linear-gradient(#8DDD2B,#58B718);border-color:#A6F044;color:#fff}
+.headerActions{gap:8px}.langSwitch{gap:8px}.round svg{width:21px;height:21px}
+.tabstrip{background:#04346FCC;border-top:1px solid #4B91C888;backdrop-filter:blur(3px)}
+.tabs{justify-content:space-between;padding:0 28px}.tabs button{font-size:16px;color:#fff;padding:16px 10px 12px;text-shadow:0 2px 3px #001E46}.tabs button.active{color:#8BDD31;border-bottom-color:#8BDD31}
+.tabfade{display:none}
+main{padding:28px 28px 48px;max-width:850px}
+.hero{border:1px solid #7FD5F3;border-radius:25px;padding:28px 32px 25px;background:
+ linear-gradient(90deg,rgba(3,51,112,.97) 0%,rgba(1,67,125,.91) 53%,rgba(0,89,133,.58) 100%),
+ url('icons/hero-lake.jpg') right center/58% 100% no-repeat;
+ box-shadow:0 9px 20px #00386F66;margin-bottom:12px}
+.hero::after{display:none}.hero::before{opacity:.65}.hero h2{font-size:31px;line-height:1.05;color:#fff;text-shadow:0 2px 3px #001B3D;margin-bottom:6px}.hero p{font-size:16px;color:#fff}
+.searchrow{gap:12px}.searchrow input{min-height:58px;border-radius:16px;padding:16px 20px;font-size:17px;box-shadow:inset 0 0 0 1px #DCEAF4}.searchrow button,#searchBtn{min-width:116px;border-radius:15px;background:linear-gradient(#8BDD31,#70C91F);font-size:17px;color:#071B38;box-shadow:0 4px 9px #002A5655}
+.searchAlt button{background:linear-gradient(#70C72A,#54AA1E);color:#fff;border:0;min-height:48px;border-radius:13px;padding:12px 22px;font-size:16px;box-shadow:0 4px 9px #002A5655}
+.hero p.searchHint{font-size:14px;color:#fff;margin-top:16px}.searchHint .fi{background:#164A80;color:#fff;border-radius:10px;width:35px;height:35px}
+.dataAge{color:#fff;font-size:14px;text-shadow:0 1px 2px #00649D;margin:12px 0 18px}.dataAge .fi{color:#D7F143}
+.quick{gap:14px;margin:0 0 16px}.quick button{border-radius:23px;border:1px solid #C9E4EF;padding:18px 20px;background:linear-gradient(145deg,#F8FFF0,#E8FBD9);box-shadow:0 5px 14px #00679A33}.quick button:nth-of-type(2){background:linear-gradient(145deg,#fff,#E8F7FF)}
+.quick button .qi{width:50px;height:50px;border-radius:14px;background:linear-gradient(#85DD2E,#4DAE18);box-shadow:0 4px 8px #3B8C1744}.quick button:nth-of-type(2) .qi{background:linear-gradient(#1496D2,#0872B4)}.quick button b{font-size:18px;color:#071B38}.quick button span{font-size:14px;color:#3F6076}
+.filters{gap:12px}.filters select,.clearbtn,.inlinefield{border-radius:15px;border-color:#BFDDEC;min-height:52px;background:#fff;font-size:15px;box-shadow:0 4px 10px #00679A25}.fpill .fi{color:#1A9D42}.clearbtn{color:#064B80;background:#E9F9FF}.wideline{background:#fff;border:1px solid #BFDDEC;border-radius:15px;padding:0;box-shadow:0 4px 10px #00679A25}.wideline .inlinefield{border:0;box-shadow:none;width:100%;justify-content:space-between}.sectiontitle h3{color:#fff;text-shadow:0 2px 3px #006197}.sectiontitle span{color:#EAF8FF}.record,.mapcard,.infoCard,.accessbar{box-shadow:0 5px 14px #00679A25}
+@media(max-width:520px){
+ .headerTop{min-height:168px;padding:12px 18px 8px}.headerBrand h1{font-size:28px}.oslMark{height:132px}
+ .headerActions .round,.langSwitch button{width:42px;height:42px;min-width:42px}.tabs{padding:0 18px}.tabs button{font-size:14px;padding-left:6px;padding-right:6px}
+ main{padding:18px 18px 40px}.hero{padding:24px 20px}.hero h2{font-size:27px}.hero p{font-size:15px}.searchrow input{font-size:16px}.searchrow button,#searchBtn{min-width:105px}.quick button{padding:16px}.quick button b{font-size:17px}
+}
+@media(max-width:389px){.oslMark{height:110px}.headerBrand h1{font-size:25px}.headerActions .round,.langSwitch button{width:38px;height:38px;min-width:38px}.tabs button{font-size:13px}.hero h2{font-size:25px}}
