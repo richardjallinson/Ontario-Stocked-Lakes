@@ -324,18 +324,30 @@ img.onboardIcon{width:60px;height:60px;border-radius:17px;display:block;
    degrades to exactly the old header rather than to unreadable text. */
 header{display:block;padding:calc(12px + env(safe-area-inset-top)) 0 0;box-shadow:0 2px 14px #0A192B33;
  position:relative;background:var(--green);isolation:isolate}
+/* Spans the whole header; the tab strip's own solid background is what stops
+   it visually. That is deliberate — an explicit bottom offset here would be a
+   guess at the tab strip's height, which changes with the text-size setting. */
 header::before{content:"";position:absolute;inset:0;z-index:-1;
  background-image:linear-gradient(100deg,#071426E0 0%,#071426B5 38%,#0714265E 66%,#07142626 100%),
                   url(img/header-lake.webp);
  background-size:cover,cover;background-position:center,center 38%;background-repeat:no-repeat,no-repeat}
 .headerTop{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px 12px}
 .headerBrand h1{font-size:23px;margin:0;letter-spacing:-.5px;line-height:1.05}
-.wmAccent{color:var(--accent)}
+/* v4a: scoped and reset deliberately. ".headerBrand span" already existed for
+   the small grey subtitle line (12px, #A8C2DA) and beats a bare .wmAccent on
+   specificity, so the first cut of this rendered "Lakes" as small grey body
+   text on its own line. Every inherited property is overridden explicitly. */
+.headerBrand h1 .wmAccent{display:inline;color:var(--accent);font-size:inherit;
+ font-weight:inherit;line-height:inherit;margin:0;max-width:none;overflow:visible;
+ text-overflow:clip;white-space:inherit}
 .eyebrow{font-size:10px;letter-spacing:2.4px;color:#7FA0BE;font-weight:800;margin-bottom:2px}
 .headerActions{display:flex;gap:8px;flex:0 0 auto}
 .round{width:38px;height:38px;font-size:19px;border-color:#33517A;background:#ffffff14}
 
-.tabstrip{position:relative;border-top:1px solid #ffffff14}
+/* Solid navy, not translucent: this band is what stops the photo, and the
+   tab labels need a predictable surface rather than whatever pixels of lake
+   happen to be behind them. */
+.tabstrip{position:relative;border-top:1px solid #ffffff14;background:var(--green);z-index:1}
 .tabs{display:flex;gap:0;padding:0 16px;overflow-x:auto;overflow-y:hidden;
  scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
 .tabs::-webkit-scrollbar{display:none;height:0}
@@ -456,7 +468,9 @@ h1,h2,h3,.hero h2,.headerBrand h1,.onboardCard h2,.record h4,.detailhead h2,
 .dashboard strong{color:var(--green)}
 .searchrow button,#searchBtn{color:#13263C;font-weight:800}
 .runfind,.primaryModalAction,.directions{background:linear-gradient(150deg,#1D3A57,#13263C)}
-.tabs button.active{color:#4CCB84;border-bottom-color:var(--accent)}
+.tabs button.active{color:#4CCB84;border-bottom-color:var(--accent);border-bottom-width:3px}
+.tabs button.active .ti{color:#4CCB84}
+.tabs button{color:#C6D8E8}
 .tabfade{background:linear-gradient(to right,transparent,#13263C)}
 .langSwitch button.active{color:var(--green);background:var(--accent);border-color:var(--accent)}
 :focus-visible{outline-color:#C4941F}
@@ -675,7 +689,7 @@ body.filtering .sectiontitle{margin-top:14px}
 .dataAge{display:flex;align-items:center;justify-content:center;gap:7px;
  margin:12px 16px 14px;font-size:.8rem;opacity:.72;text-align:center}
 .dataAge .fi svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;
- stroke-linecap:round;stroke-linejoin:round;color:var(--gold)}
+ stroke-linecap:round;stroke-linejoin:round;color:var(--accent-dark)}
 .searchHint{display:flex;align-items:flex-start;gap:9px}
 .searchHint .fi{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
  width:26px;height:26px;border-radius:9px;background:#FFFFFF1F;margin-top:1px}
@@ -725,9 +739,21 @@ body.filtering .sectiontitle{margin-top:14px}
 .headerTop{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .hCol{display:flex;flex-direction:column;gap:8px;min-width:0;flex:1 1 auto}
 .eyebrow{font-size:10px;letter-spacing:2.4px;margin-bottom:3px}
-.headerActions{display:flex;gap:6px;flex:0 0 auto;align-items:center}
-.langSwitch{display:flex;gap:6px;flex:0 0 auto}
+.headerActions{display:flex;gap:6px;flex:0 0 auto;align-items:flex-start}
+.langSwitch{display:flex;gap:6px;flex:0 0 auto;align-items:flex-start}
+/* v4a: each control is a button plus a caption beneath, as in the reference.
+   The caption is decorative — the buttons keep their aria-labels, so a screen
+   reader is not made to read the name twice. */
+.hAct{display:flex;flex-direction:column;align-items:center;gap:3px}
+.hCap{font-style:normal;font-size:10px;font-weight:700;color:#DDE9F5;
+ text-shadow:0 1px 3px #04101FCC;white-space:nowrap;letter-spacing:.1px}
 .oslMark{height:150px;width:auto;flex:0 0 auto;display:block;margin:-8px -4px -10px 0}
+
+/* v4a: the wordmark now sits on sky rather than flat navy, so it carries a
+   shadow. Without it the descenders disappear into the brightest clouds even
+   with the scrim, which the first cut proved on a real phone. */
+.headerBrand h1{text-shadow:0 2px 10px #04101FB3,0 1px 3px #04101F99}
+.eyebrow{text-shadow:0 1px 4px #04101FB3}
 
 /* The wordmark is 28px. v2g set 24px, which fell to 22px under the narrow-
    phone rule — and 375pt is a live width, so on an iPhone X/11 Pro the app's

@@ -52,6 +52,8 @@ const I18N={
   viewCurrentRegs:"View Current FMZ {zone} Regulations",
   checkRegsFor:"Check current FMZ {zone} regulations",
   illustrations:"Fish illustrations",
+  capSettings:"Settings",
+  capHelp:"Help",
   accUnnamed:"unnamed site",
   nearestAccess:"Nearest fishing access",
   accPoint:"Access point",
@@ -298,6 +300,8 @@ const I18N={
   viewCurrentRegs:"Voir les règlements actuels de la ZGP {zone}",
   checkRegsFor:"Vérifiez les règlements actuels de la ZGP {zone}",
   illustrations:"Illustrations de poissons",
+  capSettings:"Réglages",
+  capHelp:"Aide",
   accUnnamed:"site sans nom",
   nearestAccess:"Accès de pêche le plus proche",
   accPoint:"Point d’accès",
@@ -540,7 +544,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3z";
+const APP_VERSION="v4a";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
