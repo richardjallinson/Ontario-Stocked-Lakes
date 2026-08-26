@@ -22,6 +22,7 @@ const SHELL_FILES = [
   "./vendor/leaflet/leaflet.css",
   "./vendor/leaflet/leaflet.js",
   "./icons/header-mark.png",
+  "./icons/header-sky.jpg",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./privacy.html",
