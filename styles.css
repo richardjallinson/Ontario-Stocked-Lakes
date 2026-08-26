@@ -463,12 +463,29 @@ h1,h2,h3,.hero h2,.headerBrand h1,.onboardCard h2,.record h4,.detailhead h2,
    gradient kept as the bottom layer so a failed decode still degrades to the
    old card rather than to a white box. */
 .hero{position:relative;overflow:hidden;
- /* v4e: the lake photo came off this card deliberately. Header and card were
-    two crops of the same scene stacked with a thin navy strip between them —
-    one wallpaper interrupted, not two designed surfaces, and the body text
-    was fighting trees for legibility. The header carries the photograph; this
-    carries the controls. It also returns 126 KB to the bundle. */
- background:linear-gradient(150deg,#1D3A57,#13263C)}
+ /* v4f: water and rock as faint texture, not a second photograph.
+    v4e removed the full-strength plate from this card because two crops of
+    one lake stacked read as interrupted wallpaper and the body text fought
+    trees. Richard wants the card to feel like fishing rather than a plain
+    panel, so the plate comes back at roughly a tenth of its strength: enough
+    to catch the light and suggest water, not enough to compete with the
+    controls sitting on it.
+    It reuses img/header-lake.webp — already bundled and already in the
+    service worker's shell — so this costs zero new bytes. The position is
+    pinned bottom-right, which is the shoreline-and-rocks corner of that crop;
+    that is the part worth showing. The gradient over it is deliberately
+    heavier than the header's for the same reason it always was: this card
+    carries three lines of body text, the header carries two words. */
+ /* Strengths compared side by side offscreen: at F2/EE/EB the texture was
+    invisible — all cost, no effect. E0/DA/D6 shows the water and the rocks
+    while white body text still measures 8.5:1 at its worst and the muted
+    subtitle 5.8:1, both well clear of the 4.5 floor. */
+ background-image:linear-gradient(155deg,#1D3A57E0 0%,#1B3550DA 45%,#13263CD6 100%),
+                  url(img/header-lake.webp),
+                  linear-gradient(150deg,#1D3A57,#13263C);
+ background-size:cover,190% auto,cover;
+ background-position:center,right 78%,center;
+ background-repeat:no-repeat,no-repeat,no-repeat}
 .hero::before{content:"";position:absolute;right:-70px;top:-45px;width:280px;height:200px;
  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 280 200'%3E%3Cg fill='none' stroke='%237FA0BE' stroke-opacity='.28'%3E%3Cellipse cx='140' cy='100' rx='130' ry='86' stroke-width='1.4'/%3E%3Cellipse cx='140' cy='100' rx='96' ry='62' stroke-width='1.4'/%3E%3Cellipse cx='140' cy='100' rx='64' ry='40' stroke-width='1.4'/%3E%3Cellipse cx='140' cy='100' rx='34' ry='20' stroke-width='1.4'/%3E%3C/g%3E%3C/svg%3E");
  background-repeat:no-repeat;pointer-events:none}
