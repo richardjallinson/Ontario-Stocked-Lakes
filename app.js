@@ -64,7 +64,7 @@ const I18N={
   accessNotBuilt:"Access-point data has not been built into this copy of the app yet.",
   accessNote:"Ontario Fishing Access Point data. Sites change — check locally before towing a boat.",
   offlineNote:"Don’t completely close the app if you are expecting low or no cell reception — it keeps everything you need for the lake ready to go.",
-  splashWarning:"Ontario Stocked Lakes. Don’t completely close the app if you are expecting low or no cell reception. Loading lakes…",
+  splashWarning:"Ontario Stocked Lakes. Loading lakes…",
   loadingSub:"Fetching Ontario's stocking records and lake index. Search will be ready in a moment.",
   splashLoading:"Loading Ontario lakes…",
   emptyWheelsHid:"{n} lakes match your search, but the {what} filter is hiding them.",
@@ -310,7 +310,7 @@ const I18N={
   accessNotBuilt:"Les données des points d’accès ne sont pas encore intégrées à cette version de l’application.",
   accessNote:"Données des points d’accès de pêche de l’Ontario. Les sites changent — vérifiez sur place avant de remorquer un bateau.",
   offlineNote:"Ne fermez pas complètement l’application si vous vous attendez à une réception faible ou nulle — elle garde tout ce qu’il vous faut pour le lac à portée de main.",
-  splashWarning:"Ontario Stocked Lakes. Ne fermez pas complètement l’application si vous vous attendez à une réception faible ou nulle. Chargement des lacs…",
+  splashWarning:"Ontario Stocked Lakes. Chargement des lacs…",
   loadingSub:"Récupération des données d’ensemencement et de l’index des lacs de l’Ontario. La recherche sera prête dans un instant.",
   splashLoading:"Chargement des lacs de l'Ontario…",
   emptyWheelsHid:"{n} lacs correspondent à votre recherche, mais le filtre {what} les masque.",
@@ -540,7 +540,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3t";
+const APP_VERSION="v3v";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -1163,6 +1163,12 @@ const splashShownAt=Date.now();
 document.addEventListener("DOMContentLoaded",()=>{
  const v=document.getElementById("splashVer");
  if(v)v.textContent=APP_VERSION;
+ // The bar fills once, left to right, and reaches 100% exactly as the splash
+ // ends. The duration comes from SPLASH_MIN_MS rather than being repeated in
+ // the CSS — the suite has caught this kind of paired constant drifting three
+ // times already, so this pair is kept from existing at all.
+ const bar=document.querySelector("#splash .splashBar i");
+ if(bar)bar.style.animationDuration=SPLASH_MIN_MS+"ms";
 });
 let splashHiding=false;
 function hideSplash(){

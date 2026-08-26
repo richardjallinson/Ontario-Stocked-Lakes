@@ -929,7 +929,10 @@ body.filtering .searchAlt{display:flex}
    caption underneath can actually change ("Loading" is a lie the moment
    loading fails) and the bar can actually move.
    --------------------------------------------------------------------------- */
-#splash{position:fixed;inset:0;z-index:9000;background:#0E1B2E;
+/* #071426 is not a design choice: it is the sampled mean of the artwork's own
+   edge pixels, so the image's rectangle disappears into the page instead of
+   sitting on it. Resample if the artwork is ever regenerated. */
+#splash{position:fixed;inset:0;z-index:9000;background:#071426;
  display:flex;flex-direction:column;align-items:center;justify-content:center;
  gap:18px;padding:28px;transition:opacity .45s ease}
 /* The artwork now carries its own caption and progress bar, so it is the whole
@@ -942,10 +945,12 @@ body.filtering .searchAlt{display:flex}
    than a stray element beneath it. */
 #splash .splashBar{width:min(78vw,400px);height:8px;border-radius:4px;margin-top:-6px;
  background:#ffffff22;overflow:hidden}
-#splash .splashBar i{display:block;height:100%;width:34%;border-radius:4px;
- background:#3F8CFF;animation:splashSlide 1.15s ease-in-out infinite alternate}
+#splash .splashBar i{display:block;height:100%;width:100%;border-radius:4px;
+ background:#3F8CFF;transform:scaleX(0);transform-origin:left;
+ animation:splashFill linear forwards}
+@keyframes splashFill{to{transform:scaleX(1)}}
 @keyframes splashSlide{from{transform:translateX(-30%)}to{transform:translateX(220%)}}
-@media (prefers-reduced-motion: reduce){#splash .splashBar i{animation:none;width:100%}}
+@media (prefers-reduced-motion: reduce){#splash .splashBar i{animation:none;transform:scaleX(1)}}
 #splash.done{opacity:0;pointer-events:none}
 
 /* The same progress bar, reused in the results area while the datasets land.
