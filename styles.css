@@ -962,3 +962,11 @@ body.filtering .searchAlt{display:flex}
    actually running when a stale cache makes an update look like it failed. */
 .splashVer{position:absolute;right:14px;bottom:12px;font-size:11px;
  color:#ffffff5c;letter-spacing:.04em;font-weight:700}
+
+/* Out-of-season regulations. Red rather than amber: an out-of-date season or
+   limit can put someone on the wrong side of the law, which is a different
+   class of problem from a slow-loading lake index. */
+.staleRegs{background:#FDF1F0;border:1px solid #E0B4B1;color:#7E2A26;
+ font-size:13px;line-height:1.55;font-weight:700;padding:13px 15px;
+ margin:10px 0;cursor:default}
+.zoneAction.stale{border-color:#E0B4B1;background:#FDF1F0;color:#7E2A26}

@@ -48,6 +48,9 @@ const I18N={
   fishStocked:"fish stocked",kmAway:"km away",records:"records",
   explore:"Explore",nearMe:"Near Me",sections:"Sections",
   plateNote:"Illustration \u2014 not for identification",
+  regsStale:"These regulations are Ontario's {year} rules and {now} rules are now in force. Treat every season, limit and size below as out of date and check Ontario's current summary before you fish.",
+  viewCurrentRegs:"View Current FMZ {zone} Regulations",
+  checkRegsFor:"Check current FMZ {zone} regulations",
   illustrations:"Fish illustrations",
   splashWarning:"Ontario Stocked Lakes. Don’t completely close the app if you are expecting low or no cell reception. Loading lakes…",
   loadingSub:"Fetching Ontario's stocking records and lake index. Search will be ready in a moment.",
@@ -183,7 +186,7 @@ const I18N={
   onboardText:"Search by distance, species and stocking history, then check regulations, access, weather and eating advice before you go.",
   onboard1:"Choose a distance and species",onboard2:"Compare stocked lakes",onboard3:"Open a lake and verify the current rules",
   helpTitle:"Help & About",helpFind:"Find Fish",helpFindText:"Use your location, distance, species, stocking year and quantity filters to find stocked lakes.",
-  helpRules:"Regulations",helpRulesText:"The app imports Ontario's 2026 open regulation data, but current official Ontario rules remain the final verification source.",
+  helpRules:"Regulations",helpRulesText:"The app imports Ontario's open regulation data for the season named on the Regulations tab, and warns you when that season has passed. Current official Ontario rules remain the final verification source.",
   helpTrips:"Trips & catches",helpTripsText:"Trip notes and catch logs are stored on this device. Save a backup below before you reset or change devices.",
   helpWeather:"Weather",helpWeatherText:"Weather alerts come from Environment and Climate Change Canada. Weather information is for trip planning and safety, not a bite prediction.",
   privacy:"Privacy",privacyText:"Location is requested only when you use a location feature, and is never sent anywhere. Your most recent position is kept on this device for two weeks so distances still show next time. Trips and catches stay on this device.",
@@ -200,7 +203,7 @@ const I18N={
   statLakesLbl:"Stocked lakes",statRecordsLbl:"Stocking records",statSpeciesLbl:"Species",statLatestLbl:"Latest year",
   recentlyStocked:"Recently Stocked",recentlyStockedSub:"Newest records first",
   recentNear:"Recent Near Me",recentNearSub:"Newest stocked lakes close to you",
-  regs2026:"2026 Regulations",regs2026Sub:"Official Ontario fishing rules",
+  regs2026:"Fishing Regulations",regs2026Sub:"Official Ontario fishing rules",
   fishOnlineSub:"Government lake information",fishOnlineSub2:"Government lake information and maps",
   lakesNearYou:"Lakes near you",sortedByDrive:"Sorted by how far you'd have to drive.",within:"Within",
   myLakesSub:"Lakes you've saved. Tap \u2606 on any lake to keep it here.",filterSavedPh:"Filter your saved lakes",
@@ -217,7 +220,7 @@ const I18N={
   lakeMap:"Lake map",baseMap:"Map",baseTopo:"Topo",basePlain:"Plain",tapMarker:"Tap a marker for details",loading:"Loading\u2026",
   officialSources:"Official Ontario sources",
   regsSummaryNote:"Regulations in this app are a summary. These are the authoritative sources \u2014 open them before you fish.",
-  regsSummaryTitle:"2026 Fishing Regulations Summary",regsSummarySub:"Seasons, limits and slot sizes by zone",
+  regsSummaryTitle:"Fishing Regulations Summary",regsSummarySub:"Seasons, limits and slot sizes by zone",
   licences:"Fishing licences",licencesSub:"Buy or renew an Outdoors Card and licence",
   eatingGuide:"Guide to Eating Ontario Fish",eatingGuideSub:"Consumption advisories by waterbody",
   ecWeather:"Environment Canada weather",ecWeatherSub:"Forecasts and marine warnings",
@@ -279,6 +282,9 @@ const I18N={
   fishStocked:"poissons ensemenc\u00e9s",kmAway:"km",records:"enregistrements",
   explore:"Explorer",nearMe:"Pr\u00e8s de moi",sections:"Sections",
   plateNote:"Illustration \u2014 non destin\u00e9e \u00e0 l'identification",
+  regsStale:"Ces règlements sont ceux de {year} et les règles de {now} sont maintenant en vigueur. Considérez chaque saison, limite et taille ci-dessous comme périmée et vérifiez le résumé actuel de l’Ontario avant de pêcher.",
+  viewCurrentRegs:"Voir les règlements actuels de la ZGP {zone}",
+  checkRegsFor:"Vérifiez les règlements actuels de la ZGP {zone}",
   illustrations:"Illustrations de poissons",
   splashWarning:"Ontario Stocked Lakes. Ne fermez pas complètement l’application si vous vous attendez à une réception faible ou nulle. Chargement des lacs…",
   loadingSub:"Récupération des données d’ensemencement et de l’index des lacs de l’Ontario. La recherche sera prête dans un instant.",
@@ -414,7 +420,7 @@ const I18N={
   onboardText:"Recherchez par distance, espèce et historique d’ensemencement, puis vérifiez les règlements, l’accès, la météo et les conseils de consommation.",
   onboard1:"Choisissez une distance et une espèce",onboard2:"Comparez les lacs ensemencés",onboard3:"Ouvrez un lac et vérifiez les règles actuelles",
   helpTitle:"Aide et à propos",helpFind:"Trouver du poisson",helpFindText:"Utilisez votre position, la distance, l’espèce, l’année et la quantité d’ensemencement pour trouver des lacs.",
-  helpRules:"Règlements",helpRulesText:"L’application importe les données ouvertes 2026 de l’Ontario, mais les règles officielles actuelles de l’Ontario demeurent la source finale de vérification.",
+  helpRules:"Règlements",helpRulesText:"L’application importe les données ouvertes de l’Ontario pour la saison indiquée dans l’onglet Règlements et vous avertit lorsque cette saison est passée. Les règles officielles actuelles de l’Ontario demeurent la source finale de vérification.",
   helpTrips:"Sorties et prises",helpTripsText:"Les notes de sortie et les prises sont enregistrées sur cet appareil. Enregistrez une copie ci-dessous avant de changer d’appareil.",
   helpWeather:"Météo",helpWeatherText:"Les alertes météo proviennent d’Environnement et Changement climatique Canada. Elles servent à la planification et à la sécurité, pas à prédire les prises.",
   privacy:"Confidentialité",privacyText:"La position est demandée seulement lorsque vous utilisez une fonction géolocalisée et n’est jamais transmise. Votre position la plus récente est conservée sur cet appareil pendant deux semaines afin que les distances s’affichent à la prochaine ouverture. Les sorties et les prises restent sur cet appareil.",
@@ -431,7 +437,7 @@ const I18N={
   statLakesLbl:"Lacs ensemenc\u00e9s",statRecordsLbl:"Ensemencements",statSpeciesLbl:"Esp\u00e8ces",statLatestLbl:"Derni\u00e8re ann\u00e9e",
   recentlyStocked:"Ensemenc\u00e9s r\u00e9cemment",recentlyStockedSub:"Les plus r\u00e9cents d'abord",
   recentNear:"R\u00e9cents pr\u00e8s de moi",recentNearSub:"Lacs ensemenc\u00e9s r\u00e9cemment, pr\u00e8s de vous",
-  regs2026:"R\u00e8glements 2026",regs2026Sub:"R\u00e8gles de p\u00eache officielles de l'Ontario",
+  regs2026:"R\u00e8glements de p\u00eache",regs2026Sub:"R\u00e8gles de p\u00eache officielles de l'Ontario",
   fishOnlineSub:"Renseignements gouvernementaux sur les lacs",fishOnlineSub2:"Renseignements et cartes du gouvernement",
   lakesNearYou:"Lacs pr\u00e8s de vous",sortedByDrive:"Tri\u00e9s selon la distance \u00e0 parcourir.",within:"Dans un rayon de",
   myLakesSub:"Vos lacs enregistr\u00e9s. Touchez \u2606 sur un lac pour l'ajouter ici.",filterSavedPh:"Filtrer vos lacs enregistr\u00e9s",
@@ -448,7 +454,7 @@ const I18N={
   lakeMap:"Carte du lac",baseMap:"Carte",baseTopo:"Topo",basePlain:"\u00c9pur\u00e9e",tapMarker:"Touchez un rep\u00e8re pour les d\u00e9tails",loading:"Chargement\u2026",
   officialSources:"Sources officielles de l'Ontario",
   regsSummaryNote:"Les r\u00e8glements pr\u00e9sent\u00e9s ici sont un r\u00e9sum\u00e9. Voici les sources officielles \u2014 consultez-les avant de p\u00eacher.",
-  regsSummaryTitle:"R\u00e9sum\u00e9 des r\u00e8glements de p\u00eache 2026",regsSummarySub:"Saisons, limites et fourchettes de taille par zone",
+  regsSummaryTitle:"R\u00e9sum\u00e9 des r\u00e8glements de p\u00eache",regsSummarySub:"Saisons, limites et fourchettes de taille par zone",
   licences:"Permis de p\u00eache",licencesSub:"Acheter ou renouveler une Carte Plein air et un permis",
   eatingGuide:"Guide de consommation du poisson de l'Ontario",eatingGuideSub:"Avis de consommation par plan d'eau",
   ecWeather:"M\u00e9t\u00e9o d'Environnement Canada",ecWeatherSub:"Pr\u00e9visions et avertissements maritimes",
@@ -484,6 +490,10 @@ function translateStaticUI(){
  // The splash image now carries an instruction, not just branding, so a
  // screen reader has to hear it — alt="" would make it invisible.
  document.querySelectorAll("[data-i18n-alt]").forEach(el=>{el.setAttribute("alt",t(el.dataset.i18nAlt))});
+ // The Regulations tab is static markup, so its banner is filled in here —
+ // this runs on load and on every language switch.
+ const rb=document.getElementById("regsStaleBanner");
+ if(rb)rb.innerHTML=regsStaleNote();
  document.querySelectorAll("[data-i18n-within]").forEach(el=>{
   el.textContent=t("withinKm").replace("{n}",el.dataset.i18nWithin);
  });
@@ -506,8 +516,39 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3l";
+const APP_VERSION="v3n";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
+/* Fishing access points.
+   ---------------------------------------------------------------------------
+   KNOWN ISSUE — this endpoint is not the government's. It sits on an
+   individual's ArcGIS Online account ("smaglio2"), which republished Ontario's
+   data. It works, but it can disappear without notice and nobody would be
+   told. The official source is layer 0 of the Fish ON-Line map service, on
+   ws.lioservices.lrc.gov.on.ca — the same host this app already uses for zone
+   boundaries:
+
+     https://ws.lioservices.lrc.gov.on.ca/arcgis4/rest/services/FishONLine/Fish_Online_Map/MapServer/0
+
+   The official layer also carries more than this one exposes: SITE_NAME,
+   FISHING_ACCESS_POINT_TYPE, PARKING_PRESENCE_FLG, ACCESSIBILITY_FLG,
+   USER_FEE_FLG, SITE_OWNERSHIP_TYPE, MATERIAL_TYPE and
+   SITE_LAST_VERIFICATION_DATE — enough to say "boat launch, parking, no fee,
+   last verified 2023" instead of just "Access point". MaxRecordCount is 2000,
+   so anything reading it in bulk must page with resultOffset, the way
+   tools/build-waterbodies.py already does.
+
+   Two jobs, in order of value:
+     1. Point ACCESS_API at the official URL above. Small change, removes a
+        dependency on a stranger's account.
+     2. Better still, bundle it. Access points are needed at the lake, which
+        is exactly where there is no signal — the same reasoning that removed
+        the access FILTER in v2u. A tools/build-access.py following the
+        build-nearby.py pattern would make the "Nearest fishing access" card
+        work offline.
+
+   GeoHub page, for the licence wording and a manual download if wanted:
+     https://geohub.lio.gov.on.ca/datasets/lio::fishing-access-point
+   --------------------------------------------------------------------------- */
 const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -2250,6 +2291,37 @@ function resolveVerifiedRule(l,species){
 }
 
 let fullRegs=null,fullRegsLoaded=false,zoneRuleIndex=new Map(),exceptionIndex=new Map(),additionalIndex=new Map();
+
+/* Regulations go stale on a schedule, and stale fishing rules are the one
+   thing in this app that could put someone on the wrong side of the law.
+
+   Ontario publishes a new summary each year and the new rules take effect on
+   1 January, so the bundled file is good through 31 December of its own year
+   and not a day after. Updating the data on 1 January is not enough on its
+   own: App Store review takes days, people update when they feel like it, and
+   an angler at a lake with no signal is running whatever copy was last
+   cached — which is offline-first working exactly as designed.
+
+   So the app checks rather than trusting the calendar. The year is read from
+   the file's own metadata rather than hardcoded, so regenerating the data is
+   all that is needed to clear the warning. */
+const REGS_YEAR_FALLBACK=2026;
+function regsYear(){
+ const y=fullRegs&&fullRegs.meta&&Number(fullRegs.meta.year);
+ return Number.isFinite(y)&&y>2000?y:REGS_YEAR_FALLBACK;
+}
+function regsStale(){
+ // Stale from 1 January of the year after the data's own year.
+ return new Date().getFullYear()>regsYear();
+}
+/* One banner, used everywhere regulations are shown. Empty while current, so
+   it costs nothing and cannot be forgotten in one place and not another. */
+function regsStaleNote(){
+ if(!regsStale())return "";
+ return `<div class="record staleRegs">${t("regsStale")
+   .replace("{year}",regsYear())
+   .replace("{now}",new Date().getFullYear())}</div>`;
+}
 async function loadFullRegulations(){
  try{
   fullRegs=await fetch("ontario-regulations-2026.json").then(r=>r.json());
@@ -2528,7 +2600,10 @@ function detail(l){
  <div class="detailMapWrap"><div id="detailMap" role="img" aria-label="${t('lakeMapLabel')}"></div></div>
  <div class="detailgrid">${l.stocked?`<div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div>`:`<div><small>Stocking</small><b>Not stocked</b></div>`}${userLoc?`<div><small>Distance from you</small><b>${esc(distanceLabel(l))}</b></div>`:""}${l.district?`<div><small>MNRF district</small><b>${esc(l.district)}</b></div>`:""}
  <div><small>Fisheries Management Zone</small><b>${l.fmz?`FMZ ${l.fmz}`:"Loading / unavailable"}</b></div><div><small>Waterbody ID</small><b>${esc(l.waterbodyId||"—")}</b></div></div>
- ${l.fmz?`<a class="zoneAction" target="_blank" rel="noopener" href="${REGS_BASE}${l.fmz}">View Current FMZ ${l.fmz} Regulations</a>`:""}
+ ${l.fmz?`<a class="zoneAction${regsStale()?" stale":""}" target="_blank" rel="noopener" href="${REGS_BASE}${l.fmz}">${
+   regsStale()?t("checkRegsFor").replace("{zone}",l.fmz)
+              :t("viewCurrentRegs").replace("{zone}",l.fmz)}</a>`:""}
+ ${regsStaleNote()}
 ${presentBlock(l)}
  <button class="tripStart" id="startTrip">Start a fishing trip</button>
  <div id="lake-rules" class="tabAnchor"></div>${fullRegCard(l,l.species[0]||"Fish")}
