@@ -52,6 +52,7 @@ const I18N={
   viewCurrentRegs:"View Current FMZ {zone} Regulations",
   checkRegsFor:"Check current FMZ {zone} regulations",
   illustrations:"Fish illustrations",
+  offlineNote:"Don’t completely close the app if you are expecting low or no cell reception — it keeps everything you need for the lake ready to go.",
   splashWarning:"Ontario Stocked Lakes. Don’t completely close the app if you are expecting low or no cell reception. Loading lakes…",
   loadingSub:"Fetching Ontario's stocking records and lake index. Search will be ready in a moment.",
   splashLoading:"Loading Ontario lakes…",
@@ -286,6 +287,7 @@ const I18N={
   viewCurrentRegs:"Voir les règlements actuels de la ZGP {zone}",
   checkRegsFor:"Vérifiez les règlements actuels de la ZGP {zone}",
   illustrations:"Illustrations de poissons",
+  offlineNote:"Ne fermez pas complètement l’application si vous vous attendez à une réception faible ou nulle — elle garde tout ce qu’il vous faut pour le lac à portée de main.",
   splashWarning:"Ontario Stocked Lakes. Ne fermez pas complètement l’application si vous vous attendez à une réception faible ou nulle. Chargement des lacs…",
   loadingSub:"Récupération des données d’ensemencement et de l’index des lacs de l’Ontario. La recherche sera prête dans un instant.",
   splashLoading:"Chargement des lacs de l'Ontario…",
@@ -516,7 +518,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3o";
+const APP_VERSION="v3p";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -3161,12 +3163,6 @@ function helpMarkup(){
  <div class="versionStamp">Ontario Stocked Lakes • ${APP_VERSION}<span>© 2026 Richard J Allinson</span><span class="rightsNote">${t("rightsNote")}</span></div>`;
 }
 
-// Derived from wherever the app is being served, so the share link is correct
-// on GitHub Pages, on Vercel and on any domain this moves to later. A
-// hardcoded URL is what broke it last time.
-const APP_URL=(location.origin&&location.origin!=="null")
- ? location.origin+location.pathname.replace(/index\.html$/,"")
- : "https://richardjallinson.github.io/Ontario-Stocked-Lakes/";
 const TEXT_SIZES=["standard","large","larger"];
 function applyTextSize(size){
  document.body.classList.remove("text-large","text-larger");
@@ -3235,16 +3231,6 @@ function settingsMarkup(){
  </section>
 
  <section class="setBlock">
-  <h3>${t("appLink")}</h3>
-  <p class="setNote">${t("appLinkNote")}</p>
-  <div class="linkRow"><code id="appUrl">${esc(APP_URL)}</code></div>
-  <div class="dataActions">
-   <button id="copyLink" type="button">${t("copyLink")}</button>
-   <button id="shareLink" type="button">${t("shareApp")}</button>
-  </div>
- </section>
-
- <section class="setBlock">
   <h3>${t("yourData")}</h3>
   <p class="setNote">${t("yourDataText")}</p>
   <div class="dataActions">
@@ -3278,15 +3264,6 @@ function openSettings(){
  });
  const sl=$("setLocate");if(sl)sl.onclick=()=>{$("settingsSheet").classList.add("hidden");locate(apply)};
  const rs=$("refreshStocking");if(rs)rs.onclick=refreshStockingFromAPI;
- const cl=$("copyLink");if(cl)cl.onclick=()=>{
-  const done=()=>toast(t("linkCopied"));
-  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(APP_URL).then(done).catch(()=>toast(APP_URL));
-  else toast(APP_URL);
- };
- const sh=$("shareLink");if(sh)sh.onclick=()=>{
-  if(navigator.share)navigator.share({title:"Ontario Stocked Lakes",url:APP_URL}).catch(()=>{});
-  else if(cl)cl.click();
- };
  const ex=$("exportData");if(ex)ex.onclick=exportMyData;
  const im=$("importData");if(im)im.onchange=e=>{if(e.target.files[0])importMyData(e.target.files[0])};
  const oh=$("openHelpFromSettings");if(oh)oh.onclick=()=>{$("settingsSheet").classList.add("hidden");openHelp()};

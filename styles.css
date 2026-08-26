@@ -970,3 +970,11 @@ body.filtering .searchAlt{display:flex}
  font-size:13px;line-height:1.55;font-weight:700;padding:13px 15px;
  margin:10px 0;cursor:default}
 .zoneAction.stale{border-color:#E0B4B1;background:#FDF1F0;color:#7E2A26}
+
+/* The keep-the-app-open advice, repeated at the foot of Explore. The splash
+   carries it for five seconds at launch, which is easy to miss and easier to
+   forget; this sits where someone is standing when it starts to matter. Gold
+   on the app's own dark card so it reads as guidance rather than an error. */
+.offlineNote{background:#13263C;border:1px solid #2C4A6E;color:#E8C77A;
+ border-radius:14px;padding:14px 16px;margin:14px 0 4px;font-size:13px;
+ line-height:1.55;font-weight:700;text-align:center}
