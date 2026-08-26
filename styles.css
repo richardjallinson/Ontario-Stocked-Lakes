@@ -1,5 +1,16 @@
 
-:root{--green:#13263C;--green2:#1D3A57;--water:#2E6E9E;--cream:#F3EFE4;--ink:#152230;--muted:#5D6B7A;--card:#fff;--line:#DCE5EC;--gold:#C4941F;--display:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif}
+/* Colour pass (v3y). --green stays the deep navy it always was — headers,
+   text-on-light, the identity colour — because renaming it would touch every
+   rule below. --accent is new: the vivid "sport" green for anything that
+   invites a tap (Search, My Location, active tab, active language, the
+   trip-start button). --gold narrows to a deliberate second accent used only
+   where it always meant "official/dated" — the stocking-date line and the
+   focus ring — rather than being the app's one CTA colour.
+   Navy-on-accent repeats the navy-on-gold pattern already used everywhere
+   else, so buttons keep one visual grammar regardless of which accent. */
+:root{--green:#13263C;--green2:#1D3A57;--water:#2E6E9E;--cream:#F3EFE4;--ink:#152230;--muted:#5D6B7A;--card:#fff;--line:#DCE5EC;--gold:#C4941F;
+ --accent:#2FAE60;--accent-dark:#1F7A46;--accent-deep:#134A2C;
+ --display:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif}
 *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#EEF4F9;color:var(--ink)}
 header{background:var(--green);color:white;padding:calc(14px + env(safe-area-inset-top)) 18px 15px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000}
 header h1{margin:0;font-size:24px}.eyebrow{font-size:11px;letter-spacing:2px;color:#A8C2DA;font-weight:700}.round{border:1px solid #4A6B94;background:#ffffff12;color:white;width:42px;height:42px;border-radius:50%;font-size:24px}
@@ -7,7 +18,7 @@ main{max-width:850px;margin:auto;padding:16px}/* The hero is a raised card now, 
    the corner at low opacity. Reusing icons/header-mark.png rather than adding
    a photo keeps this to zero new bytes and keeps the app offline-first: a
    bundled mark cannot fail to load at a lake. */
-.hero{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--green2),var(--green));
+.hero{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--accent-deep),var(--green));
  color:white;padding:24px 22px 22px;border-radius:24px;box-shadow:0 14px 34px #0B182B33;margin-bottom:4px}
 .hero::after{content:"";position:absolute;right:-26px;bottom:-30px;width:190px;height:180px;
  background:url(icons/header-mark.png) no-repeat center/contain;opacity:.13;pointer-events:none}
@@ -17,20 +28,27 @@ main{max-width:850px;margin:auto;padding:16px}/* The hero is a raised card now, 
 .searchrow input{border-radius:14px;padding:15px 16px;font-size:15px;border:0}
 .searchrow button{border-radius:14px;padding:0 22px;font-weight:800;font-size:15px}
 .searchAlt{margin-top:10px}
-.searchAlt button{border-radius:14px;padding:13px 20px;font-weight:800}.searchrow input{flex:1;border:0;padding:14px;border-radius:12px;font-size:16px;min-width:0}.searchrow button,#searchBtn{border:0;background:var(--gold);padding:0 17px;border-radius:12px;font-weight:800}
+.searchAlt button{border-radius:14px;padding:13px 20px;font-weight:800}.searchrow input{flex:1;border:0;padding:14px;border-radius:12px;font-size:16px;min-width:0}.searchrow button,#searchBtn{border:0;background:var(--accent);color:var(--green);padding:0 17px;border-radius:12px;font-weight:800}
 .quick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.quick{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
 .quick button{background:white;border:1px solid var(--line);border-radius:20px;text-align:left;
  padding:17px 16px;box-shadow:0 4px 14px #13263C10}
 /* The icon sits in a filled rounded tile, as in the mockup, rather than
    floating loose against the card. */
 .quick button .qi{display:flex;align-items:center;justify-content:center;width:42px;height:42px;
- border-radius:13px;background:var(--green);color:#fff;margin-bottom:11px}
+ border-radius:13px;background:var(--accent);color:var(--green);margin-bottom:11px}
+/* Recent Near Me keeps its own tile colour — location is a different kind of
+   action from stocking recency, and one green tile plus one blue tile reads
+   faster than two identical squares with different icons inside them. */
+.quick button:nth-of-type(2) .qi{background:var(--water);color:#fff}
 .quick button .qi svg{width:22px;height:22px}
-.quick button b{display:block;font-size:1rem;line-height:1.2;margin-bottom:3px}.quick b,.quick span{display:block}.quick span{font-size:12px;color:var(--muted);margin-top:4px}
+/* One point down from the first cut (16px->15px), and in px like every other
+   size in this file — 1rem was the odd one out. Freed from the dead narrow-
+   column layout above, 15px now has the card's full width to sit in. */
+.quick button b{display:block;font-size:15px;line-height:1.2;margin-bottom:3px}.quick b,.quick span{display:block}.quick span{font-size:12px;color:var(--muted);margin-top:4px}
 .filters{display:flex;gap:10px;margin-bottom:12px}/* Pills: the icon is a sibling of the <select>, absolutely placed, because a
    <select> cannot contain markup. Left padding on the select makes room. */
 .fpill{position:relative;flex:1;display:flex}
-.fpill .fi{position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--green);opacity:.85}
+.fpill .fi{position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--accent-dark);opacity:.9}
 .fpill .fi svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .filters select{flex:1;width:100%;background:white;border:1px solid var(--line);
  border-radius:16px;padding:14px 12px 14px 37px;font-size:14px;font-weight:600;
@@ -91,7 +109,7 @@ body{padding-bottom:76px}.filters{display:grid;grid-template-columns:1fr 1fr;gap
 .microcopy{font-size:11px!important;margin-top:9px!important}
 .inlineBtn{border:0;background:var(--green);color:white;padding:10px 12px;border-radius:10px;font-weight:800;cursor:pointer}
 
-.bottomnav button{min-width:0}.tripStart{width:100%;border:0;background:var(--gold);color:#152230;padding:14px;border-radius:12px;font-weight:900;font-size:15px;margin:0 0 16px}
+.bottomnav button{min-width:0}.tripStart{width:100%;border:0;background:var(--accent);color:var(--green);padding:14px;border-radius:12px;font-weight:900;font-size:15px;margin:0 0 16px}
 .tripmeta{color:var(--muted);font-size:12px;margin:-8px 0 14px}.lakeSnapshot{display:grid;gap:5px;background:#eef5f2;border:1px solid var(--line);border-radius:14px;padding:13px;margin:12px 0}.lakeSnapshot span{font-size:12px;color:var(--muted)}
 .catchform{display:grid;gap:8px;background:#F2F6FA;border:1px solid var(--line);border-radius:14px;padding:12px}.catchform input,.catchform select,.catchform textarea,.tripnotes{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font:inherit;background:#fff}.formrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}.catchform textarea,.tripnotes{min-height:70px;resize:vertical}.catchform button{border:0;background:var(--green);color:white;padding:12px;border-radius:10px;font-weight:900}.checkline{font-size:12px;color:var(--muted)}
 .catchrow{display:flex;justify-content:space-between;padding:10px 2px;border-bottom:1px solid var(--line)}.catchrow span{display:block;font-size:11px;color:var(--muted);margin-top:2px}.catchrow button{border:0;background:#eee;border-radius:50%;width:28px;height:28px}.tripnotes{margin:12px 0 8px}.endTrip{width:100%;border:1px solid #a94442;background:white;color:#8a2927;padding:12px;border-radius:10px;font-weight:900;margin-top:8px}
@@ -294,7 +312,7 @@ header{display:block;padding:calc(12px + env(safe-area-inset-top)) 0 0;box-shado
 .tabs button{flex:0 0 auto;border:0;background:transparent;cursor:pointer;
  padding:14px 13px 11px;font-size:13px;letter-spacing:.2px;font-weight:600;
  color:#8FA9C4;border-bottom:3px solid transparent;white-space:nowrap}
-.tabs button.active{color:var(--gold);font-weight:800;border-bottom-color:var(--gold)}
+.tabs button.active{color:var(--accent);font-weight:800;border-bottom-color:var(--accent)}
 .tabfade{position:absolute;top:0;right:0;width:26px;bottom:0;pointer-events:none;
  background:linear-gradient(to right,transparent,var(--green))}
 
@@ -319,14 +337,10 @@ main{padding:14px 16px 40px}
   .dashboard span{font-size:8.5px}
 }
 
-/* Shortcut cards, including the two that are now links. */
-.quick{gap:9px;margin:12px 0}
-.quick button,.quick a{background:#fff;border:1px solid var(--line);border-radius:15px;
- text-align:left;padding:13px 14px 15px;display:block;text-decoration:none;color:var(--ink)}
-.quick a b{color:var(--green);display:block;font-size:15.5px;line-height:1.2}
-.quick a span{display:block;font-size:12px;color:var(--muted);margin-top:5px;line-height:1.35}
-.quick a::after{content:"↗";position:absolute;top:12px;right:13px;color:#9FB2C4;font-size:13px}
-.quick a{position:relative}
+/* v3y: removed a third dead block here ("the two that are now links") from
+   back when the shortcuts were anchors, not buttons — no .quick a exists in
+   the app any more. It had also been quietly setting the card radius to 15px
+   ever since, overriding the 20px this design actually calls for.
 
 /* The Regulations tab. */
 .resourcesPanel{margin:4px 0 10px}
@@ -346,33 +360,21 @@ main{padding:14px 16px 40px}
 .langSwitch{display:flex;gap:4px;flex:0 0 auto}
 .langSwitch button{border:1px solid #33517A;background:#ffffff14;color:#CFE0F0;
  padding:0 11px;height:38px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer}
-.langSwitch button.active{background:#fff;color:var(--green);border-color:#fff}
+.langSwitch button.active{background:var(--accent);color:var(--green);border-color:var(--accent)}
 
-/* Shortcut cards read horizontally now: icon, then label. Half the height. */
-.quick{grid-template-columns:1fr 1fr;gap:9px}
-.quick button,.quick a{display:grid;grid-template-columns:auto 1fr;gap:11px;
- align-items:start;padding:13px 14px}
-.qi{margin-bottom:0;width:32px;height:32px;border-radius:9px}
-.qi svg{width:17px;height:17px}
-.quick b{font-size:14.5px;line-height:1.2;align-self:center}
-.quick span,.quick a span{grid-column:2;font-size:11.5px;margin-top:3px;line-height:1.3}
-.quick b{grid-column:2}
-.qi{grid-row:1/3;grid-column:1}
-.quick a::after{top:11px;right:11px;font-size:12px}
+/* v3y: the two rule-sets that used to live here ("icon beside a narrow label
+   column") were an older shortcut-card design from before v3x. Nothing
+   removed them when the icon-above-heading card replaced it, so they were
+   still unconditional and still winning: same specificity as the current
+   card's rules, later in the file, so last-in-source took it. That squeezed
+   "Recently Stocked" into a ~100px-wide right-hand column, which is why it
+   wrapped onto three lines instead of the two the card was designed for. Both
+   dead blocks are gone; icons/qi.svg is deleted, an <i class="qi"> that no
+   longer exists elsewhere, but ".qi" as a bare rule if you're hunting for it.
 
 /* Six tabs should very nearly fit a 390pt screen before scrolling. */
 .tabs button{padding:14px 10px 11px;font-size:12.5px}
 
-/* Shortcut rows: one column, icon left, title on a single line. The 2×2 grid
-   forced every title to wrap and left a gap under it. */
-.quick{grid-template-columns:1fr;gap:8px}
-.quick button,.quick a{grid-template-columns:auto 1fr;grid-template-rows:auto auto;
- align-content:start;padding:12px 38px 12px 13px;border-radius:14px}
-.quick .qi{grid-row:1/3;grid-column:1;align-self:center;margin:0}
-.quick b{grid-column:2;grid-row:1;align-self:end;font-size:15px;line-height:1.15}
-.quick span,.quick a span{grid-column:2;grid-row:2;align-self:start;margin-top:2px;
- font-size:12px;line-height:1.3}
-.quick a::after{top:50%;transform:translateY(-50%);right:14px;font-size:14px}
 
 
 /* ===========================================================================
@@ -418,9 +420,9 @@ h1,h2,h3,.hero h2,.headerBrand h1,.onboardCard h2,.record h4,.detailhead h2,
 .dashboard strong{color:var(--green)}
 .searchrow button,#searchBtn{color:#13263C;font-weight:800}
 .runfind,.primaryModalAction,.directions{background:linear-gradient(150deg,#1D3A57,#13263C)}
-.tabs button.active{color:#E4B23A;border-bottom-color:#C4941F}
+.tabs button.active{color:#4CCB84;border-bottom-color:var(--accent)}
 .tabfade{background:linear-gradient(to right,transparent,#13263C)}
-.langSwitch button.active{color:#13263C}
+.langSwitch button.active{color:var(--green);background:var(--accent);border-color:var(--accent)}
 :focus-visible{outline-color:#C4941F}
 #toast{background:#13263C}
 
@@ -785,7 +787,7 @@ body.filtering .sectiontitle{margin-top:14px}
 .tripTabs button{flex:1;border:0;background:transparent;color:var(--muted);
  font:inherit;font-weight:800;font-size:13px;padding:10px 4px;min-height:40px;
  border-bottom:2px solid transparent;cursor:pointer}
-.tripTabs button.on{color:var(--green);border-bottom-color:var(--gold)}
+.tripTabs button.on{color:var(--green);border-bottom-color:var(--accent)}
 
 /* Labelled number fields. Length and weight are indistinguishable as two bare
    boxes, and the unit belongs on the label rather than in a placeholder that
@@ -920,7 +922,7 @@ body.filtering .hero{padding-bottom:12px}
 /* Gold, like Search: the two are the same kind of act — start a search — and
    an outlined ghost read as secondary chrome next to the thing it equals. */
 .searchAlt button{
- border:0;background:var(--gold);color:var(--green);
+ border:0;background:var(--accent);color:var(--green);
  padding:10px 16px;border-radius:11px;font:inherit;font-weight:800;font-size:14px;
  min-height:40px;cursor:pointer;
 }
