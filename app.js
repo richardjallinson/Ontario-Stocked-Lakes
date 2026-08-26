@@ -52,6 +52,7 @@ const I18N={
   viewCurrentRegs:"View Current FMZ {zone} Regulations",
   checkRegsFor:"Check current FMZ {zone} regulations",
   illustrations:"Fish illustrations",
+  accUnnamed:"unnamed site",
   nearestAccess:"Nearest fishing access",
   accPoint:"Access point",
   accParking:"parking",
@@ -297,6 +298,7 @@ const I18N={
   viewCurrentRegs:"Voir les règlements actuels de la ZGP {zone}",
   checkRegsFor:"Vérifiez les règlements actuels de la ZGP {zone}",
   illustrations:"Illustrations de poissons",
+  accUnnamed:"site sans nom",
   nearestAccess:"Accès de pêche le plus proche",
   accPoint:"Point d’accès",
   accParking:"stationnement",
@@ -538,7 +540,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3r";
+const APP_VERSION="v3s";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -1457,8 +1459,13 @@ function accessCard(l){
   ?within.map(a=>{
     const facts=accessFacts(a);
     const ver=a.ver?` • ${t("accVerified").replace("{year}",a.ver)}`:"";
-    return `<div class="accessrow"><div><b>🚤 ${esc(a.n)}</b><span>${
-      esc(a.t||t("accPoint"))} • ${a.km.toFixed(1)} km ${bearingLabel(l.lat,l.lon,a.lat,a.lon)}${
+    /* Two-thirds of Ontario's sites are unnamed, and build-access.py falls
+       back to a generic label for those. Printing "Fishing access" as a
+       heading above a line reading "Boat Launch" says nothing twice, so an
+       unnamed site leads with what it actually is. */
+    const named=a.n&&a.n!==t("accPoint");
+    return `<div class="accessrow"><div><b>🚤 ${esc(named?a.n:(a.t||t("accPoint")))}</b><span>${
+      esc(named?(a.t||t("accPoint")):t("accUnnamed"))} • ${a.km.toFixed(1)} km ${bearingLabel(l.lat,l.lon,a.lat,a.lon)}${
       facts.length?` • ${facts.join(" • ")}`:""}${ver}</span></div>`+
      `<a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lon}">Directions</a></div>`;
    }).join("")
