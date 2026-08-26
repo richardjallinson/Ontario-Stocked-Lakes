@@ -540,7 +540,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3s";
+const APP_VERSION="v3t";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -2255,7 +2255,7 @@ function emptyMessage(){
  }
  return t("emptyNoMatch");
 }
-function toggleFav(key){favoriteKeys.has(key)?favoriteKeys.delete(key):favoriteKeys.add(key);localStorage.setItem("osl-favorites",JSON.stringify([...favoriteKeys]));apply()}
+function toggleFav(key){favoriteKeys.has(key)?favoriteKeys.delete(key):favoriteKeys.add(key);localStorage.setItem("osl-favorites",JSON.stringify([...favoriteKeys]));persistDurable();apply()}
 
 function regulationUrl(l){return l.fmz?`${REGS_BASE}${l.fmz}`:"https://www.ontario.ca/document/ontario-fishing-regulations-summary"}
 
@@ -2612,7 +2612,7 @@ function presentBlock(l){
 }
 
 function detail(l){
- recentLakes=[l.key,...recentLakes.filter(k=>k!==l.key)].slice(0,10);localStorage.setItem("osl-recent",JSON.stringify(recentLakes));
+ recentLakes=[l.key,...recentLakes.filter(k=>k!==l.key)].slice(0,10);localStorage.setItem("osl-recent",JSON.stringify(recentLakes));persistDurable();
  const fav=favoriteKeys.has(l.key),history=l.records.map(r=>`<div class="historyrow"><div><b>${esc(r.Stocking_Year||"—")}</b><span>${esc(r.Species?speciesLabel(r.Species):t("speciesUnavailable"))}</span></div><div class="historyright"><b>${num(r.Number_of_Fish_Stocked)}</b><span>${esc(r.Developmental_Stage?stageLabel(r.Developmental_Stage):"")}</span></div></div>`).join("");
  $("detail").innerHTML=`<div class="detailhead"><div><h2>${esc(l.name)}</h2><div class="species">${esc(l.species.join(" • "))}</div></div><button class="bigstar ${fav?"saved":""}" id="detailFav">${fav?"★":"☆"}</button></div>
  ${whereLine(l)}
@@ -2664,7 +2664,7 @@ ${presentBlock(l)}
   if(target)target.scrollIntoView({behavior:"smooth",block:"start"});
  });
 }
-function saveTrips(){localStorage.setItem("osl-trips",JSON.stringify(trips))}
+function saveTrips(){localStorage.setItem("osl-trips",JSON.stringify(trips));persistDurable()}
 
 /* Units. Measurements are stored canonically in centimetres and kilograms and
    converted only for display, so switching the setting reinterprets nothing —
@@ -3163,7 +3163,12 @@ $("recentBtn").onclick=()=>{townOrigin=null;$("search").value="";$("species").va
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
 $("closeSheet").onclick=()=>$("sheet").classList.add("hidden");
 $("closeTrip").onclick=()=>$("tripSheet").classList.add("hidden");$("tripSheet").onclick=e=>{if(e.target===$("tripSheet"))$("tripSheet").classList.add("hidden")};$("sheet").onclick=e=>{if(e.target===$("sheet"))$("sheet").classList.add("hidden")};
-load();if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
+load();
+/* Durable-store restore runs beside load(), not inside it: the lake database
+   and the person's own data are independent, and neither should wait for the
+   other. If the Documents copy was newer, whatever is on screen re-renders. */
+restoreDurable().then(changed=>{if(changed){renderTrips();apply()}});
+if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
 
 
 
@@ -3175,6 +3180,84 @@ function toast(msg){
 }
 
 const nativeBridge=k=>window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers[k];
+
+/* ---------------------------------------------------------------------------
+   Durable storage.
+
+   Trips, catches, saved lakes and recents live in localStorage, and inside a
+   WKWebView iOS treats that as WEBSITE data: it can be purged under storage
+   pressure, and Settings > Clear Website Data wipes it silently. A season of
+   catch logs is not something to keep in evictable storage.
+
+   In the native app the real copy is an ordinary JSON file in the app's own
+   Documents folder, which iOS never evicts and which device backups include:
+
+     reads  — startup fetches __storage/osl-user.json. The custom scheme
+              handler serves it from Documents; on the plain web there is
+              nothing at that path, the fetch 404s, and localStorage remains
+              the store, exactly as before.
+     writes — every save still hits localStorage first (instant, and the web
+              version's only store), then hands the same payload to the
+              persistStore native bridge, which writes the file atomically.
+              Writes cannot go through the custom scheme: WKWebView strips
+              request bodies on custom-scheme fetches, a long-standing WebKit
+              quirk, so this half rides a WKScriptMessageHandler like the
+              location bridge does.
+
+   Newer copy wins on startup, decided by a savedAt stamp kept in both places
+   — covers a restored device, a cleared web view, and the first run after
+   this update (migration is just "the file does not exist yet, write it").
+
+   Language, units and text size stay plain localStorage on purpose: losing
+   them costs two taps, and rebuilding them here would be complexity spent on
+   nothing. */
+const DURABLE_KEYS=["osl-trips","osl-favorites","osl-recent"];
+const SAVED_AT_KEY="osl-saved-at";
+
+function persistDurable(){
+ const stamp=Date.now();
+ try{localStorage.setItem(SAVED_AT_KEY,String(stamp))}catch(e){}
+ const br=nativeBridge("persistStore");
+ if(!br)return;
+ const data={};
+ for(const k of DURABLE_KEYS){const v=localStorage.getItem(k);if(v!=null)data[k]=v}
+ try{br.postMessage(JSON.stringify({savedAt:stamp,data}))}catch(e){}
+}
+
+/* Adopt the Documents copy when it is the newer one, then re-init the
+   in-memory structures the top of this file already built from localStorage.
+   Returns true when anything changed so the caller can re-render. */
+async function restoreDurable(){
+ let file=null;
+ try{
+  const r=await fetch("__storage/osl-user.json",{cache:"no-store"});
+  if(r.ok)file=await r.json();
+ }catch(e){ /* the plain web: nothing at that path, and nothing to do */ }
+ const localAt=Number(localStorage.getItem(SAVED_AT_KEY)||0);
+ let changed=false;
+ if(file&&file.data&&Number(file.savedAt||0)>localAt){
+  for(const k of DURABLE_KEYS){
+   if(typeof file.data[k]==="string"&&file.data[k]!==localStorage.getItem(k)){
+    try{localStorage.setItem(k,file.data[k]);changed=true}catch(e){}
+   }
+  }
+  if(changed){
+   try{localStorage.setItem(SAVED_AT_KEY,String(file.savedAt))}catch(e){}
+   trips=JSON.parse(localStorage.getItem("osl-trips")||"[]");
+   favoriteKeys=new Set(JSON.parse(localStorage.getItem("osl-favorites")||"[]"));
+   recentLakes=JSON.parse(localStorage.getItem("osl-recent")||"[]");
+  }
+ }
+ // First run after this update, or a fresh install restored from an iCloud
+ // device backup: make sure the Documents file exists from here on. On the
+ // web this is only the stamp write.
+ persistDurable();
+ // The web fallback can at least ask Safari not to evict. Best effort;
+ // browsers that do not support it ignore it.
+ if(!nativeBridge("persistStore")&&navigator.storage&&navigator.storage.persist)
+  navigator.storage.persist().catch(()=>{});
+ return changed;
+}
 
 window.__nativeBackupFailed=()=>toast("The backup could not be saved. Try again, or free up some space on the device.");
 
@@ -3209,6 +3292,7 @@ function importMyData(file){
    if(Array.isArray(d.trips))localStorage.setItem("osl-trips",JSON.stringify(d.trips));
    if(Array.isArray(d.favorites))localStorage.setItem("osl-favorites",JSON.stringify(d.favorites));
    if(Array.isArray(d.recent))localStorage.setItem("osl-recent",JSON.stringify(d.recent));
+   persistDurable();
    trips=JSON.parse(localStorage.getItem("osl-trips")||"[]");
    migrateTrips();
    favoriteKeys=new Set(JSON.parse(localStorage.getItem("osl-favorites")||"[]"));
