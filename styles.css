@@ -1095,10 +1095,25 @@ body.filtering .searchAlt{display:flex}
    caption underneath can actually change ("Loading" is a lie the moment
    loading fails) and the bar can actually move.
    --------------------------------------------------------------------------- */
-/* #071426 is not a design choice: it is the sampled mean of the artwork's own
-   edge pixels, so the image's rectangle disappears into the page instead of
-   sitting on it. Resample if the artwork is ever regenerated. */
-#splash{position:fixed;inset:0;z-index:9000;background:#071426;
+/* The splash background is a GRADIENT, not a flat colour, and it is derived
+   rather than chosen.
+
+   The source mockup drew the splash as a phone-shaped card on a lighter
+   backdrop, so the artwork had a lighter frame baked into it — that inner
+   edge was the rectangle Richard could see, and no amount of matching the
+   CSS to the outer edge could fix it, because the mismatch was inside the
+   picture. The card's background is also a subtle vertical gradient, so a
+   single flat colour cannot meet it at every height.
+
+   Fix: a quadratic was fitted to the card's own background column using only
+   rows with no trout or text in them, that curve was painted into the
+   artwork's margins, and these stops come from the same curve. Fill and page
+   therefore cannot disagree — measured max deviation is under 2 levels per
+   channel down the whole height.
+
+   RE-DERIVE if the artwork is ever regenerated or re-saved; JPEG re-encoding
+   shifts these values, which is how it drifted in the first place. */
+#splash{position:fixed;inset:0;z-index:9000;background:linear-gradient(180deg,#020B1C 0%, #010D1F 25%, #010E20 50%, #010E21 75%, #010E20 100%);
  display:flex;flex-direction:column;align-items:center;justify-content:center;
  gap:18px;padding:28px;transition:opacity .45s ease}
 /* The artwork now carries its own caption and progress bar, so it is the whole
