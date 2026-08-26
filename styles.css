@@ -11,17 +11,30 @@
 :root{--green:#13263C;--green2:#1D3A57;--water:#2E6E9E;--cream:#F3EFE4;--ink:#152230;--muted:#5D6B7A;--card:#fff;--line:#DCE5EC;--gold:#C4941F;
  --accent:#2FAE60;--accent-dark:#1F7A46;--accent-deep:#134A2C;
  --display:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif}
-*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#EEF4F9;color:var(--ink)}
+*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#E8F1FA;color:var(--ink)}
 header{background:var(--green);color:white;padding:calc(14px + env(safe-area-inset-top)) 18px 15px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000}
 header h1{margin:0;font-size:24px}.eyebrow{font-size:11px;letter-spacing:2px;color:#A8C2DA;font-weight:700}.round{border:1px solid #4A6B94;background:#ffffff12;color:white;width:42px;height:42px;border-radius:50%;font-size:24px}
 main{max-width:850px;margin:auto;padding:16px}/* The hero is a raised card now, with the app's own trout artwork sunk into
    the corner at low opacity. Reusing icons/header-mark.png rather than adding
    a photo keeps this to zero new bytes and keeps the app offline-first: a
    bundled mark cannot fail to load at a lake. */
-.hero{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--accent-deep),var(--green));
+/* The card plate sits on the right, where the mockup shows trees behind the
+   controls. Scrim measured the same way: ~75% on the left where the heading
+   and hint sit (13:1), easing to 30% past the controls so the photo is
+   actually visible. The green gradient stays as the base layer, so this is
+   photo-on-top-of-colour rather than photo-instead-of-colour — if the image
+   fails to decode the card is still the v3y card, not a white box. */
+.hero{position:relative;overflow:hidden;
+ background-image:linear-gradient(95deg,#0B2A1BE6 0%,#0B2A1BD9 42%,#10305096 68%,#1030504D 100%),
+                  url(img/card-lake.webp),
+                  linear-gradient(135deg,var(--accent-deep),var(--green));
+ background-size:cover,cover,cover;
+ background-position:center,right center,center;
+ background-repeat:no-repeat,no-repeat,no-repeat;
  color:white;padding:24px 22px 22px;border-radius:24px;box-shadow:0 14px 34px #0B182B33;margin-bottom:4px}
-.hero::after{content:"";position:absolute;right:-26px;bottom:-30px;width:190px;height:180px;
- background:url(icons/header-mark.png) no-repeat center/contain;opacity:.13;pointer-events:none}
+/* v3z: the trout watermark is gone from the hero. It existed because there
+   was no photo to put here; now there is one, and two overlapping textures
+   behind the same text was one too many. The trout still leads the header. */
 .hero>*{position:relative;z-index:1}
 .hero h2{font-size:1.6rem;line-height:1.15;margin-bottom:6px}
 .hero h2{font-size:25px;margin:0 0 7px}.hero p{margin:0 0 17px;color:#C6D8E8}.searchrow{display:flex;gap:10px;margin-top:14px}
@@ -30,8 +43,9 @@ main{max-width:850px;margin:auto;padding:16px}/* The hero is a raised card now, 
 .searchAlt{margin-top:10px}
 .searchAlt button{border-radius:14px;padding:13px 20px;font-weight:800}.searchrow input{flex:1;border:0;padding:14px;border-radius:12px;font-size:16px;min-width:0}.searchrow button,#searchBtn{border:0;background:var(--accent);color:var(--green);padding:0 17px;border-radius:12px;font-weight:800}
 .quick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.quick{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
-.quick button{background:white;border:1px solid var(--line);border-radius:20px;text-align:left;
+.quick button{background:#EFF8F1;border:1px solid #CFE6D6;border-radius:20px;text-align:left;
  padding:17px 16px;box-shadow:0 4px 14px #13263C10}
+.quick button:nth-of-type(2){background:#EAF3FC;border-color:#CBDFF2}
 /* The icon sits in a filled rounded tile, as in the mockup, rather than
    floating loose against the card. */
 .quick button .qi{display:flex;align-items:center;justify-content:center;width:42px;height:42px;
@@ -298,9 +312,25 @@ img.onboardIcon{width:60px;height:60px;border-radius:17px;display:block;
    scrolls horizontally, and marks the active section with a gold underline.
    =========================================================================== */
 
-header{display:block;padding:calc(12px + env(safe-area-inset-top)) 0 0;box-shadow:0 2px 14px #0A192B33}
+/* v3z: the lake plate sits behind the header, under a scrim.
+   The scrim is not decoration. Measured on the actual shipped WebP, white
+   text over the bare photo lands at 3.4:1 — under the 4.5:1 floor — and over
+   the bright cloud patches at 1.15:1, which is invisible. A left-weighted
+   black gradient at ~62% fading to ~15% puts the wordmark at 12:1 and the
+   worst cloud patch at 6.6:1, while the right side stays clear enough to
+   read as water and trees behind the trout. Re-measure if the plate is ever
+   regenerated: a brighter sky would need a heavier scrim.
+   The flat navy stays underneath as the fallback, so a failed image decode
+   degrades to exactly the old header rather than to unreadable text. */
+header{display:block;padding:calc(12px + env(safe-area-inset-top)) 0 0;box-shadow:0 2px 14px #0A192B33;
+ position:relative;background:var(--green);isolation:isolate}
+header::before{content:"";position:absolute;inset:0;z-index:-1;
+ background-image:linear-gradient(100deg,#071426E0 0%,#071426B5 38%,#0714265E 66%,#07142626 100%),
+                  url(img/header-lake.webp);
+ background-size:cover,cover;background-position:center,center 38%;background-repeat:no-repeat,no-repeat}
 .headerTop{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px 12px}
 .headerBrand h1{font-size:23px;margin:0;letter-spacing:-.5px;line-height:1.05}
+.wmAccent{color:var(--accent)}
 .eyebrow{font-size:10px;letter-spacing:2.4px;color:#7FA0BE;font-weight:800;margin-bottom:2px}
 .headerActions{display:flex;gap:8px;flex:0 0 auto}
 .round{width:38px;height:38px;font-size:19px;border-color:#33517A;background:#ffffff14}
@@ -309,6 +339,12 @@ header{display:block;padding:calc(12px + env(safe-area-inset-top)) 0 0;box-shado
 .tabs{display:flex;gap:0;padding:0 16px;overflow-x:auto;overflow-y:hidden;
  scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
 .tabs::-webkit-scrollbar{display:none;height:0}
+/* Tab icons. Scoped to .tabs on purpose: .ti is already the map-layer toggle
+   badge (grey tile, navy glyph) and must not inherit any of this. */
+.tabs button .ti{display:block;width:auto;height:22px;background:none;border-radius:0;
+ color:inherit;margin:0 auto 3px}
+.tabs button .ti svg{width:22px;height:22px;stroke-width:1.7}
+.tabs button span{display:block}
 .tabs button{flex:0 0 auto;border:0;background:transparent;cursor:pointer;
  padding:14px 13px 11px;font-size:13px;letter-spacing:.2px;font-weight:600;
  color:#8FA9C4;border-bottom:3px solid transparent;white-space:nowrap}
