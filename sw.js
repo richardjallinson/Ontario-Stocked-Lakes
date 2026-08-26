@@ -3,7 +3,7 @@
    load isn't blocked on ~12 MB. Live government API calls always go to the
    network so regulations and advisories are never served stale. */
 
-const VERSION = "v4d";
+const VERSION = "v4e";
 const SHELL = `osl-shell-${VERSION}`;
 /* Deliberately NOT versioned. The data cache used to be osl-data-${VERSION},
    and activate deletes every cache that is not current — so every app update
@@ -26,7 +26,6 @@ const SHELL_FILES = [
   // they are chrome, and a header that loads its background only after the
   // first online visit would defeat the point of bundling them.
   "./img/header-lake.webp",
-  "./img/card-lake.webp",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./privacy.html",

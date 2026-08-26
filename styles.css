@@ -55,7 +55,10 @@ main{max-width:850px;margin:auto;padding:16px}/* The hero is a raised card now, 
 /* Recent Near Me keeps its own tile colour — location is a different kind of
    action from stocking recency, and one green tile plus one blue tile reads
    faster than two identical squares with different icons inside them. */
-.quick button:nth-of-type(2) .qi{background:var(--water);color:#fff}
+/* v4e: the lime tile next to a dark navy one made Recent Near Me look
+   disabled. Both are now bright and equally weighted; only the hue differs,
+   which is what distinguishes them without ranking them. */
+.quick button:nth-of-type(2) .qi{background:#2E9BD6;color:#06233A}
 .quick button .qi svg{width:22px;height:22px}
 /* One point down from the first cut (16px->15px), and in px like every other
    size in this file — 1rem was the odd one out. Freed from the dead narrow-
@@ -336,9 +339,15 @@ header::before{content:"";position:absolute;inset:0;z-index:-1;
     from the text shadows below instead — a dark halo on the glyphs themselves
     rather than a curtain over the whole picture. Rendered and compared at
     three strengths before choosing this one. */
- background-image:linear-gradient(100deg,#04101F9E 0%,#04101F62 28%,#04101F20 55%,#04101F0A 100%),
+ /* The first layer is a soft pool of shadow sitting exactly where the trout
+    lands. Every crop of this plate has trees on the right — there is no patch
+    of open sky to move the logo onto — so rather than fight the photograph,
+    the logo gets its own backing. A neon-blue cutout needs separation from
+    busy green, and this gives it that without darkening the whole header. */
+ background-image:radial-gradient(105% 125% at 84% 48%,#04101F8C 0%,#04101F52 42%,#04101F00 72%),
+                  linear-gradient(100deg,#04101F9E 0%,#04101F62 28%,#04101F20 55%,#04101F0A 100%),
                   url(img/header-lake.webp);
- background-size:cover,cover;background-position:center,center 38%;background-repeat:no-repeat,no-repeat}
+ background-size:cover,cover,cover;background-position:center,center,center 38%;background-repeat:no-repeat,no-repeat,no-repeat}
 .headerTop{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px 12px}
 .headerBrand h1{font-size:23px;margin:0;letter-spacing:-.5px;line-height:1.05}
 /* v4a: scoped and reset deliberately. ".headerBrand span" already existed for
@@ -429,7 +438,7 @@ main{padding:14px 16px 40px}
    longer exists elsewhere, but ".qi" as a bare rule if you're hunting for it.
 
 /* Six tabs should very nearly fit a 390pt screen before scrolling. */
-.tabs button{padding:14px 10px 11px;font-size:12.5px}
+.tabs button{padding:10px 10px 8px;font-size:12.5px}
 
 
 
@@ -454,12 +463,12 @@ h1,h2,h3,.hero h2,.headerBrand h1,.onboardCard h2,.record h4,.detailhead h2,
    gradient kept as the bottom layer so a failed decode still degrades to the
    old card rather than to a white box. */
 .hero{position:relative;overflow:hidden;
- background-image:linear-gradient(95deg,#04101FCC 0%,#04101FA6 40%,#04101F66 68%,#04101F33 100%),
-                  url(img/card-lake.webp),
-                  linear-gradient(150deg,#1D3A57,#13263C);
- background-size:cover,cover,cover;
- background-position:center,right center,center;
- background-repeat:no-repeat,no-repeat,no-repeat}
+ /* v4e: the lake photo came off this card deliberately. Header and card were
+    two crops of the same scene stacked with a thin navy strip between them —
+    one wallpaper interrupted, not two designed surfaces, and the body text
+    was fighting trees for legibility. The header carries the photograph; this
+    carries the controls. It also returns 126 KB to the bundle. */
+ background:linear-gradient(150deg,#1D3A57,#13263C)}
 .hero::before{content:"";position:absolute;right:-70px;top:-45px;width:280px;height:200px;
  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 280 200'%3E%3Cg fill='none' stroke='%237FA0BE' stroke-opacity='.28'%3E%3Cellipse cx='140' cy='100' rx='130' ry='86' stroke-width='1.4'/%3E%3Cellipse cx='140' cy='100' rx='96' ry='62' stroke-width='1.4'/%3E%3Cellipse cx='140' cy='100' rx='64' ry='40' stroke-width='1.4'/%3E%3Cellipse cx='140' cy='100' rx='34' ry='20' stroke-width='1.4'/%3E%3C/g%3E%3C/svg%3E");
  background-repeat:no-repeat;pointer-events:none}
@@ -757,7 +766,7 @@ body.filtering .sectiontitle{margin-top:14px}
    targets, not a style choice — 28px puts all four below it.
    --------------------------------------------------------------------------- */
 .headerTop{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.hCol{display:flex;flex-direction:column;gap:8px;min-width:0;flex:1 1 auto}
+.hCol{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1 1 auto}
 .eyebrow{font-size:10px;letter-spacing:2.4px;margin-bottom:3px}
 .headerActions{display:flex;gap:6px;flex:0 0 auto;align-items:flex-start}
 .langSwitch{display:flex;gap:6px;flex:0 0 auto;align-items:flex-start}
@@ -767,7 +776,11 @@ body.filtering .sectiontitle{margin-top:14px}
 .hAct{display:flex;flex-direction:column;align-items:center;gap:3px}
 .hCap{font-style:normal;font-size:10px;font-weight:700;color:#DDE9F5;
  text-shadow:0 1px 3px #04101FCC;white-space:nowrap;letter-spacing:.1px}
-.oslMark{height:150px;width:auto;flex:0 0 auto;display:block;margin:-8px -4px -10px 0}
+/* v4e: 150px -> 122px. On a 390x844 phone the header and tab strip together
+   were eating ~40% of the screen, so the first lake sat below the fold — the
+   wrong trade for an app used on the water, where the data is the point and
+   the photograph is the frame. */
+.oslMark{height:122px;width:auto;flex:0 0 auto;display:block;margin:-6px -4px -8px 0}
 
 /* v4a: the wordmark now sits on sky rather than flat navy, so it carries a
    shadow. Without it the descenders disappear into the brightest clouds even
