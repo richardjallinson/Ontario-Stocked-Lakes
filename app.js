@@ -516,47 +516,15 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3n";
+const APP_VERSION="v3o";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
-/* Fishing access points.
-   ---------------------------------------------------------------------------
-   KNOWN ISSUE — this endpoint is not the government's. It sits on an
-   individual's ArcGIS Online account ("smaglio2"), which republished Ontario's
-   data. It works, but it can disappear without notice and nobody would be
-   told. The official source is layer 0 of the Fish ON-Line map service, on
-   ws.lioservices.lrc.gov.on.ca — the same host this app already uses for zone
-   boundaries:
-
-     https://ws.lioservices.lrc.gov.on.ca/arcgis4/rest/services/FishONLine/Fish_Online_Map/MapServer/0
-
-   The official layer also carries more than this one exposes: SITE_NAME,
-   FISHING_ACCESS_POINT_TYPE, PARKING_PRESENCE_FLG, ACCESSIBILITY_FLG,
-   USER_FEE_FLG, SITE_OWNERSHIP_TYPE, MATERIAL_TYPE and
-   SITE_LAST_VERIFICATION_DATE — enough to say "boat launch, parking, no fee,
-   last verified 2023" instead of just "Access point". MaxRecordCount is 2000,
-   so anything reading it in bulk must page with resultOffset, the way
-   tools/build-waterbodies.py already does.
-
-   Two jobs, in order of value:
-     1. Point ACCESS_API at the official URL above. Small change, removes a
-        dependency on a stranger's account.
-     2. Better still, bundle it. Access points are needed at the lake, which
-        is exactly where there is no signal — the same reasoning that removed
-        the access FILTER in v2u. A tools/build-access.py following the
-        build-nearby.py pattern would make the "Nearest fishing access" card
-        work offline.
-
-   GeoHub page, for the licence wording and a manual download if wanted:
-     https://geohub.lio.gov.on.ca/datasets/lio::fishing-access-point
-   --------------------------------------------------------------------------- */
-const ACCESS_API="https://services1.arcgis.com/YiULsZbgRKmBtdZN/ArcGIS/rest/services/Protected_Fishing_Access_IntroGIS_smaglio2_WFL1/FeatureServer/2/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
 const SURVEY_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open10/MapServer/18/query";
 const CAUGHT_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open10/MapServer/16/query";
 const BATHY_URL="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open01/MapServer";
 const BATHY_LAYER=30;
-let rows=[],lakes=[],shown=[],accessPoints=[],accessLoaded=false,fmzFeatures=[],fmzLoaded=false,speciesLoaded=false,userLoc=null,currentView="explore";
+let rows=[],lakes=[],shown=[],fmzFeatures=[],fmzLoaded=false,speciesLoaded=false,userLoc=null,currentView="explore";
 let trips=JSON.parse(localStorage.getItem("osl-trips")||"[]"),recentLakes=JSON.parse(localStorage.getItem("osl-recent")||"[]");
 let advisoryLocations=[],advisoriesLoaded=false,favoriteKeys=new Set(JSON.parse(localStorage.getItem("osl-favorites")||"[]"));
 const $=id=>document.getElementById(id);
@@ -633,7 +601,6 @@ function showDetailMap(l){
   setTimeout(()=>{try{detailMap.invalidateSize()}catch(e){}},60);
  }catch(e){ /* the map is a bonus here; the sheet's facts are the point */ }
 }
-const accessLayer=L.layerGroup().addTo(map);
 const bathyLayer=L.tileLayer(`${BATHY_URL}/export?bbox={bbox-epsg-3857}&bboxSR=3857&layers=show:${BATHY_LAYER}&size=256,256&imageSR=3857&format=png32&transparent=true&f=image`,{opacity:.72,attribution:"Government of Ontario bathymetry"});
 const fmzLayer=L.geoJSON(null,{
  style:()=>({weight:2,fillOpacity:.06}),
@@ -1000,52 +967,9 @@ async function loadFMZ(show=true){
   else $("fmzStatus").textContent=t("zonesUnavailable");
  }
 }
-function renderDepth(){
- if($("showDepth").checked){
-  if(!map.hasLayer(bathyLayer))bathyLayer.addTo(map);
-  $("depthStatus").textContent=t("contoursOn");
- }else{
-  if(map.hasLayer(bathyLayer))map.removeLayer(bathyLayer);
-  $("depthStatus").textContent=t("bathyNote");
- }
-}
 function renderFMZ(){
  fmzLayer.clearLayers();
  if($("showFMZ").checked&&fmzLoaded)fmzLayer.addData(fmzFeatures);
-}
-async function loadAccess(){
- if(accessLoaded){renderAccess();return}
- $("accessStatus").textContent=t("loadingAccess");
- try{
-  const p=new URLSearchParams({where:"1=1",outFields:"AccessName,WaterBody,Town,County,Owner,Manager,AccessType,BoatSize,RampType,UniversalA,Parking,Shorefishi,Dock,Directions,CoordX,CoordY",returnGeometry:"true",outSR:"4326",f:"geojson",resultRecordCount:"2000"});
-  const j=await fetch(ACCESS_API+"?"+p).then(r=>r.json());
-  accessPoints=(j.features||[]).map(f=>{
-   const a=f.properties||{},c=f.geometry&&f.geometry.coordinates;
-   let lat=c&&c[1],lon=c&&c[0];
-   if((!lat||!lon)&&a.CoordX&&a.CoordY){const ll=mercatorToLatLon(a.CoordX,a.CoordY);lat=ll[0];lon=ll[1]}
-   return {...a,lat:Number(lat),lon:Number(lon)}
-  }).filter(a=>Number.isFinite(a.lat)&&Number.isFinite(a.lon));
-  accessLoaded=true;$("accessStatus").textContent=`${num(accessPoints.length)} government access points loaded`;renderAccess();
- }catch(e){$("accessStatus").textContent=t("accessUnavailable");$("showAccess").checked=false}
-}
-function accessIcon(a){
- const t=String(a.AccessType||"").toLowerCase(),dock=String(a.Dock||"").toLowerCase();
- if(t.includes("boat")||String(a.RampType||"").trim())return "🚤";
- if(t.includes("shore")||String(a.Shorefishi||"").toLowerCase().includes("yes"))return "🎣";
- if(dock.includes("yes")||t.includes("dock")||t.includes("pier"))return "🛶";
- return "📍";
-}
-function renderAccess(){
- accessLayer.clearLayers();if(!$("showAccess").checked||!accessLoaded)return;
- accessPoints.forEach(a=>{
-  const title=a.AccessName||a.WaterBody||"Fishing access point",icon=accessIcon(a);
-  const popup=`<b>${icon} ${esc(title)}</b><br>${esc(a.AccessType||"Fishing access")}<br>${a.WaterBody?esc(a.WaterBody)+"<br>":""}${a.Parking?`Parking: ${esc(a.Parking)}<br>`:""}<a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lon}">Directions</a>`;
-  L.circleMarker([a.lat,a.lon],{radius:6,color:"#2E6E9E",weight:2,fillColor:"#fff",fillOpacity:.95}).addTo(accessLayer).bindPopup(popup);
- });
-}
-function nearestAccess(l,limit=3){
- if(!accessLoaded)return [];
- return accessPoints.map(a=>({...a,km:distance(l.lat,l.lon,a.lat,a.lon)})).sort((a,b)=>a.km-b.km).slice(0,limit);
 }
 function pick(a,names){
  for(const n of names) if(a[n]!==undefined&&a[n]!==null&&String(a[n]).trim()!=="") return a[n];
@@ -1646,7 +1570,18 @@ function searchCentre(){return townOrigin?[townOrigin.lat,townOrigin.lon]:userLo
    walleye almost always means near here. "Any distance" is still one tap
    away, and the filter is ignored entirely when there is no position, so a
    refused location degrades to a province-wide search rather than to nothing. */
-const DEFAULT_RADIUS="50";
+/* "Any distance" — a search should not silently exclude the province by
+   default. The distance filter is one tap away when it is wanted; a default
+   that hides most of Ontario is not something the person asked for. */
+const DEFAULT_RADIUS="";
+
+/* Closest, not "best guess". The old default ranked by a blend that put
+   recently stocked lakes first, which is a preference rather than an answer —
+   and it was the mechanism behind the v2t bug that buried every unstocked
+   lake. Closest is what someone standing at a boat ramp means. Without a
+   position to measure from there is nothing to be closest to, so the sort
+   falls through to the alphabet, which apply() already does. */
+const DEFAULT_SORT="closest";
 
 /* Reopening the last search.
 
@@ -2614,7 +2549,6 @@ ${presentBlock(l)}
  </div>
  <div id="lake-depth" class="tabAnchor"></div><div class="infoCard"><h3>🌊 ${t("lakeDepth")}</h3><p>${l.depthMax?t("depthKnown").replace("{max}",esc(l.depthMax)).replace("{mean}",l.depthMean?esc(l.depthMean):"—"):t("depthUnknown")}</p><p class="helpNote">${t("depthNotForNav")}</p></div>
  <div id="lake-stocking" class="tabAnchor"></div><h3>Recent Stocking History</h3><div class="history">${history}</div>
- <div id="lake-access" class="tabAnchor"></div><div class="infoCard"><h3>🚤 Nearest fishing access</h3><div id="nearestAccess">${accessLoaded?nearestAccess(l).map(a=>`<div class="accessrow"><div><b>${accessIcon(a)} ${esc(a.AccessName||a.WaterBody||"Fishing access")}</b><span>${esc(a.AccessType||"Access point")} • ${a.km.toFixed(1)} km from lake point</span></div><a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lon}">Directions</a></div>`).join(""):`<p>${t("accessNotLoaded")}</p>`}</div></div>
  ${nearbyStaysCard(l)}
  <div class="infoCard"><h3>Fishing information</h3><p>Stocking records are useful planning information, but fishing seasons, limits and exceptions can change. Check Ontario's current regulations before fishing.</p>
  <div class="actionstack">
@@ -3107,9 +3041,7 @@ function syncTabs(){
  setView(map[currentView]||currentView);
 }
 const fs2=$("favSearch");if(fs2)fs2.oninput=()=>{clearTimeout(fs2._t);fs2._t=setTimeout(apply,200)};
-$("showAccess").onchange=()=>{$("showAccess").checked?loadAccess():renderAccess()};
 $("showFMZ").onchange=()=>{$("showFMZ").checked?loadFMZ(true):renderFMZ()};
-$("showDepth").onchange=renderDepth;
 $("searchBtn").onclick=runSearch;
 
 /* The fifth way to search. Near Me carried "Use my location" until v2l folded
@@ -3138,7 +3070,7 @@ setBasemap(baseKey);
 const so=$("sort");if(so)so.onchange=markFiltersDirty;
 // The access filter needs the access-point file loaded before it can mean
 // anything, so asking for it fetches it rather than silently matching nothing.
-$("clearFilters").onclick=()=>{townOrigin=null;$("search").value="";$("species").value="";$("year").value="";$("radius").value=DEFAULT_RADIUS;const so=$("sort");if(so)so.value="";clearFiltersDirty();commitFilters();searched=false;currentView="explore";forgetLastSearch();apply()};
+$("clearFilters").onclick=()=>{townOrigin=null;$("search").value="";$("species").value="";$("year").value="";$("radius").value=DEFAULT_RADIUS;const so=$("sort");if(so)so.value=DEFAULT_SORT;clearFiltersDirty();commitFilters();searched=false;currentView="explore";forgetLastSearch();apply()};
 
 
 $("recentNearBtn").onclick=recentNearMe;

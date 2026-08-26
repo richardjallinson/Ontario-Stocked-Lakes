@@ -107,15 +107,14 @@
   <select id="species"><option value="" data-i18n="allSpecies">All species</option></select>
   <select id="year"><option value="" data-i18n="allYears">All years</option></select>
   <select id="radius">
-    <option value="" data-i18n="anyDistance">Any distance</option><option value="25" data-i18n-within="25">Within 25 km</option><option value="50" selected data-i18n-within="50">Within 50 km</option><option value="100" data-i18n-within="100">Within 100 km</option><option value="200" data-i18n-within="200">Within 200 km</option>
+    <option value="" selected data-i18n="anyDistance">Any distance</option><option value="25" data-i18n-within="25">Within 25 km</option><option value="50" data-i18n-within="50">Within 50 km</option><option value="100" data-i18n-within="100">Within 100 km</option><option value="200" data-i18n-within="200">Within 200 km</option>
   </select>
   <button id="clearFilters" class="clearbtn" data-i18n="clear">Clear</button>
 </section>
 <section class="filters wideline" data-show="explore favorites">
   <label class="inlinefield sortField"><span data-i18n="sortResults">Sort results</span>
     <select id="sort">
-      <option value="" data-i18n="sortDefault">Best guess</option>
-      <option value="closest" data-i18n="closest">Closest</option>
+      <option value="closest" selected data-i18n="closest">Closest</option>
       <option value="recent" data-i18n="recent">Most recently stocked</option>
       <option value="quantity" data-i18n="quantity">Most fish stocked</option>
     </select>
@@ -129,17 +128,10 @@
 
 <section class="mapcontrols" data-show="explore">
   <div class="accessbar">
-    <label><input type="checkbox" id="showAccess"> <i class="ti"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.2 15.6h17.6l-2.2 4H5.4l-2.2-4Z"/><path d="M6 15.6V9.4h9.2l3.4 6.2"/><path d="M10.6 9.4V6.2h3"/></svg></i><b data-i18n="showAccess">Show fishing access points</b></label>
-    <span id="accessStatus" data-i18n="accessStatus">Boat launches • shore access • docks/piers</span>
-  </div>
-  <div class="accessbar">
     <label><input type="checkbox" id="showFMZ"> <i class="ti"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3.5 3.8 5.6a1 1 0 0 0-.6.9v13a.6.6 0 0 0 .85.55L9 18l6 2.5 5.2-2.1a1 1 0 0 0 .6-.9v-13a.6.6 0 0 0-.85-.55L15 6 9 3.5Z"/><path d="M9 3.5V18M15 6v14.5"/></svg></i><b data-i18n="showFMZ">Show Fisheries Management Zones</b></label>
     <span id="fmzStatus">Ontario FMZ 1–20</span>
   </div>
-  <div class="accessbar">
-    <label><input type="checkbox" id="showDepth"> <i class="ti"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8.4c2-1.6 3.4-1.6 5.4 0s3.4 1.6 5.4 0 3.4-1.6 5.4 0"/><path d="M3 13c2-1.6 3.4-1.6 5.4 0s3.4 1.6 5.4 0 3.4-1.6 5.4 0"/><path d="M3 17.6c2-1.6 3.4-1.6 5.4 0s3.4 1.6 5.4 0 3.4-1.6 5.4 0"/></svg></i><b data-i18n="showDepth">Show lake depth contours</b></label>
-    <span id="depthStatus" data-i18n="depthStatus">Government bathymetry • not for navigation</span>
-  </div>
+
 </section>
 
 <section class="mapcard" data-show="explore favorites">
