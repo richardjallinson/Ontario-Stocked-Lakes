@@ -540,7 +540,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3v";
+const APP_VERSION="v3w";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -613,7 +613,7 @@ function showDetailMap(l){
   if(!detailMap){
    detailMap=L.map(host,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});
    const b=BASEMAPS[baseKey]||BASEMAPS.map;
-   L.tileLayer(b.url,b.opts).addTo(detailMap);
+   if(b.url)L.tileLayer(b.url,b.opts).addTo(detailMap);
   }
   detailMap.setView([l.lat,l.lon],12);
   if(detailMarker)detailMap.removeLayer(detailMarker);
@@ -643,12 +643,21 @@ const fmzLayer=L.geoJSON(null,{
    licence and exclude commercial use, so it cannot ship in an App Store build
    however good the satellite view would look.
 --------------------------------------------------------------------------- */
+/* CARTO left this list in August 2026: their basemaps began demanding an API
+   key, watermarking every unauthenticated tile, and the raster service the
+   app used is being retired outright — so a key would only have postponed the
+   same failure. A third-party credential baked into a shipped app is also
+   exactly the kind of dependency the access-point work just removed. Both
+   replacements below are keyless. */
 const BASEMAPS={
  map:{
   label:"Map",
-  url:"https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-  opts:{subdomains:"abcd",maxZoom:19,
-        attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'}
+  // OpenStreetMap's own tile service: no key, no subdomain shards, no {r}
+  // retina variant — plain XYZ. The attribution line is an OSM licence
+  // requirement, same as the lodging card's.
+  url:"https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+  opts:{maxZoom:19,
+        attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}
  },
  topo:{
   label:"Ontario topo",
@@ -658,9 +667,12 @@ const BASEMAPS={
  },
  plain:{
   label:"Plain",
-  url:"https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-  opts:{subdomains:"abcd",maxZoom:19,
-        attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'}
+  // Genuinely plain now: no tile layer at all, just the marker on a calm
+  // background. It used to be CARTO's light style, which made "Plain" the
+  // oddest of the three to need a network — this one is the only basemap
+  // that works at a lake with no signal.
+  url:null,
+  opts:{attribution:""}
  }
 };
 let baseLayer=null,baseKey=localStorage.getItem("osl-basemap")||"map";
@@ -672,10 +684,12 @@ function setBasemap(key){
  // unavailable used to leave the buttons showing the wrong one.
  document.querySelectorAll(".baseSwitch button").forEach(x=>x.classList.toggle("on",x.dataset.base===key));
  if(!mapAvailable)return;
- if(baseLayer)map.removeLayer(baseLayer);
+ if(baseLayer){map.removeLayer(baseLayer);baseLayer=null}
  const b=BASEMAPS[key];
- baseLayer=L.tileLayer(b.url,b.opts).addTo(map);
- baseLayer.bringToBack&&baseLayer.bringToBack();
+ if(b.url){
+  baseLayer=L.tileLayer(b.url,b.opts).addTo(map);
+  baseLayer.bringToBack&&baseLayer.bringToBack();
+ }
 }
 
 /* The map used to sit wherever it was last dragged while the list below it
