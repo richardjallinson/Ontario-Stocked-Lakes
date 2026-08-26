@@ -518,7 +518,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v3p";
+const APP_VERSION="v3q";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -2177,7 +2177,6 @@ function toggleFav(key){favoriteKeys.has(key)?favoriteKeys.delete(key):favoriteK
 function regulationUrl(l){return l.fmz?`${REGS_BASE}${l.fmz}`:"https://www.ontario.ca/document/ontario-fishing-regulations-summary"}
 
 
-const ONTARIO_REGS_DATASET_URL="https://data.ontario.ca/en/dataset/recreational-fishing-regulations-data";
 const ONTARIO_REGS_SUMMARY_URL="https://www.ontario.ca/document/ontario-fishing-regulations-summary";
 const ONTARIO_REGS_UPDATED="2026-08-04";
 const ECCC_ALERTS_API="https://api.weather.gc.ca/collections/weather-alerts/items";
@@ -2324,7 +2323,7 @@ function regulationCard(l,species){
      <div><small>${t("season")}</small><b>Check current dates</b></div>
    </div>
    <p class="regWarning">This species/FMZ combination has not yet been packaged as a verified numeric rule. Ontario rules can also be overridden by species exceptions, waterbody exceptions, fish sanctuaries and variation orders. The app will not display a guessed legal limit.</p>
-   <div class="regActions"><a target="_blank" rel="noopener" href="${officialRuleSource(l)}">Open FMZ ${l.fmz} Current Rules</a><a target="_blank" rel="noopener" href="${ONTARIO_REGS_DATASET_URL}">Ontario 2026 Regulation Dataset</a></div>
+   <div class="regActions"><a target="_blank" rel="noopener" href="${officialRuleSource(l)}">Open FMZ ${l.fmz} Current Rules</a></div>
  </div>`;
 }
 
@@ -3148,7 +3147,6 @@ function helpMarkup(){
  <div class="aboutBlock"><h3>${t("dataSources")}</h3>
   <a target="_blank" rel="noopener" href="https://www.ontario.ca/fishonline">Ontario Fish ON-Line / ON-Pêche</a>
   <a target="_blank" rel="noopener" href="https://www.ontario.ca/document/ontario-fishing-regulations-summary">2026 Ontario Fishing Regulations Summary</a>
-  <a target="_blank" rel="noopener" href="https://data.ontario.ca/en/dataset/recreational-fishing-regulations-data">Ontario Open Data — Fishing Regulations</a>
   <a target="_blank" rel="noopener" href="https://weather.gc.ca/">Environment Canada Weather</a>
  </div>
  ${speciesArtCredit?`<div class="aboutBlock"><h3>${t("illustrations")}</h3>
