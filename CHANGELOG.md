@@ -4,6 +4,31 @@ Bundles are named sequentially — v1a, v1b, v1c — matching the Estate File
 convention. `APP_VERSION` in `app.js` and `VERSION` in `sw.js` carry the same
 marker and must always match.
 
+## v4p — 2026-08-27
+
+### Fixed — after a plain Search, the way back was greyed out
+- Press Search with no filters set and every lake appears. Clear filters —
+  the one control that returns to the start screen — stayed disabled, so
+  there was no way back to the prompt from that state.
+- The handler was never the problem: it already resets `searched`, forgets
+  the last search and re-renders the prompt. Only the arming test was too
+  narrow, checking the filter widgets but not whether a search had run.
+  Clear is now armed by filters **or** a completed search, and re-syncs on
+  every render since `searched` flips after the previous sync.
+- Found by the browser suite, which had been stopping at this point.
+
+### Note on the test suite
+- `tests/test-browser.js` still halts here, and it is not the app's fault:
+  the suite predates v4h (which gave Clear its disabled state) and clicks the
+  button unconditionally, including twice in a row where the second click has
+  nothing to do. Roughly 50 of its 256 assertions have ever run. Updating the
+  suite to match the intended behaviour is its own job and is NOT done —
+  until it is, treat "browser tests pass" as unproven for most of the app.
+- `tests/test-appstore.js` is unaffected: 28 of 28 pass.
+
+### Changed
+- `APP_VERSION` / `VERSION` → `v4p`.
+
 ## v4o — 2026-08-27
 
 ### Fixed — the eating guide was the one screen still hardcoded in English

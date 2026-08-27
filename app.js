@@ -576,7 +576,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4o";
+const APP_VERSION="v4p";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -1838,7 +1838,11 @@ function filtersAreSet(){
 function syncClearButton(){
  const btn=$("clearFilters");
  if(!btn)return;
- const on=filtersAreSet();
+ /* v4p: armed by filters OR a finished search. The handler already resets
+    searched and returns to the prompt — "start over" was fully built — but the
+    arming test only looked at filter widgets. So pressing Search with nothing
+    set showed every lake with the one control that goes back greyed out. */
+ const on=filtersAreSet()||searched;
  btn.classList.toggle("armed",on);
  btn.disabled=!on;
  // Spelled out for screen readers, which cannot see the dimming.
@@ -2183,6 +2187,7 @@ function apply(){
  render();
 }
 function render(){
+ syncClearButton();   // v4p: searched may have flipped since the last sync
  $("count").textContent=lakeCount(shown.length);
  /* "Filtering" means the person has narrowed something, which is why it hides
     the hero copy and the shortcut cards. The distance dropdown counts only
