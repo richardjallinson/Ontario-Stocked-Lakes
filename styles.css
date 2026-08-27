@@ -84,9 +84,23 @@ footer{text-align:center;padding:25px 15px 40px;color:var(--muted);font-size:12p
 .historyrow{display:flex;justify-content:space-between;gap:15px;padding:12px 13px;border-bottom:1px solid var(--line);background:#fff}
 .historyrow:last-child{border-bottom:0}.historyrow span{display:block;font-size:12px;color:var(--muted);margin-top:3px}.historyright{text-align:right}
 
-body{padding-bottom:76px}.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}.clearbtn{display:flex;align-items:center;justify-content:center;gap:7px;background:white;
- border:1px solid var(--line);border-radius:16px;font-weight:800;color:var(--green);
- padding:14px 16px;box-shadow:0 2px 8px #13263C0D}
+body{padding-bottom:76px}.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}/* v4h: Clear is an ACTION, not a fourth filter.
+   It used to be an identical white card sitting in a 2x2 grid with three
+   dropdowns — same fill, same border, same shadow — so the only thing saying
+   "this wipes your filters" was the word itself. It is now transparent and
+   outlined: same footprint, so the grid stays tidy and its position stays
+   predictable, but it plainly is not one of the selects.
+   Two states: disarmed when nothing is set (it genuinely has nothing to do,
+   and a control that does nothing when tapped teaches people to ignore it),
+   armed the moment any filter is on. */
+.clearbtn{display:flex;align-items:center;justify-content:center;gap:7px;
+ background:transparent;border:1.5px dashed #B4C6D6;border-radius:16px;
+ font-weight:700;color:#7E8FA1;padding:14px 16px;box-shadow:none;
+ transition:color .15s ease,border-color .15s ease,background .15s ease}
+.clearbtn[disabled]{opacity:.55;cursor:default}
+.clearbtn.armed{border-style:solid;border-color:#9FB6CC;color:var(--green);
+ font-weight:800;background:#FFFFFFB3}
+.clearbtn.armed:active{background:#F1F6FA}
 .clearbtn .fi svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round}
 .cardactions{display:flex;align-items:center;gap:7px}.star,.bigstar{border:0;background:transparent;color:#8494A5;font-size:29px;line-height:1;cursor:pointer}.star.saved,.bigstar.saved{color:#C4941F}.bigstar{font-size:38px}
 .detailhead{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.detailhead h2{margin-bottom:5px}.empty{text-align:center;color:var(--muted);padding:28px}
@@ -223,7 +237,9 @@ button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
 .quick b{color:var(--green);font-size:15px;letter-spacing:-.15px}
 .quick button:hover{border-color:#B9CBDD;box-shadow:0 4px 14px #13263C12}
 #searchBtn{color:var(--ink)}
-.clearbtn{color:var(--green)}
+/* Scoped to the armed state so the disarmed one stays quiet — the later flat
+   colour rule was overriding the dimming. */
+.clearbtn.armed{color:var(--green)}
 .bottomnav button{color:var(--muted)}
 
 /* Header: let the tagline breathe instead of truncating mid-word. */

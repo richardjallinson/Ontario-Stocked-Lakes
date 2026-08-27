@@ -52,6 +52,8 @@ const I18N={
   viewCurrentRegs:"View Current FMZ {zone} Regulations",
   checkRegsFor:"Check current FMZ {zone} regulations",
   illustrations:"Fish illustrations",
+  clearFiltersOn:"Clear all filters",
+  clearFiltersOff:"Clear filters — nothing is set",
   capSettings:"Settings",
   capHelp:"Help",
   accUnnamed:"unnamed site",
@@ -300,6 +302,8 @@ const I18N={
   viewCurrentRegs:"Voir les règlements actuels de la ZGP {zone}",
   checkRegsFor:"Vérifiez les règlements actuels de la ZGP {zone}",
   illustrations:"Illustrations de poissons",
+  clearFiltersOn:"Effacer tous les filtres",
+  clearFiltersOff:"Effacer les filtres — aucun filtre actif",
   capSettings:"Réglages",
   capHelp:"Aide",
   accUnnamed:"site sans nom",
@@ -544,7 +548,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4g";
+const APP_VERSION="v4h";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -1752,11 +1756,44 @@ function commitFilters(){
  committed.sort=$("sort")?$("sort").value:"";
 }
 
+/* Is there anything for Clear to actually clear?
+
+   Clear used to sit in the filter grid looking exactly like the three selects
+   beside it — same white card, same size — while doing something entirely
+   different, and it was live even on a fresh screen where it did nothing at
+   all. A control that does nothing when tapped teaches people to ignore it,
+   which is worse than not showing it.
+
+   Note townOrigin and the search box count: "Within 100 km of Tweed" is a
+   filter even though no <select> changed, and Clear resets both. */
+function filtersAreSet(){
+ const q=$("search"),sp=$("species"),yr=$("year"),rad=$("radius"),so=$("sort");
+ return !!(
+  (q&&q.value.trim()) ||
+  (sp&&sp.value) ||
+  (yr&&yr.value) ||
+  (rad&&rad.value!==DEFAULT_RADIUS) ||
+  (so&&so.value!==DEFAULT_SORT) ||
+  townOrigin
+ );
+}
+
+function syncClearButton(){
+ const btn=$("clearFilters");
+ if(!btn)return;
+ const on=filtersAreSet();
+ btn.classList.toggle("armed",on);
+ btn.disabled=!on;
+ // Spelled out for screen readers, which cannot see the dimming.
+ btn.setAttribute("aria-label", on ? t("clearFiltersOn") : t("clearFiltersOff"));
+}
+
 function markFiltersDirty(){
  filtersDirty=true;
  const btn=$("searchBtn"),hint=$("filterHint");
  if(btn)btn.classList.add("pending");
  if(hint)hint.hidden=false;
+ syncClearButton();
 }
 
 function clearFiltersDirty(){
@@ -1764,6 +1801,7 @@ function clearFiltersDirty(){
  const btn=$("searchBtn"),hint=$("filterHint");
  if(btn)btn.classList.remove("pending");
  if(hint)hint.hidden=true;
+ syncClearButton();
 }
 
 /* The one place a search actually happens. */
@@ -3179,7 +3217,7 @@ setBasemap(baseKey);
 const so=$("sort");if(so)so.onchange=markFiltersDirty;
 // The access filter needs the access-point file loaded before it can mean
 // anything, so asking for it fetches it rather than silently matching nothing.
-$("clearFilters").onclick=()=>{townOrigin=null;$("search").value="";$("species").value="";$("year").value="";$("radius").value=DEFAULT_RADIUS;const so=$("sort");if(so)so.value=DEFAULT_SORT;clearFiltersDirty();commitFilters();searched=false;currentView="explore";forgetLastSearch();apply()};
+$("clearFilters").onclick=()=>{townOrigin=null;$("search").value="";$("species").value="";$("year").value="";$("radius").value=DEFAULT_RADIUS;const so=$("sort");if(so)so.value=DEFAULT_SORT;clearFiltersDirty();commitFilters();searched=false;currentView="explore";forgetLastSearch();apply();syncClearButton()};
 
 
 $("recentNearBtn").onclick=recentNearMe;
@@ -3192,6 +3230,7 @@ load();
    and the person's own data are independent, and neither should wait for the
    other. If the Documents copy was newer, whatever is on screen re-renders. */
 restoreDurable().then(changed=>{if(changed){renderTrips();apply()}});
+syncClearButton();   // a restored search should arrive with Clear already armed
 if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
 
 
