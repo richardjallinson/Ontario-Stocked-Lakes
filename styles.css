@@ -170,6 +170,18 @@ body{padding-bottom:76px}.filters{display:grid;grid-template-columns:1fr 1fr;gap
 .advisorybox{display:grid;gap:9px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
 .advisorybox>span{font-size:11px;color:var(--muted)}.advisorybox label{font-size:11px;font-weight:800;color:var(--muted)}
 .advisorybox select,.advisorybox input{display:block;width:100%;margin-top:4px;border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff;font:inherit}
+
+/* v4n — Trevor: picking a fish in the eating guide and tapping the size box
+   zoomed the whole app in, permanently. iOS auto-zooms any focused control
+   whose text is under 16px, and a standalone web app never zooms back out.
+   Two layers: maximum-scale=1 in the viewport meta stops the auto-zoom
+   itself (pinch still works in Safari; Apple ignores the cap for user
+   gestures), and a 16px floor on every control that takes typing removes
+   the trigger on any iOS version that ignores the meta. Selects that only
+   open pickers keep their designed sizes. */
+.advisorybox input,.advisorybox select,
+.catchform input,.catchform select,.catchform textarea,.tripnotes,
+.findgrid input,.findgrid select,.addItemRow input,.fieldLabel input{font-size:16px}
 .advisorybox button{border:0;background:var(--green);color:#fff;padding:11px;border-radius:10px;font-weight:900}
 .mealgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:5px}.mealgrid div{background:#eef5f2;border-radius:11px;padding:11px;text-align:center}.mealgrid small,.mealgrid span{display:block;color:var(--muted);font-size:10px}.mealgrid b{display:block;font-size:25px;color:var(--green);margin:3px 0}
 

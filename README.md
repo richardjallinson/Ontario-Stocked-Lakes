@@ -145,5 +145,5 @@ licences, above, and nothing here restricts your rights in that material.
 
 ---
 
-**Version v4m.** `APP_VERSION` in `app.js` and `VERSION` in `sw.js` both read
-`v4m` and must always match. See [CHANGELOG.md](CHANGELOG.md) for what changed.
+**Version v4o.** `APP_VERSION` in `app.js` and `VERSION` in `sw.js` both read
+`v4o` and must always match. See [CHANGELOG.md](CHANGELOG.md) for what changed.

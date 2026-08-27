@@ -157,6 +157,19 @@ const I18N={
   noSpeciesListNote:"No species are on record for this lake, so type what you caught.",
   saveCatchLocation:"Save current catch location",
   checkEatingAdvice:"Check the eating advice for this lake",
+  advLoading:"Consumption-advisory data is loading.",
+  advMulti:"More than one Ontario Fish Guide location has this waterbody name, so this app will not guess which advisory applies.",
+  advNone:"No exact-name Ontario Fish Guide advisory location was matched to this lake.",
+  advVerifyLoc:"Use Ontario's official Fish Guide to verify the location.",
+  advOpenGuide:"Open Ontario Fish Guide",
+  advSpeciesLabel:"Fish species",advLengthLabel:"Fish length (cm)",advLengthPh:"e.g. 42",
+  advCheckBtn:"Check Eating Advice",
+  advEnterLength:"Enter the fish length in centimetres.",
+  advNoRange:"No tested advisory range was found for a {len} cm {sp} at this location. Check the official Ontario Fish Guide.",
+  advGeneral:"General population",advSensitive:"Sensitive population",advMeals:"meals/month",advNA:"N/A",
+  advCause:"Advisory cause listed by Ontario: {c}",
+  advPlanNote:"This is planning information from Ontario's 2025 advisory database. Verify current advice in the official Fish Guide.",
+  advVerifyBtn:"Verify in Official Ontario Fish Guide",
   checklistNote:"Saved with this trip. Add your own items — they stay on this device.",
   addItem:"Add",
   addItemPh:"Add an item…",
@@ -408,6 +421,19 @@ const I18N={
   noSpeciesListNote:"Aucune espèce n’est répertoriée pour ce lac; inscrivez votre prise.",
   saveCatchLocation:"Enregistrer la position de la prise",
   checkEatingAdvice:"Consultez les conseils de consommation pour ce lac",
+  advLoading:"Les donn\u00e9es sur les avis de consommation se chargent\u2026",
+  advMulti:"Plusieurs emplacements du Guide de consommation du poisson de l'Ontario portent ce nom de plan d'eau; l'application ne devinera pas quel avis s'applique.",
+  advNone:"Aucun emplacement du Guide de consommation du poisson de l'Ontario ne correspond exactement au nom de ce lac.",
+  advVerifyLoc:"Utilisez le guide officiel de l'Ontario pour v\u00e9rifier l'emplacement.",
+  advOpenGuide:"Ouvrir le Guide de consommation de l'Ontario",
+  advSpeciesLabel:"Esp\u00e8ce de poisson",advLengthLabel:"Longueur du poisson (cm)",advLengthPh:"p. ex. 42",
+  advCheckBtn:"V\u00e9rifier les conseils de consommation",
+  advEnterLength:"Entrez la longueur du poisson en centim\u00e8tres.",
+  advNoRange:"Aucune plage test\u00e9e n'a \u00e9t\u00e9 trouv\u00e9e pour un {sp} de {len} cm \u00e0 cet endroit. Consultez le guide officiel de l'Ontario.",
+  advGeneral:"Population g\u00e9n\u00e9rale",advSensitive:"Population sensible",advMeals:"repas/mois",advNA:"s.o.",
+  advCause:"Cause de l'avis indiqu\u00e9e par l'Ontario\u00a0: {c}",
+  advPlanNote:"Information de planification tir\u00e9e de la base de donn\u00e9es des avis de 2025 de l'Ontario. V\u00e9rifiez les conseils \u00e0 jour dans le guide officiel.",
+  advVerifyBtn:"V\u00e9rifier dans le guide officiel de l'Ontario",
   checklistNote:"Enregistrée avec cette sortie. Ajoutez vos propres articles — ils restent sur cet appareil.",
   addItem:"Ajouter",
   addItemPh:"Ajouter un article…",
@@ -550,7 +576,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4m";
+const APP_VERSION="v4o";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -941,7 +967,7 @@ function thermalLabel(v){return appLang==="fr"&&THERMAL_FR[v]?THERMAL_FR[v]:v}
 function stageLabel(v){return appLang==="fr"&&STAGE_FR[v]?STAGE_FR[v]:v}
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function name(r){return r.Official_Waterbody_Name||r.Unoffcial_Waterbody_Name||"Unnamed waterbody"}
-function num(v){return Number(v||0).toLocaleString("en-CA",{maximumFractionDigits:0})}
+function num(v){return Number(v||0).toLocaleString(appLang==="fr"?"fr-CA":"en-CA",{maximumFractionDigits:0})}
 function rad(x){return x*Math.PI/180}
 function distance(a,b,c,d){const R=6371,x=rad(c-a),y=rad(d-b),q=Math.sin(x/2)**2+Math.cos(rad(a))*Math.cos(rad(c))*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(q))}
 function lakeKey(r){return String(r.Waterbody_Location_Identifier||"").trim()||[name(r),r.Geographic_Township,r.Latitude,r.Longitude].map(v=>String(v||"").trim().toLowerCase()).join("|")}
@@ -1117,19 +1143,23 @@ function adviceFor(loc,species,length){
  return byPop;
 }
 function advisoryPanel(l){
- if(!advisoriesLoaded)return `<div class="historynote">Consumption-advisory data is loading.</div>`;
+ /* v4o: this panel was the one screen still hardcoded in English — every
+    other string in the app is bilingual. Labels now go through t(); species
+    options show speciesLabel() but keep the dataset's English name as the
+    value so adviceFor() still matches. */
+ if(!advisoriesLoaded)return `<div class="historynote">${t("advLoading")}</div>`;
  const matches=l.advisoryMatches||[];
- if(matches.length!==1)return `<div class="historynote">${matches.length>1?"More than one Ontario Fish Guide location has this waterbody name, so this app will not guess which advisory applies.":"No exact-name Ontario Fish Guide advisory location was matched to this lake."} Use Ontario's official Fish Guide to verify the location.</div><a class="secondaryAction" target="_blank" rel="noopener" href="https://www.ontario.ca/page/fish-consumption-report">Open Ontario Fish Guide</a>`;
+ if(matches.length!==1)return `<div class="historynote">${matches.length>1?t("advMulti"):t("advNone")} ${t("advVerifyLoc")}</div><a class="secondaryAction" target="_blank" rel="noopener" href="https://www.ontario.ca/page/fish-consumption-report">${t("advOpenGuide")}</a>`;
  const loc=matches[0],species=[...new Set(loc.advisories.map(a=>a.species))].sort();
- return `<div class="advisorybox"><b>${esc(loc.name)}</b>${loc.desc?`<span>${esc(loc.desc)}</span>`:""}<label>Fish species<select id="advSpecies">${species.map(s=>`<option>${esc(s)}</option>`).join("")}</select></label><label>Fish length (cm)<input id="advLength" type="number" min="1" step="1" placeholder="e.g. 42"></label><button id="checkAdvice">Check Eating Advice</button><div id="adviceResult"></div></div><a class="secondaryAction" target="_blank" rel="noopener" href="https://www.ontario.ca/page/fish-consumption-report">Verify in Official Ontario Fish Guide</a>`;
+ return `<div class="advisorybox"><b>${esc(loc.name)}</b>${loc.desc?`<span>${esc(loc.desc)}</span>`:""}<label>${t("advSpeciesLabel")}<select id="advSpecies">${species.map(s=>`<option value="${esc(s)}">${esc(speciesLabel(s))}</option>`).join("")}</select></label><label>${t("advLengthLabel")}<input id="advLength" type="number" inputmode="numeric" min="1" step="1" placeholder="${t("advLengthPh")}"></label><button id="checkAdvice">${t("advCheckBtn")}</button><div id="adviceResult"></div></div><a class="secondaryAction" target="_blank" rel="noopener" href="https://www.ontario.ca/page/fish-consumption-report">${t("advVerifyBtn")}</a>`;
 }
 function wireAdvisory(l){
  const btn=$("checkAdvice");if(!btn)return;
- btn.onclick=()=>{const loc=(l.advisoryMatches||[])[0],sp=$("advSpecies").value,len=Number($("advLength").value),out=$("adviceResult");if(!len){out.innerHTML="<p>Enter the fish length in centimetres.</p>";return}
+ btn.onclick=()=>{const loc=(l.advisoryMatches||[])[0],sp=$("advSpecies").value,len=Number($("advLength").value),out=$("adviceResult");if(!len){out.innerHTML=`<p>${t("advEnterLength")}</p>`;return}
   const a=adviceFor(loc,sp,len),g=a.General,s=a.Sensitive;
-  if(!g&&!s){out.innerHTML=`<div class="historynote">No tested advisory range was found for a ${len} cm ${esc(sp)} at this location. Check the official Ontario Fish Guide.</div>`;return}
+  if(!g&&!s){out.innerHTML=`<div class="historynote">${t("advNoRange").replace("{len}",String(len)).replace("{sp}",esc(speciesLabel(sp)))}</div>`;return}
   const cause=[g&&g.cause,s&&s.cause].filter(Boolean)[0]||"";
-  out.innerHTML=`<div class="mealgrid"><div><small>General population</small><b>${g?esc(g.meals):"N/A"}</b><span>meals/month</span></div><div><small>Sensitive population</small><b>${s?esc(s.meals):"N/A"}</b><span>meals/month</span></div></div>${cause?`<p class="microcopy">Advisory cause listed by Ontario: ${esc(cause)}</p>`:""}<p class="microcopy">This is planning information from Ontario's 2025 advisory database. Verify current advice in the official Fish Guide.</p>`;
+  out.innerHTML=`<div class="mealgrid"><div><small>${t("advGeneral")}</small><b>${g?esc(g.meals):t("advNA")}</b><span>${t("advMeals")}</span></div><div><small>${t("advSensitive")}</small><b>${s?esc(s.meals):t("advNA")}</b><span>${t("advMeals")}</span></div></div>${cause?`<p class="microcopy">${t("advCause").replace("{c}",esc(cause))}</p>`:""}<p class="microcopy">${t("advPlanNote")}</p>`;
  };
 }
 /* ---------------------------------------------------------------------------
