@@ -548,7 +548,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4j";
+const APP_VERSION="v4k";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -850,21 +850,16 @@ const HIDDEN_SPECIES=new Set([
 function anglerSpecies(list){
  return (list||[]).filter(s=>!HIDDEN_SPECIES.has(s));
 }
-/* What a lake's headline should list. A stocked lake is not only its stocked
-   fish: Lake Ontario stocks five salmonids and holds the walleye, pike and
-   bass that surveys have recorded for decades. Stocked species lead -- they
-   are why the lake is in the app -- then every surveyed species the filters
-   can already find, deduplicated. okSpecies() unions the same two lists, so
-   this is what stops a card from hiding the species that matched it. (The
-   field reports of one-species lakes were all stocked lakes, because only
-   stocked lakes took the l.species-only branch this replaces.) */
+/* The headline list for a lake card, map popup or detail sheet. Stocked
+   species lead, because they are why the lake is in this app; surveyed
+   species the filters can already find follow, deduplicated. A stocked
+   lake used to show ONLY l.species here, which hid every surveyed species
+   from view even though okSpecies() already searches both lists — v4j. */
 function displaySpecies(l){
- const out=[],seen=new Set();
- (l.species||[]).concat(anglerSpecies(l.present)).forEach(s=>{
-  const k=String(s).toLowerCase();
-  if(!seen.has(k)){seen.add(k);out.push(s)}
- });
- return out;
+ const stocked=l.stocked?(l.species||[]):[];
+ const seen=new Set(stocked);
+ const surveyed=anglerSpecies(l.present).filter(s=>!seen.has(s));
+ return stocked.concat(surveyed);
 }
 /* Why a visible list came back empty. The distinction matters: "no records"
    and "records we don't show you" are different facts, and telling an angler
@@ -2691,12 +2686,8 @@ function presentBlock(l){
 
 function detail(l){
  recentLakes=[l.key,...recentLakes.filter(k=>k!==l.key)].slice(0,10);localStorage.setItem("osl-recent",JSON.stringify(recentLakes));persistDurable();
- // The header line is a summary, not the inventory -- presentBlock() below
- // lists everything. Six names then a count; localized, unlike the raw
- // l.species.join it replaces, so a French sheet no longer opens in English.
- const headSp=displaySpecies(l),headLine=headSp.slice(0,6).map(speciesLabel).join(" • ")+(headSp.length>6?" +"+(headSp.length-6):"");
  const fav=favoriteKeys.has(l.key),history=l.records.map(r=>`<div class="historyrow"><div><b>${esc(r.Stocking_Year||"—")}</b><span>${esc(r.Species?speciesLabel(r.Species):t("speciesUnavailable"))}</span></div><div class="historyright"><b>${num(r.Number_of_Fish_Stocked)}</b><span>${esc(r.Developmental_Stage?stageLabel(r.Developmental_Stage):"")}</span></div></div>`).join("");
- $("detail").innerHTML=`<div class="detailhead"><div><h2>${esc(l.name)}</h2><div class="species">${esc(headLine)}</div></div><button class="bigstar ${fav?"saved":""}" id="detailFav">${fav?"★":"☆"}</button></div>
+ $("detail").innerHTML=`<div class="detailhead"><div><h2>${esc(l.name)}</h2><div class="species">${esc(displaySpecies(l).slice(0,6).map(speciesLabel).join(" • "))}${displaySpecies(l).length>6?` <span class="more">+${displaySpecies(l).length-6}</span>`:""}</div></div><button class="bigstar ${fav?"saved":""}" id="detailFav">${fav?"★":"☆"}</button></div>
  ${whereLine(l)}
  <div class="detailMapWrap"><div id="detailMap" role="img" aria-label="${t('lakeMapLabel')}"></div></div>
  <div class="detailgrid">${l.stocked?`<div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div>`:`<div><small>Stocking</small><b>Not stocked</b></div>`}${userLoc?`<div><small>Distance from you</small><b>${esc(distanceLabel(l))}</b></div>`:""}${l.district?`<div><small>MNRF district</small><b>${esc(l.district)}</b></div>`:""}
