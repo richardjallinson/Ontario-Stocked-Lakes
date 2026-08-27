@@ -548,7 +548,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4h";
+const APP_VERSION="v4j";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -849,6 +849,22 @@ const HIDDEN_SPECIES=new Set([
    can never show a species the filters cannot find. */
 function anglerSpecies(list){
  return (list||[]).filter(s=>!HIDDEN_SPECIES.has(s));
+}
+/* What a lake's headline should list. A stocked lake is not only its stocked
+   fish: Lake Ontario stocks five salmonids and holds the walleye, pike and
+   bass that surveys have recorded for decades. Stocked species lead -- they
+   are why the lake is in the app -- then every surveyed species the filters
+   can already find, deduplicated. okSpecies() unions the same two lists, so
+   this is what stops a card from hiding the species that matched it. (The
+   field reports of one-species lakes were all stocked lakes, because only
+   stocked lakes took the l.species-only branch this replaces.) */
+function displaySpecies(l){
+ const out=[],seen=new Set();
+ (l.species||[]).concat(anglerSpecies(l.present)).forEach(s=>{
+  const k=String(s).toLowerCase();
+  if(!seen.has(k)){seen.add(k);out.push(s)}
+ });
+ return out;
 }
 /* Why a visible list came back empty. The distinction matters: "no records"
    and "records we don't show you" are different facts, and telling an angler
@@ -2167,7 +2183,7 @@ function render(){
   const latest=l.records.filter(r=>Number(r.Stocking_Year)===l.latestYear),latestFish=latest.reduce((n,r)=>n+(Number(r.Number_of_Fish_Stocked)||0),0),fav=favoriteKeys.has(l.key);
   // An unstocked lake has no year and no stocking totals, so it gets its own
   // pill and its own meta line instead of a row of dashes.
-  const listSpecies=l.stocked?l.species:anglerSpecies(l.present);
+  const listSpecies=displaySpecies(l);
   // The empty case is not one case. A stocked lake with no stocked species is
   // a data gap; an unstocked lake can be unsurveyed, forage-only, or keyed no
   // finer than a family. Each says a different thing to someone choosing a lake.
@@ -2212,7 +2228,7 @@ function render(){
  };
  markerLayer.clearLayers();
  fitToResults();
- shown.slice(0,400).forEach(l=>{const m=L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${esc((l.stocked?l.species:anglerSpecies(l.present)).slice(0,4).map(speciesLabel).join(", "))}<br>${l.stocked?(t("latestStocking")+": "+esc(l.latestYear||"—")):t("notStocked")}`);m.on("click",()=>detail(l))});
+ shown.slice(0,400).forEach(l=>{const m=L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${esc(displaySpecies(l).slice(0,4).map(speciesLabel).join(", "))}<br>${l.stocked?(t("latestStocking")+": "+esc(l.latestYear||"—")):t("notStocked")}`);m.on("click",()=>detail(l))});
 }
 function lakeCount(n){return num(n)+" "+(n===1?"lake":"lakes")}
 
@@ -2675,8 +2691,12 @@ function presentBlock(l){
 
 function detail(l){
  recentLakes=[l.key,...recentLakes.filter(k=>k!==l.key)].slice(0,10);localStorage.setItem("osl-recent",JSON.stringify(recentLakes));persistDurable();
+ // The header line is a summary, not the inventory -- presentBlock() below
+ // lists everything. Six names then a count; localized, unlike the raw
+ // l.species.join it replaces, so a French sheet no longer opens in English.
+ const headSp=displaySpecies(l),headLine=headSp.slice(0,6).map(speciesLabel).join(" • ")+(headSp.length>6?" +"+(headSp.length-6):"");
  const fav=favoriteKeys.has(l.key),history=l.records.map(r=>`<div class="historyrow"><div><b>${esc(r.Stocking_Year||"—")}</b><span>${esc(r.Species?speciesLabel(r.Species):t("speciesUnavailable"))}</span></div><div class="historyright"><b>${num(r.Number_of_Fish_Stocked)}</b><span>${esc(r.Developmental_Stage?stageLabel(r.Developmental_Stage):"")}</span></div></div>`).join("");
- $("detail").innerHTML=`<div class="detailhead"><div><h2>${esc(l.name)}</h2><div class="species">${esc(l.species.join(" • "))}</div></div><button class="bigstar ${fav?"saved":""}" id="detailFav">${fav?"★":"☆"}</button></div>
+ $("detail").innerHTML=`<div class="detailhead"><div><h2>${esc(l.name)}</h2><div class="species">${esc(headLine)}</div></div><button class="bigstar ${fav?"saved":""}" id="detailFav">${fav?"★":"☆"}</button></div>
  ${whereLine(l)}
  <div class="detailMapWrap"><div id="detailMap" role="img" aria-label="${t('lakeMapLabel')}"></div></div>
  <div class="detailgrid">${l.stocked?`<div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div>`:`<div><small>Stocking</small><b>Not stocked</b></div>`}${userLoc?`<div><small>Distance from you</small><b>${esc(distanceLabel(l))}</b></div>`:""}${l.district?`<div><small>MNRF district</small><b>${esc(l.district)}</b></div>`:""}

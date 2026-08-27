@@ -93,14 +93,24 @@ body{padding-bottom:76px}.filters{display:grid;grid-template-columns:1fr 1fr;gap
    Two states: disarmed when nothing is set (it genuinely has nothing to do,
    and a control that does nothing when tapped teaches people to ignore it),
    armed the moment any filter is on. */
+/* v4i: two solid states, no dashed outline.
+   The dashed version read as an empty slot or a drop target rather than a
+   button at rest — in interface convention a dashed box means "nothing here
+   yet", which is the opposite of what this is.
+   Disarmed: a quiet grey chip. Still plainly not one of the white dropdowns,
+   still plainly inactive, but it looks like a resting button rather than a
+   gap in the grid.
+   Armed: the palette's water blue with white text at 5.5:1. Blue on purpose —
+   lime already means "go" on Search and My Location, and this undoes rather
+   than starts. Different job, different colour. */
 .clearbtn{display:flex;align-items:center;justify-content:center;gap:7px;
- background:transparent;border:1.5px dashed #B4C6D6;border-radius:16px;
- font-weight:700;color:#7E8FA1;padding:14px 16px;box-shadow:none;
+ background:#EDF1F5;border:1px solid #DCE5EC;border-radius:16px;
+ font-weight:700;color:#647383;padding:14px 16px;box-shadow:none;
  transition:color .15s ease,border-color .15s ease,background .15s ease}
-.clearbtn[disabled]{opacity:.55;cursor:default}
-.clearbtn.armed{border-style:solid;border-color:#9FB6CC;color:var(--green);
- font-weight:800;background:#FFFFFFB3}
-.clearbtn.armed:active{background:#F1F6FA}
+.clearbtn[disabled]{cursor:default}
+.clearbtn.armed{background:var(--water);border-color:var(--water);color:#fff;
+ font-weight:800;box-shadow:0 2px 8px #2E6E9E33}
+.clearbtn.armed:active{background:#28618C;border-color:#28618C}
 .clearbtn .fi svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round}
 .cardactions{display:flex;align-items:center;gap:7px}.star,.bigstar{border:0;background:transparent;color:#8494A5;font-size:29px;line-height:1;cursor:pointer}.star.saved,.bigstar.saved{color:#C4941F}.bigstar{font-size:38px}
 .detailhead{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.detailhead h2{margin-bottom:5px}.empty{text-align:center;color:var(--muted);padding:28px}
@@ -239,7 +249,9 @@ button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
 #searchBtn{color:var(--ink)}
 /* Scoped to the armed state so the disarmed one stays quiet — the later flat
    colour rule was overriding the dimming. */
-.clearbtn.armed{color:var(--green)}
+/* Scoped to .armed, and white rather than the app green: the armed chip is a
+   filled blue surface now, so green text on it would fail contrast. */
+.clearbtn.armed{color:#fff}
 .bottomnav button{color:var(--muted)}
 
 /* Header: let the tagline breathe instead of truncating mid-word. */
