@@ -71,6 +71,7 @@ const I18N={
   splashWarning:"Ontario Stocked Lakes. Loading lakes…",
   loadingSub:"Fetching Ontario's stocking records and lake index. Search will be ready in a moment.",
   splashLoading:"Loading Ontario lakes…",
+  splashCount:"Loading {n} Lakes",
   emptyWheelsHid:"{n} lakes match your search, but the {what} filter is hiding them.",
   clearThose:"Clear that filter",
   lakeIndexLoading:"Still loading Ontario's full lake index — these results are stocked lakes only for the moment, and will fill in on their own.",
@@ -321,6 +322,7 @@ const I18N={
   splashWarning:"Ontario Stocked Lakes. Chargement des lacs…",
   loadingSub:"Récupération des données d’ensemencement et de l’index des lacs de l’Ontario. La recherche sera prête dans un instant.",
   splashLoading:"Chargement des lacs de l'Ontario…",
+  splashCount:"Chargement de {n} lacs…",
   emptyWheelsHid:"{n} lacs correspondent à votre recherche, mais le filtre {what} les masque.",
   clearThose:"Effacer ce filtre",
   lakeIndexLoading:"Chargement de l’index complet des lacs de l’Ontario — ces résultats ne comprennent que les lacs ensemencés pour l’instant; ils se compléteront d’eux-mêmes.",
@@ -548,7 +550,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4l";
+const APP_VERSION="v4m";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -1196,6 +1198,14 @@ const splashShownAt=Date.now();
 document.addEventListener("DOMContentLoaded",()=>{
  const v=document.getElementById("splashVer");
  if(v)v.textContent=APP_VERSION;
+ /* The caption shows the lake count, but the number is never hardcoded —
+    v4g's "10,948" was baked into the artwork and survived two releases of
+    string fixes. The count comes from the last successfully loaded index
+    (localStorage), then updates live the moment this launch's index lands.
+    First-ever run has no count yet and says "Loading Ontario lakes…". */
+ const sm=document.getElementById("splashMsg");
+ if(sm){const c=Number(localStorage.getItem("osl-lakecount")||0);
+  sm.textContent=c>0?t("splashCount").replace("{n}",num(c)):t("splashLoading");}
  // The bar fills once, left to right, and reaches 100% exactly as the splash
  // ends. The duration comes from SPLASH_MIN_MS rather than being repeated in
  // the CSS — the suite has caught this kind of paired constant drifting three
@@ -1262,6 +1272,11 @@ async function load(){
   rows=all.filter(x=>x.Latitude&&x.Longitude);
   waterbodies=fullIndex;
   waterbodiesLoaded=true;waterbodiesState="ready";
+  // Remember the real count for the next launch's splash, and correct this
+  // splash on the spot if it is still up (first run, or the index grew).
+  try{localStorage.setItem("osl-lakecount",String(fullIndex.length))}catch(_){}
+  const sm2=document.getElementById("splashMsg");
+  if(sm2&&!splashHiding)sm2.textContent=t("splashCount").replace("{n}",num(fullIndex.length));
   afterStockingLoaded();
  }catch(e){
   waterbodiesLoaded=false;waterbodiesState="unavailable";
@@ -1341,6 +1356,7 @@ async function loadWaterbodies(){
   if(!list)throw new Error("not built");
   waterbodies=list;
   waterbodiesLoaded=true;waterbodiesState="ready";
+  try{localStorage.setItem("osl-lakecount",String(list.length))}catch(_){}
   mergeWaterbodies();
   buildFilters(true);
   // A saved species may only exist in the wheel after the merge, so try the
@@ -3234,6 +3250,31 @@ $("clearFilters").onclick=()=>{townOrigin=null;$("search").value="";$("species")
 $("recentNearBtn").onclick=recentNearMe;
 $("recentBtn").onclick=()=>{townOrigin=null;$("search").value="";$("species").value="";$("year").value="";$("radius").value="";commitFilters();searched=true;currentView="explore";shown=[...lakes].sort((a,b)=>b.latestYear-a.latestYear);render()};
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>setView(b.dataset.view));
+/* v4m — Trevor: with a lake page open you could still scroll the lake list
+   underneath it. Every sheet opens and closes by toggling the "hidden" class
+   from a dozen call sites, so rather than patch each one, watch the class:
+   whenever any sheet is visible the body is frozen in place (position:fixed
+   at the current scroll offset — the only lock iOS respects), and when the
+   last sheet closes the page is put back exactly where it was. */
+let sheetScrollY=0;
+function syncSheetLock(){
+ const open=[...document.querySelectorAll(".sheet")].some(s=>!s.classList.contains("hidden"));
+ const locked=document.body.classList.contains("sheetOpen");
+ if(open&&!locked){
+  sheetScrollY=window.scrollY||document.documentElement.scrollTop||0;
+  document.body.style.top=-sheetScrollY+"px";
+  document.body.classList.add("sheetOpen");
+ }else if(!open&&locked){
+  document.body.classList.remove("sheetOpen");
+  document.body.style.top="";
+  window.scrollTo(0,sheetScrollY);
+ }
+}
+{
+ const mo=new MutationObserver(syncSheetLock);
+ document.querySelectorAll(".sheet").forEach(s=>mo.observe(s,{attributes:true,attributeFilter:["class"]}));
+ syncSheetLock();
+}
 $("closeSheet").onclick=()=>$("sheet").classList.add("hidden");
 $("closeTrip").onclick=()=>$("tripSheet").classList.add("hidden");$("tripSheet").onclick=e=>{if(e.target===$("tripSheet"))$("tripSheet").classList.add("hidden")};$("sheet").onclick=e=>{if(e.target===$("sheet"))$("sheet").classList.add("hidden")};
 load();

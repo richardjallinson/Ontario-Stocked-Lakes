@@ -77,6 +77,15 @@ main{max-width:850px;margin:auto;padding:16px}/* The hero is a raised card now, 
 .results{display:grid;gap:10px}.record{background:white;border:1px solid var(--line);border-radius:16px;padding:15px;cursor:pointer}.topline{display:flex;justify-content:space-between;gap:10px}.record h4{font-size:18px;margin:0 0 3px}.pill{white-space:nowrap;background:#E7EFF7;color:var(--green);font-weight:800;font-size:12px;border-radius:20px;padding:6px 9px;height:max-content}.species{font-weight:700;color:var(--green2)}.meta{display:flex;flex-wrap:wrap;gap:7px 14px;margin-top:10px;font-size:13px;color:var(--muted)}
 footer{text-align:center;padding:25px 15px 40px;color:var(--muted);font-size:12px}
 .sheet{position:fixed;inset:0;background:#0008;z-index:3000;display:flex;align-items:flex-end}.sheet.hidden{display:none}.sheetbox{background:white;width:100%;max-width:850px;margin:auto;border-radius:24px 24px 0 0;padding:24px;max-height:78vh;overflow:auto;position:relative}.close{position:absolute;right:16px;top:12px;border:0;background:#ECF1F6;width:36px;height:36px;border-radius:50%;font-size:24px}.detailgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}.detailgrid div{background:#F2F6FA;padding:12px;border-radius:12px}.detailgrid small{display:block;color:var(--muted);margin-bottom:3px}.directions{display:block;text-align:center;text-decoration:none;background:var(--green);color:white;padding:14px;border-radius:12px;font-weight:800}
+/* v4m: a sheet is modal — the list behind it must not move (Trevor could
+   scroll the lake list under an open lake page). Two layers:
+   overscroll-behavior stops the sheet's own scroll from chaining to the page
+   when it hits either end, and body.sheetOpen freezes the page outright
+   (position:fixed is the only lock iOS Safari actually honours; app.js sets
+   top to the saved scroll offset and restores it on close). */
+.sheetbox{overscroll-behavior:contain}
+.sheet{overscroll-behavior:contain}
+body.sheetOpen{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 .error{padding:20px;background:#fff3f0;border-radius:14px;color:#7b3027}
 @media(max-width:480px){.quick{grid-template-columns:1fr 1fr}.mapcard #map{height:280px}.hero{padding:18px}.detailgrid{grid-template-columns:1fr 1fr}}
 
