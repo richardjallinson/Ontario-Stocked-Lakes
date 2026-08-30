@@ -1347,3 +1347,8 @@ body.spotCreating{cursor:crosshair}
 body.spotCreating .leaflet-container{cursor:crosshair}
 .spHeadBtns{display:flex;align-items:center;gap:8px}
 .spNew{border:0;background:var(--accent);color:var(--green);border-radius:9px;padding:7px 12px;font:inherit;font-weight:800;font-size:13px;cursor:pointer}
+/* Colour choice as plain tappable circles: iOS native radios drew at their
+   own size on top of the swatches and clipped the labels. A ring marks the
+   selected one. */
+.spSwatch{width:36px;height:36px;border-radius:50%;border:3px solid transparent;padding:0;cursor:pointer;flex-shrink:0}
+.spSwatch.sel{border-color:#13263C;box-shadow:0 0 0 2px #fff inset}
