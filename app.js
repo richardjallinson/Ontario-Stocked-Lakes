@@ -701,7 +701,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6t";
+const APP_VERSION="v6u";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -1217,10 +1217,10 @@ const LocationControl=L.Control.extend({
    The two lists you open sit above the two switches you flick, and the
    switches sit nearest the thumb. Leaflet prepends in this corner, so the
    add order here is deliberately the reverse of the visible order. */
-new LocationControl().addTo(map);
-new TrailToggleControl().addTo(map);
-new TrailControl().addTo(map);
 new SpotsControl().addTo(map);
+new TrailControl().addTo(map);
+new TrailToggleControl().addTo(map);
+new LocationControl().addTo(map);
 drawTrail("main",map);
 drawSavedTrails("main",map);
 drawSpots("main",map);
@@ -1464,10 +1464,10 @@ function showDetailMap(l){
   }
   if(!detailMap){
    detailMap=L.map(host,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});
-   new LocationControl().addTo(detailMap);
-   new TrailToggleControl().addTo(detailMap);
-   new TrailControl().addTo(detailMap);
    new SpotsControl().addTo(detailMap);
+   new TrailControl().addTo(detailMap);
+   new TrailToggleControl().addTo(detailMap);
+   new LocationControl().addTo(detailMap);
    detailMap.on("click",mapClickForSpot);
    detailMap.on("contextmenu",spotLongPress);
   }
