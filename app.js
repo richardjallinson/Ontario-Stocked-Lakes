@@ -655,7 +655,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6d";
+const APP_VERSION="v6e";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -937,7 +937,28 @@ let savedSpots={},shownSpotIds={},spotCreationMode=false,currentLakeForSpots=nul
 const spotLines={main:{},detail:{}};
 try{savedSpots=JSON.parse(localStorage.getItem("osl-spots")||"{}")}catch(e){}
 try{shownSpotIds=JSON.parse(localStorage.getItem("osl-spots-shown")||"{}")}catch(e){}
-function lakeKeyForSpots(l){return String(l.id||l.waterbodyId||"unnamed")}
+function lakeKeyForSpots(l){
+ if(!l)return "";
+ /* `key` is the grouping id every lake object is built with and is always
+    present; waterbodyId is blank for many lakes and `id` does not exist at
+    all, so the old fallback put every keyless lake in one shared bucket --
+    which is how a spot saved on one lake appeared on another. */
+ return String(l.key||l.waterbodyId||`${l.lat},${l.lon}`);
+}
+/* One-time move of spots saved under the old shared bucket. They cannot be
+   attributed to a lake after the fact, so they are parked under a key no
+   lake resolves to rather than deleted: nothing of the person's is thrown
+   away, and no lake shows someone else's marks. */
+(function migrateStrandedSpots(){
+ try{
+  if(savedSpots&&savedSpots.unnamed&&!savedSpots["__unfiled"]){
+   savedSpots["__unfiled"]=savedSpots.unnamed;delete savedSpots.unnamed;
+   if(shownSpotIds&&shownSpotIds.unnamed){shownSpotIds["__unfiled"]=shownSpotIds.unnamed;delete shownSpotIds.unnamed}
+   localStorage.setItem("osl-spots",JSON.stringify(savedSpots));
+   localStorage.setItem("osl-spots-shown",JSON.stringify(shownSpotIds));
+  }
+ }catch(e){}
+})();
 function getSpots(lk){return savedSpots[lk]||[]}
 function setSpots(lk,spots){savedSpots[lk]=spots;try{localStorage.setItem("osl-spots",JSON.stringify(savedSpots))}catch(e){}}
 function getShownSpots(lk){return shownSpotIds[lk]||[]}
@@ -1195,7 +1216,7 @@ function offlineTileUrls(lat,lon){
 let savedAreas={};
 try{savedAreas=JSON.parse(localStorage.getItem("osl-offline-areas")||"{}")||{}}catch(e){savedAreas={}}
 function saveAreasIndex(){try{localStorage.setItem("osl-offline-areas",JSON.stringify(savedAreas))}catch(e){}}
-function areaKeyFor(l){return String(l.id||l.waterbodyId||`${l.lat},${l.lon}`)}
+function areaKeyFor(l){return String(l.key||l.waterbodyId||`${l.lat},${l.lon}`)}
 function offlineBtnEl(){return document.getElementById("offlineBtn")}
 function paintOfflineBtn(l,state,extra){
  const b=offlineBtnEl();if(!b||!l)return;
