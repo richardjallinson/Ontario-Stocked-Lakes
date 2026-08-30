@@ -203,6 +203,10 @@ const I18N={
   bestMatch:"Best Match",closest:"Closest",recent:"Most recently stocked",quantity:"Most fish stocked",
   findStocked:"Find Fish Near Me",myLakes:"My Lakes",trips:"Trips",overview:"Overview",
   rulesTab:"Rules",
+  trackBtn:"Track",recordBtn:"Record",trailsBtn:"Trails",
+  trailStartHint:"Tap Record on the map to start laying a trail behind you.",
+  trailRecordingHint:"Recording. Move a little and your trail will appear here, ready to name and save.",
+  trailReadyToSave:"Name it and save to keep this trail.",
   lakeOne:"lake",lakeMany:"lakes",
   dbLoadErrTitle:"Ontario lake database didn't load.",
   dbLoadErrBody:"Reload the app and try again. Saved lakes and regulations are still available.",
@@ -269,7 +273,7 @@ const I18N={
   clearTrail:"Clear",
   spotsTitle:"Fishing Spots",
   spotsBtn:"My Spots",
-  spotsNav:"Spots",
+  spotsNav:"My Spots",
   spotsNavTitle:"My Fishing Spots",
   spotSearchPh:"Search spots or lakes",
   spotOne:"spot",
@@ -526,6 +530,10 @@ const I18N={
   bestMatch:"Meilleure correspondance",closest:"Les plus proches",recent:"Ensemencement le plus récent",quantity:"Plus grand nombre ensemencé",
   findStocked:"Trouver du poisson près de moi",myLakes:"Mes lacs",trips:"Sorties",overview:"Aperçu",
   rulesTab:"R\u00e8gles",
+  trackBtn:"Suivi",recordBtn:"Enregistrer",trailsBtn:"Parcours",
+  trailStartHint:"Touchez Enregistrer sur la carte pour commencer un parcours.",
+  trailRecordingHint:"Enregistrement en cours. D\u00e9placez-vous un peu et votre parcours appara\u00eetra ici.",
+  trailReadyToSave:"Nommez-le et enregistrez-le pour le conserver.",
   lakeOne:"lac",lakeMany:"lacs",
   dbLoadErrTitle:"La base de donn\u00e9es des lacs de l'Ontario n'a pas pu \u00eatre charg\u00e9e.",
   dbLoadErrBody:"Rechargez l'application et r\u00e9essayez. Les lacs enregistr\u00e9s et les r\u00e8glements restent disponibles.",
@@ -592,7 +600,7 @@ const I18N={
   clearTrail:"Effacer",
   spotsTitle:"Lieux de p\u00eache",
   spotsBtn:"Mes lieux",
-  spotsNav:"Lieux",
+  spotsNav:"Mes lieux",
   spotsNavTitle:"Mes lieux de p\u00eache",
   spotSearchPh:"Rechercher un lieu ou un lac",
   spotOne:"lieu",
@@ -693,7 +701,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6s";
+const APP_VERSION="v6t";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -814,16 +822,16 @@ function paintTrailButtons(){
  const has=trail.length>1;
  trailButtons.forEach(b=>{
   const lb=b.querySelector(".locLabel");
-  if(lb)lb.textContent=t("trailsTitle")+(has?" \u00b7 "+(trailLengthM()/1000).toFixed(1)+" km":"");
+  if(lb)lb.textContent=t("trailsBtn");
  });
 }
 const trailToggleButtons=[];
 function paintTrailToggles(){
  trailToggleButtons.forEach(b=>{
-  b.classList.toggle("tracking",trailRecording);
+  b.classList.toggle("recording",trailRecording);
   b.setAttribute("aria-label",trailRecording?t("trailOn"):t("trailOff"));
   const lb=b.querySelector(".locLabel");
-  if(lb)lb.textContent=trailRecording?t("trailOn"):t("trailOff");
+  if(lb)lb.textContent=t("recordBtn");
  });
 }
 function setTrailRecording(on){
@@ -834,7 +842,7 @@ function setTrailRecording(on){
 const TrailToggleControl=L.Control.extend({
  options:{position:"bottomleft"},
  onAdd:function(m){
-  const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapLocationControl");
+  const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapBarBtn");
   const btn=L.DomUtil.create("a","",cn);
   btn.href="#";
   btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19c3-1 4-4 2-6S3 9 5 7s6-1 8 1 2 5 4 6 4 0 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="1 4"/></svg><span class="locLabel"></span>';
@@ -931,6 +939,7 @@ function renderTrailPanel(){
  let h='<div class="tpHead"><b>'+t("trailsTitle")+'</b><button type="button" data-act="close" aria-label="Close">\u00d7</button></div>';
  if(trail.length>1){
   h+='<div class="tpCurrent"><div class="tpRowTop">'+t("currentTrail")+' \u2014 '+(trailLengthM()/1000).toFixed(1)+' km</div>'+
+     '<div class="tpReady">'+t("trailReadyToSave")+'</div>'+
      '<input id="trailNameInput" maxlength="60" placeholder="'+t("trailNamePh")+'" value="'+escHtml(defaultTrailName())+'">'+
      '<div class="tpBtns"><button type="button" class="tpSave" data-act="save">'+t("saveTrail")+'</button>'+
      '<button type="button" class="tpDanger" data-act="clear">'+t("clearTrail")+'</button></div>'+
@@ -946,6 +955,9 @@ function renderTrailPanel(){
     '<button type="button" class="tpDanger" data-act="del" data-id="'+tr.id+'" aria-label="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M10 4h4M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button></div>';
   }).join("")+'</div>';
  }
+ if(trail.length<2){
+  h+='<div class="tpHint">'+(trailRecording?t("trailRecordingHint"):t("trailStartHint"))+'</div>';
+ }
  if(trail.length<2&&!savedTrails.length)h+='<div class="tpNote">'+t("noTrails")+'</div>';
  p.innerHTML=h;
 }
@@ -958,7 +970,7 @@ function toggleTrailPanel(on){
 const TrailControl=L.Control.extend({
  options:{position:"bottomleft"},
  onAdd:function(m){
-  const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapLocationControl");
+  const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapBarBtn");
   const btn=L.DomUtil.create("a","",cn);
   btn.href="#";btn.setAttribute("aria-label",t("trailsTitle"));
   btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="locLabel"></span>';
@@ -1132,7 +1144,7 @@ function toggleSpotPanel(on){
   }catch(_){}
  }
 }
-const SpotsControl=L.Control.extend({options:{position:"bottomleft"},onAdd:function(m){const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapLocationControl");const btn=L.DomUtil.create("a","",cn);btn.href="#";btn.setAttribute("aria-label",t("newSpot"));btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9h-7v2h7v-2z" fill="currentColor"/></svg><span class="locLabel">'+t("spotsBtn")+'</span>';L.DomEvent.on(btn,"click",L.DomEvent.preventDefault);L.DomEvent.on(btn,"click",()=>{setSpotCreation(false);toggleSpotPanel()});return cn}});
+const SpotsControl=L.Control.extend({options:{position:"bottomleft"},onAdd:function(m){const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapBarBtn");const btn=L.DomUtil.create("a","",cn);btn.href="#";btn.setAttribute("aria-label",t("newSpot"));btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9h-7v2h7v-2z" fill="currentColor"/></svg><span class="locLabel">'+t("spotsBtn")+'</span>';L.DomEvent.on(btn,"click",L.DomEvent.preventDefault);L.DomEvent.on(btn,"click",()=>{setSpotCreation(false);toggleSpotPanel()});return cn}});
 
 function dotIcon(){
  /* A divIcon rather than a circleMarker so CSS can animate it: solid blue
@@ -1144,7 +1156,7 @@ function paintTrackButtons(){
   b.classList.toggle("tracking",userTracking);
   b.setAttribute("aria-label",userTracking?t("trackingOn"):t("trackingOff"));
   const lb=b.querySelector(".locLabel");
-  if(lb)lb.textContent=userTracking?t("trackingOn"):t("trackingOff");
+  if(lb)lb.textContent=t("trackBtn");
  });
 }
 function placeDot(which,mapObj,lat,lon){
@@ -1190,7 +1202,7 @@ function stopTracking(){
 const LocationControl=L.Control.extend({
  options:{position:"bottomleft"},
  onAdd:function(m){
-  const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapLocationControl");
+  const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapBarBtn");
   const btn=L.DomUtil.create("a","",cn);
   btn.href="#";
   btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8-8-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="locLabel"></span>';
