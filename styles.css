@@ -1355,7 +1355,7 @@ body.spotCreating .leaflet-container{cursor:crosshair}
 /* Top-anchored panel: bottom-anchored, the iOS keyboard covered the Save
    button whenever the name field had focus -- the "no save button" bug. */
 .spotPanel{top:110px;bottom:auto}
-.spIconRow{display:flex;gap:8px;margin-bottom:8px}
+.spIconRow{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
 .spIcon{width:38px;height:38px;border-radius:10px;border:2px solid var(--line);background:#fff;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .spIcon.sel{border-color:#13263C;background:#EEF3F8}
 .spColorRow{display:flex;gap:8px;margin-bottom:8px}

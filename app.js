@@ -687,7 +687,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6n";
+const APP_VERSION="v6o";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -1003,7 +1003,7 @@ const SPOT_ICONS=[
     over busy basemaps, where thin line-art vanishes. Chart-style symbols. */
  {key:"pin",label:"Pin",svg:'<path d="M12 2a7 7 0 0 1 7 7c0 4.8-5.3 10.6-6.6 12a.55.55 0 0 1-.8 0C10.3 19.6 5 13.8 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5" fill="#13263C" stroke="none"/>'},
  {key:"fish",label:"Fish",svg:'<path d="M2.5 12c2.6-3.6 6.1-5.4 9.3-5.4 2.9 0 5.4 1.7 7.2 5.4-1.8 3.7-4.3 5.4-7.2 5.4-3.2 0-6.7-1.8-9.3-5.4z"/><path d="M16.8 12l5.2-4.2-1.7 4.2 1.7 4.2z"/><circle cx="7.6" cy="10.9" r="1.1" fill="#13263C" stroke="none"/>'},
- {key:"boat",label:"Launch",svg:'<path d="M3.5 14.5l2.2-6h4.1l1 2.2h7.2l2.5 3.8z"/><path d="M3 17.5h18" fill="none" stroke-width="2"/><path d="M5.5 20h13" fill="none" stroke-width="2"/>'},
+ {key:"boat",label:"Boat",svg:'<path d="M2.5 13.5c1.8-.7 3-2.6 3.6-5.2l.6.1c.3 1.9.2 3.5-.3 4.9h11.8V9.6h1.9v3.7h1.4l-1.6 3.4H4.2z"/><path d="M18.2 7.4h1.9v2.2h-1.9z"/><path d="M3.5 19h17" fill="none" stroke-width="2"/>'},
  {key:"anchor",label:"Anchor",svg:'<circle cx="12" cy="5" r="2.1"/><path d="M11 7.6h2V18.2a6.4 6.4 0 0 0 5.2-3.6l1.9 1a9 9 0 0 1-16.2 0l1.9-1A6.4 6.4 0 0 0 11 18.2z"/><path d="M8.6 9.4h6.8" fill="none" stroke-width="2"/>'},
  {key:"star",label:"Star",svg:'<path d="M12 2.5l2.8 6 6.5.8-4.8 4.4 1.3 6.4L12 16.9l-5.8 3.2 1.3-6.4L2.7 9.3l6.5-.8z"/>'},
  {key:"hazard",label:"Hazard",svg:'<path d="M12 3.2 22 20.2H2z"/><rect x="11" y="9.2" width="2" height="5.6" rx="1" fill="#13263C" stroke="none"/><circle cx="12" cy="17.4" r="1.15" fill="#13263C" stroke="none"/>'},
