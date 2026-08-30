@@ -1273,8 +1273,13 @@ body.filtering .searchAlt{display:flex}
 .mapcard.isFull .maphead{padding-top:max(12px,env(safe-area-inset-top))}
 .mapcard.isFull .mapExpand{top:max(10px,calc(env(safe-area-inset-top) + 4px))}
 /* Location button on the map — sits in the bottom-left Leaflet control stack,
-   styled to match Leaflet's zoom buttons. Tapping centers the map on the user. */
+   styled to match Leaflet's zoom buttons. Tapping toggles continuous tracking. */
 .mapLocationControl{background:none;border:none;box-shadow:none}
-.mapLocationControl a{background:#fff;border:1px solid rgba(19,38,60,.25);border-radius:4px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:#13263C;text-decoration:none;font-size:18px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.mapLocationControl a{background:#fff;border:1px solid rgba(19,38,60,.25);border-radius:4px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:#13263C;text-decoration:none;font-size:18px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:background 150ms}
 .mapLocationControl a:hover{background:#f4f4f4}
+.mapLocationControl a.tracking{background:#1976D2;color:#fff;border-color:#1976D2}
+.mapLocationControl a.tracking:hover{background:#1565C0}
 .mapLocationControl svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+/* Dropped flags: the emoji pin itself, plus its popup's remove button. */
+.flagPin{font-size:22px;line-height:1;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.flagDelBtn{margin-top:6px;border:0;background:#C0392B;color:#fff;padding:6px 10px;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit}
