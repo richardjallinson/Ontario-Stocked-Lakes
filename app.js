@@ -254,6 +254,7 @@ const I18N={
   baseHint:"Tap Map, Topo or Depth to change the view.",
   tilesSlow:"Topo and Depth pull live map imagery and can take a moment to load, especially the first time.",
   findMe:"Find me",
+  goToMap:"Go To Map",
   trackingOn:"Stop tracking",
   trackingOff:"Track Location",
   officialSources:"Official Ontario sources",
@@ -526,6 +527,7 @@ const I18N={
   baseHint:"Touchez Carte, Topo ou Profondeur pour changer l'affichage.",
   tilesSlow:"Topo et Profondeur chargent des images cartographiques en direct et peuvent prendre un moment, surtout la premi\u00e8re fois.",
   findMe:"Me trouver",
+  goToMap:"Voir la carte",
   trackingOn:"Arrêter le suivi",
   trackingOff:"Suivre ma position",
   officialSources:"Sources officielles de l'Ontario",
@@ -592,7 +594,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5i";
+const APP_VERSION="v5j";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -3590,6 +3592,13 @@ $("searchBtn").onclick=runSearch;
    also threw away the species and the distance. This clears only the centre.
    The search box is emptied because a town name left sitting in it would
    re-establish the town as the centre on the very next search. */
+const gtm=$("goToMapBtn");
+if(gtm)gtm.onclick=()=>{
+ /* Jump straight to the map card. It lives a long scroll below the hero, and
+    "where is the map" was a real question — this answers it in one tap. */
+ const mc=document.querySelector(".mapcard");
+ if(mc)mc.scrollIntoView({behavior:"smooth",block:"start"});
+};
 const uml=$("useMyLocation");
 if(uml)uml.onclick=()=>{
  townOrigin=null;
