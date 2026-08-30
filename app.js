@@ -257,8 +257,16 @@ const I18N={
   goToMap:"Go To Map",
   trailOn:"Trail: On",
   trailOff:"Trail: Off",
-  clearTrail:"Clear trail",
-  clearTrailAsk:"Clear the recorded trail? This cannot be undone.",
+  clearTrail:"Clear",
+  trailsTitle:"Trails",
+  currentTrail:"Current trail",
+  saveTrail:"Save trail",
+  trailNamePh:"Trail name",
+  tapAgain:"Tap again",
+  showTrail:"Show",
+  hideTrail:"Hide",
+  noTrails:"No trails yet. Turn on Track and Trail, and your path will be recorded here.",
+  trailsFull:"Trail list is full (30). Delete one to save another.",
   offlineSave:"Save for offline",
   offlineSaved:"Saved \u2713",
   offlineWorking:"Saving\u2026",
@@ -538,8 +546,16 @@ const I18N={
   goToMap:"Voir la carte",
   trailOn:"Trac\u00e9\u202f: activ\u00e9",
   trailOff:"Trac\u00e9\u202f: d\u00e9sactiv\u00e9",
-  clearTrail:"Effacer le trac\u00e9",
-  clearTrailAsk:"Effacer le trac\u00e9 enregistr\u00e9\u202f? Cette action est irr\u00e9versible.",
+  clearTrail:"Effacer",
+  trailsTitle:"Trac\u00e9s",
+  currentTrail:"Trac\u00e9 en cours",
+  saveTrail:"Enregistrer le trac\u00e9",
+  trailNamePh:"Nom du trac\u00e9",
+  tapAgain:"Touchez de nouveau",
+  showTrail:"Afficher",
+  hideTrail:"Masquer",
+  noTrails:"Aucun trac\u00e9 pour l'instant. Activez Suivi et Trac\u00e9, et votre chemin sera enregistr\u00e9 ici.",
+  trailsFull:"La liste des trac\u00e9s est pleine (30). Supprimez-en un pour en enregistrer un autre.",
   offlineSave:"Enregistrer hors ligne",
   offlineSaved:"Enregistr\u00e9 \u2713",
   offlineWorking:"Enregistrement\u2026",
@@ -610,7 +626,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5r";
+const APP_VERSION="v5s";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -729,12 +745,9 @@ function clearTrail(){
 const trailButtons=[];
 function paintTrailButtons(){
  const has=trail.length>1;
- const km=has?(trailLengthM()/1000):0;
  trailButtons.forEach(b=>{
-  const box=b.closest(".trailControl")||b;
-  box.style.display=has?"block":"none";
   const lb=b.querySelector(".locLabel");
-  if(lb)lb.textContent=t("clearTrail")+(has?" \u00b7 "+km.toFixed(1)+" km":"");
+  if(lb)lb.textContent=t("trailsTitle")+(has?" \u00b7 "+(trailLengthM()/1000).toFixed(1)+" km":"");
  });
 }
 const trailToggleButtons=[];
@@ -765,16 +778,126 @@ const TrailToggleControl=L.Control.extend({
   return cn;
  }
 });
+/* ---- Saved trails -------------------------------------------------------
+   The workflow the chartplotters taught boaters: record a track, save it
+   with a name, and show it again another day so the live dot can ride
+   yesterday's safe line back through the fog. All on-device.
+   No native browser dialog boxes anywhere in this panel: the WKWebView
+   wrapper does not implement the JS panel delegates, so those calls fail
+   silently in the App Store build -- the old Clear dialog was in fact
+   broken there. Destructive taps use tap-again-to-confirm instead. */
+const SAVED_TRAILS_MAX=30;
+let savedTrails=[];
+try{savedTrails=JSON.parse(localStorage.getItem("osl-saved-trails")||"[]")||[]}catch(e){savedTrails=[]}
+let shownTrailIds=[];
+try{shownTrailIds=JSON.parse(localStorage.getItem("osl-trails-shown")||"[]")||[]}catch(e){shownTrailIds=[]}
+const savedTrailLines={main:{},detail:{}};
+function persistSavedTrails(){try{localStorage.setItem("osl-saved-trails",JSON.stringify(savedTrails))}catch(e){}}
+function persistShown(){try{localStorage.setItem("osl-trails-shown",JSON.stringify(shownTrailIds))}catch(e){}}
+function drawSavedTrails(which,mapObj){
+ if(!mapObj)return;
+ Object.keys(savedTrailLines[which]).forEach(id=>{
+  try{mapObj.removeLayer(savedTrailLines[which][id])}catch(e){}
+ });
+ savedTrailLines[which]={};
+ savedTrails.forEach(tr=>{
+  if(shownTrailIds.indexOf(tr.id)===-1||!tr.pts||tr.pts.length<2)return;
+  savedTrailLines[which][tr.id]=L.polyline(tr.pts,{color:"#7B3FA0",weight:4,opacity:.85,
+   lineJoin:"round",lineCap:"round",interactive:false}).addTo(mapObj);
+ });
+}
+function redrawSavedTrails(){drawSavedTrails("main",map);drawSavedTrails("detail",detailMap)}
+function defaultTrailName(){
+ const d=new Date();
+ return d.toLocaleDateString(appLang==="fr"?"fr-CA":"en-CA",{month:"short",day:"numeric"})+" \u00b7 "+
+        d.toLocaleTimeString(appLang==="fr"?"fr-CA":"en-CA",{hour:"numeric",minute:"2-digit"});
+}
+function saveCurrentTrail(name){
+ if(trail.length<2)return false;
+ if(savedTrails.length>=SAVED_TRAILS_MAX)return false;
+ const tr={id:"t"+Date.now(),name:(name||defaultTrailName()).slice(0,60),
+           pts:trail.slice(),km:trailLengthM()/1000,ts:Date.now()};
+ savedTrails.unshift(tr);persistSavedTrails();
+ /* A trail saved is a trail you meant to see: shown immediately, and the
+    live recording is archived into it rather than left duplicated in gold. */
+ shownTrailIds.push(tr.id);persistShown();
+ clearTrail();redrawSavedTrails();renderTrailPanel();
+ return true;
+}
+function toggleTrailShown(id){
+ const i=shownTrailIds.indexOf(id);
+ if(i===-1)shownTrailIds.push(id);else shownTrailIds.splice(i,1);
+ persistShown();redrawSavedTrails();renderTrailPanel();
+}
+function deleteSavedTrail(id){
+ savedTrails=savedTrails.filter(x=>x.id!==id);persistSavedTrails();
+ shownTrailIds=shownTrailIds.filter(x=>x!==id);persistShown();
+ redrawSavedTrails();renderTrailPanel();
+}
+let trailPanelEl=null;
+function trailPanel(){
+ if(trailPanelEl)return trailPanelEl;
+ trailPanelEl=document.createElement("div");
+ trailPanelEl.id="trailPanel";
+ trailPanelEl.className="trailPanel hidden";
+ document.body.appendChild(trailPanelEl);
+ trailPanelEl.addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  const act=b.dataset.act,id=b.dataset.id;
+  if(act==="close")toggleTrailPanel(false);
+  else if(act==="save"){
+   const inp=trailPanelEl.querySelector("#trailNameInput");
+   saveCurrentTrail(inp&&inp.value.trim());
+  }else if(act==="clear"||act==="del"){
+   /* Two taps for anything destructive: the first arms the button. */
+   if(b.dataset.armed){
+    if(act==="clear"){clearTrail();renderTrailPanel()}
+    else deleteSavedTrail(id);
+   }else{b.dataset.armed="1";b.classList.add("armed");b.textContent=t("tapAgain")}
+  }else if(act==="toggle")toggleTrailShown(id);
+ });
+ return trailPanelEl;
+}
+function escHtml(x){return String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function renderTrailPanel(){
+ const p=trailPanel();
+ let h='<div class="tpHead"><b>'+t("trailsTitle")+'</b><button type="button" data-act="close" aria-label="Close">\u00d7</button></div>';
+ if(trail.length>1){
+  h+='<div class="tpCurrent"><div class="tpRowTop">'+t("currentTrail")+' \u2014 '+(trailLengthM()/1000).toFixed(1)+' km</div>'+
+     '<input id="trailNameInput" maxlength="60" placeholder="'+t("trailNamePh")+'" value="'+escHtml(defaultTrailName())+'">'+
+     '<div class="tpBtns"><button type="button" class="tpSave" data-act="save">'+t("saveTrail")+'</button>'+
+     '<button type="button" class="tpDanger" data-act="clear">'+t("clearTrail")+'</button></div>'+
+     (savedTrails.length>=SAVED_TRAILS_MAX?'<div class="tpNote">'+t("trailsFull")+'</div>':'')+
+     '</div>';
+ }
+ if(savedTrails.length){
+  h+='<div class="tpList">'+savedTrails.map(tr=>{
+   const on=shownTrailIds.indexOf(tr.id)!==-1;
+   return '<div class="tpRow"><div class="tpMeta"><span class="tpName">'+escHtml(tr.name)+'</span>'+
+    '<span class="tpSub">'+tr.km.toFixed(1)+' km</span></div>'+
+    '<button type="button" data-act="toggle" data-id="'+tr.id+'" class="'+(on?"on":"")+'">'+(on?t("hideTrail"):t("showTrail"))+'</button>'+
+    '<button type="button" class="tpDanger" data-act="del" data-id="'+tr.id+'">\ud83d\uddd1</button></div>';
+  }).join("")+'</div>';
+ }
+ if(trail.length<2&&!savedTrails.length)h+='<div class="tpNote">'+t("noTrails")+'</div>';
+ p.innerHTML=h;
+}
+function toggleTrailPanel(on){
+ const p=trailPanel();
+ const show=on===undefined?p.classList.contains("hidden"):on;
+ if(show)renderTrailPanel();
+ p.classList.toggle("hidden",!show);
+}
 const TrailControl=L.Control.extend({
  options:{position:"bottomleft"},
  onAdd:function(m){
-  const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapLocationControl trailControl");
+  const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapLocationControl");
   const btn=L.DomUtil.create("a","",cn);
-  btn.href="#";btn.setAttribute("aria-label",t("clearTrail"));
-  btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19c3-1 4-4 2-6S3 9 5 7s6-1 8 1 2 5 4 6 4 0 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="locLabel"></span>';
+  btn.href="#";btn.setAttribute("aria-label",t("trailsTitle"));
+  btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="locLabel"></span>';
   trailButtons.push(btn);
   L.DomEvent.on(btn,"click",L.DomEvent.preventDefault);
-  L.DomEvent.on(btn,"click",()=>{if(confirm(t("clearTrailAsk")))clearTrail()});
+  L.DomEvent.on(btn,"click",()=>toggleTrailPanel());
   paintTrailButtons();
   return cn;
  }
@@ -850,6 +973,7 @@ new LocationControl().addTo(map);
 new TrailToggleControl().addTo(map);
 new TrailControl().addTo(map);
 drawTrail("main",map);
+drawSavedTrails("main",map);
 
 /* ---- Saving a lake for offline use -------------------------------------
    The tile cache already keeps whatever you have looked at, but it is capped
@@ -1084,7 +1208,7 @@ function showDetailMap(l){
    detailMap=null;detailMarker=null;detailBase=null;
    /* The old map took its dot with it; forget the stale reference or the
       next fix would try to move a marker that is no longer on any map. */
-   userDots.detail=null;trailLines.detail=null;
+   userDots.detail=null;trailLines.detail=null;savedTrailLines.detail={};
   }
   if(!detailMap){
    detailMap=L.map(host,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});
@@ -1104,6 +1228,7 @@ function showDetailMap(l){
      already in place rather than waiting for the next GPS fix. */
   if(userTracking&&lastFix)placeDot("detail",detailMap,lastFix.lat,lastFix.lon);
   drawTrail("detail",detailMap);
+  drawSavedTrails("detail",detailMap);
   if(detailMarker)detailMap.removeLayer(detailMarker);
   detailMarker=L.circleMarker([l.lat,l.lon],
    {radius:9,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:.95})
