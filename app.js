@@ -687,7 +687,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6m";
+const APP_VERSION="v6n";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -784,7 +784,7 @@ function drawTrail(which,mapObj){
  if(!mapObj)return;
  if(trailLines[which]){try{mapObj.removeLayer(trailLines[which])}catch(e){}trailLines[which]=null}
  if(trail.length<2)return;
- trailLines[which]=L.polyline(trail,{color:"#C4941F",weight:4,opacity:.9,
+ trailLines[which]=L.polyline(trail,{color:"#D5007F",weight:4,opacity:.9,
   lineJoin:"round",lineCap:"round",interactive:false}).addTo(mapObj);
  trailLines[which].bringToFront&&trailLines[which].bringToFront();
 }
@@ -999,11 +999,16 @@ function setShownSpots(lk,ids){shownSpotIds[lk]=ids;try{localStorage.setItem("os
    SVG path drawn in the chosen colour, so a "blue fish" and a "red fish"
    are the same shape in different category colours. */
 const SPOT_ICONS=[
- {key:"pin",label:"Pin",svg:'<circle cx="12" cy="12" r="7"/>'},
- {key:"fish",label:"Fish",svg:'<path d="M3 12c3-4 7-6 11-6 3 0 6 2 7 6-1 4-4 6-7 6-4 0-8-2-11-6zm11-2a1.3 1.3 0 100 2.6 1.3 1.3 0 000-2.6zM3 12l-2-4v8z"/>'},
- {key:"boat",label:"Launch",svg:'<path d="M4 15l2-8h3l1 3h8l2 5zm-1 3h18l-2 3H5z"/>'},
- {key:"anchor",label:"Anchor",svg:'<path d="M12 3a2.4 2.4 0 100 4.8A2.4 2.4 0 0012 3zm-1 5.6h2V19a7 7 0 006-4l2 1a9.5 9.5 0 01-16 0l2-1a7 7 0 006 4z"/>'},
- {key:"star",label:"Star",svg:'<path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17l-6.1 3.6 1.4-6.8L2.2 9.1l6.9-.8z"/>'}
+ /* Solid silhouettes with a dark outline on purpose: these render at 26px
+    over busy basemaps, where thin line-art vanishes. Chart-style symbols. */
+ {key:"pin",label:"Pin",svg:'<path d="M12 2a7 7 0 0 1 7 7c0 4.8-5.3 10.6-6.6 12a.55.55 0 0 1-.8 0C10.3 19.6 5 13.8 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5" fill="#13263C" stroke="none"/>'},
+ {key:"fish",label:"Fish",svg:'<path d="M2.5 12c2.6-3.6 6.1-5.4 9.3-5.4 2.9 0 5.4 1.7 7.2 5.4-1.8 3.7-4.3 5.4-7.2 5.4-3.2 0-6.7-1.8-9.3-5.4z"/><path d="M16.8 12l5.2-4.2-1.7 4.2 1.7 4.2z"/><circle cx="7.6" cy="10.9" r="1.1" fill="#13263C" stroke="none"/>'},
+ {key:"boat",label:"Launch",svg:'<path d="M3.5 14.5l2.2-6h4.1l1 2.2h7.2l2.5 3.8z"/><path d="M3 17.5h18" fill="none" stroke-width="2"/><path d="M5.5 20h13" fill="none" stroke-width="2"/>'},
+ {key:"anchor",label:"Anchor",svg:'<circle cx="12" cy="5" r="2.1"/><path d="M11 7.6h2V18.2a6.4 6.4 0 0 0 5.2-3.6l1.9 1a9 9 0 0 1-16.2 0l1.9-1A6.4 6.4 0 0 0 11 18.2z"/><path d="M8.6 9.4h6.8" fill="none" stroke-width="2"/>'},
+ {key:"star",label:"Star",svg:'<path d="M12 2.5l2.8 6 6.5.8-4.8 4.4 1.3 6.4L12 16.9l-5.8 3.2 1.3-6.4L2.7 9.3l6.5-.8z"/>'},
+ {key:"hazard",label:"Hazard",svg:'<path d="M12 3.2 22 20.2H2z"/><rect x="11" y="9.2" width="2" height="5.6" rx="1" fill="#13263C" stroke="none"/><circle cx="12" cy="17.4" r="1.15" fill="#13263C" stroke="none"/>'},
+ {key:"weeds",label:"Weeds",svg:'<path d="M6.2 20c-.6-4.6.3-7.8 2-10.6 1 2.8 1.3 6 .3 10.6z"/><path d="M11.2 20c-.6-5.6.3-9.6 1.1-12.6 1 3 1.5 7 .6 12.6z"/><path d="M16.4 20c-.5-3.8.5-6.6 2.1-8.6.7 2.4.6 4.9-.6 8.6z"/><path d="M3.5 20.4h17" fill="none" stroke-width="2"/>'},
+ {key:"dock",label:"Dock",svg:'<rect x="3" y="8.5" width="18" height="3.4" rx="1"/><rect x="4.6" y="11.9" width="2.1" height="8"/><rect x="10.95" y="11.9" width="2.1" height="8"/><rect x="17.3" y="11.9" width="2.1" height="8"/>'}
 ];
 function spotIconSvg(iconKey,hex,size){
  const ic=SPOT_ICONS.find(x=>x.key===iconKey)||SPOT_ICONS[0];
