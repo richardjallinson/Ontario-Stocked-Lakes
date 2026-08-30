@@ -602,7 +602,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5k";
+const APP_VERSION="v5l";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -652,61 +652,77 @@ const markerLayer=L.layerGroup().addTo(map);
    user and auto-pans the map to keep them centered. Toggle on/off by tapping.
    Uses watchPosition for continuous updates; stops watching when tracking is
    off or when the user leaves the app. */
-let userLocationDot=null,locationWatchId=null,userTracking=false;
+/* Live location, shared by both maps. One GPS watch feeds a dot on the main
+   map and a dot on the lake sheet's map; the button appears on both and the
+   two stay in step, because "am I over that 40-foot hole yet" is a lake-sheet
+   question and the sheet is where the contours are. */
+let locationWatchId=null,userTracking=false,lastFix=null;
+const userDots={main:null,detail:null};
+const trackButtons=[];
+function dotIcon(){
+ /* A divIcon rather than a circleMarker so CSS can animate it: solid blue
+    centre, plus a ring that swells and fades on a loop. */
+ return L.divIcon({className:"userDotWrap",html:'<div class="userDotPulse"></div><div class="userDot"></div>',iconSize:[18,18],iconAnchor:[9,9]});
+}
+function paintTrackButtons(){
+ trackButtons.forEach(b=>{
+  b.classList.toggle("tracking",userTracking);
+  b.setAttribute("aria-label",userTracking?t("trackingOn"):t("trackingOff"));
+  const lb=b.querySelector(".locLabel");
+  if(lb)lb.textContent=userTracking?t("trackingOn"):t("trackingOff");
+ });
+}
+function placeDot(which,mapObj,lat,lon){
+ if(!mapObj)return;
+ if(!userDots[which]){
+  userDots[which]=L.marker([lat,lon],{icon:dotIcon(),interactive:false,keyboard:false}).addTo(mapObj);
+ }else{
+  userDots[which].setLatLng([lat,lon]);
+ }
+}
+function clearDot(which,mapObj){
+ if(userDots[which]&&mapObj){try{mapObj.removeLayer(userDots[which])}catch(e){}}
+ userDots[which]=null;
+}
+function applyFix(lat,lon){
+ lastFix={lat,lon};
+ placeDot("main",map,lat,lon);
+ map.setView([lat,lon],map.getZoom(),{animate:true,duration:0.3});
+ /* The sheet map only auto-pans while its sheet is actually open, so a fix
+    arriving in the background doesn't yank a map nobody is looking at. */
+ if(detailMap){
+  placeDot("detail",detailMap,lat,lon);
+  if(document.body.classList.contains("sheetOpen"))
+   detailMap.setView([lat,lon],detailMap.getZoom(),{animate:true,duration:0.3});
+ }
+}
+function startTracking(){
+ userTracking=true;paintTrackButtons();
+ if(!navigator.geolocation){userTracking=false;paintTrackButtons();return}
+ locationWatchId=navigator.geolocation.watchPosition(
+  pos=>applyFix(pos.coords.latitude,pos.coords.longitude),
+  err=>{console.warn("Location error:",err.message)},
+  {enableHighAccuracy:true,maximumAge:0,timeout:10000}
+ );
+}
+function stopTracking(){
+ userTracking=false;paintTrackButtons();
+ if(locationWatchId!==null){navigator.geolocation.clearWatch(locationWatchId);locationWatchId=null}
+ lastFix=null;
+ clearDot("main",map);clearDot("detail",detailMap);
+}
 const LocationControl=L.Control.extend({
  options:{position:"bottomleft"},
  onAdd:function(m){
   const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapLocationControl");
   const btn=L.DomUtil.create("a","",cn);
   btn.href="#";
-  btn.setAttribute("aria-label",t("trackingOff"));
-  btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8-8-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="locLabel">'+t("trackingOff")+'</span>';
-  const self=this;
+  btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8-8-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="locLabel"></span>';
+  trackButtons.push(btn);
   L.DomEvent.on(btn,"click",L.DomEvent.preventDefault);
-  L.DomEvent.on(btn,"click",()=>{
-   userTracking=!userTracking;
-   if(userTracking)self.startTracking(btn);
-   else self.stopTracking(btn);
-  });
-  this.btn=btn;
+  L.DomEvent.on(btn,"click",()=>{userTracking?stopTracking():startTracking()});
+  paintTrackButtons();
   return cn;
- },
- startTracking:function(btn){
-  btn.classList.add("tracking");
-  btn.setAttribute("aria-label",t("trackingOn"));
-  const lb=btn.querySelector(".locLabel");if(lb)lb.textContent=t("trackingOn");
-  if(!navigator.geolocation)return;
-  locationWatchId=navigator.geolocation.watchPosition(
-   pos=>{
-    const{latitude:lat,longitude:lon}=pos.coords;
-    if(!userLocationDot){
-     /* A divIcon rather than a circleMarker so CSS can animate it: solid blue
-        centre, plus a ring that swells and fades on a loop — the familiar
-        "this dot is live" pulse. */
-     const icon=L.divIcon({className:"userDotWrap",html:'<div class="userDotPulse"></div><div class="userDot"></div>',iconSize:[18,18],iconAnchor:[9,9]});
-     userLocationDot=L.marker([lat,lon],{icon,interactive:false,keyboard:false});
-     userLocationDot.addTo(map);
-    }else{
-     userLocationDot.setLatLng([lat,lon]);
-    }
-    map.setView([lat,lon],map.getZoom(),{animate:true,duration:0.3});
-   },
-   err=>{console.warn("Location error:",err.message)},
-   {enableHighAccuracy:true,maximumAge:0,timeout:10000}
-  );
- },
- stopTracking:function(btn){
-  btn.classList.remove("tracking");
-  btn.setAttribute("aria-label",t("trackingOff"));
-  const lb=btn.querySelector(".locLabel");if(lb)lb.textContent=t("trackingOff");
-  if(locationWatchId!==null){
-   navigator.geolocation.clearWatch(locationWatchId);
-   locationWatchId=null;
-  }
-  if(userLocationDot){
-   map.removeLayer(userLocationDot);
-   userLocationDot=null;
-  }
  }
 });
 new LocationControl().addTo(map);
@@ -942,9 +958,13 @@ function showDetailMap(l){
   if(detailMap&&detailMap.getContainer()!==host){
    try{detailMap.remove()}catch(e){}
    detailMap=null;detailMarker=null;detailBase=null;
+   /* The old map took its dot with it; forget the stale reference or the
+      next fix would try to move a marker that is no longer on any map. */
+   userDots.detail=null;
   }
   if(!detailMap){
    detailMap=L.map(host,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});
+   new LocationControl().addTo(detailMap);
   }
   /* The base layer is rebuilt on every open, not just when the map is first
      created -- it used to keep whatever layer it was born with for the rest
@@ -954,6 +974,9 @@ function showDetailMap(l){
   applyDetailBase();
   paintOfflineBtn(l,"idle");
   detailMap.setView([l.lat,l.lon],12);
+  /* If tracking is already running, this sheet's map opens with the dot
+     already in place rather than waiting for the next GPS fix. */
+  if(userTracking&&lastFix)placeDot("detail",detailMap,lastFix.lat,lastFix.lon);
   if(detailMarker)detailMap.removeLayer(detailMarker);
   detailMarker=L.circleMarker([l.lat,l.lon],
    {radius:9,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:.95})
