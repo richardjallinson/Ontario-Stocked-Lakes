@@ -263,8 +263,8 @@ const I18N={
   offlineSaved:"Saved \u2713",
   offlineWorking:"Saving\u2026",
   offlineUnavailable:"Offline saving needs the app to finish loading. Try again in a moment.",
-  trackingOn:"Stop tracking",
-  trackingOff:"Track Location",
+  trackingOn:"Track: On",
+  trackingOff:"Track: Off",
   officialSources:"Official Ontario sources",
   regsSummaryNote:"Regulations in this app are a summary. These are the authoritative sources \u2014 open them before you fish.",
   regsSummaryTitle:"Fishing Regulations Summary",regsSummarySub:"Seasons, limits and slot sizes by zone",
@@ -544,8 +544,8 @@ const I18N={
   offlineSaved:"Enregistr\u00e9 \u2713",
   offlineWorking:"Enregistrement\u2026",
   offlineUnavailable:"L'enregistrement hors ligne n\u00e9cessite que l'application ait fini de charger. R\u00e9essayez dans un instant.",
-  trackingOn:"Arrêter le suivi",
-  trackingOff:"Suivre ma position",
+  trackingOn:"Suivi\u202f: activ\u00e9",
+  trackingOff:"Suivi\u202f: d\u00e9sactiv\u00e9",
   officialSources:"Sources officielles de l'Ontario",
   regsSummaryNote:"Les r\u00e8glements pr\u00e9sent\u00e9s ici sont un r\u00e9sum\u00e9. Voici les sources officielles \u2014 consultez-les avant de p\u00eacher.",
   regsSummaryTitle:"R\u00e9sum\u00e9 des r\u00e8glements de p\u00eache",regsSummarySub:"Saisons, limites et fourchettes de taille par zone",
@@ -610,7 +610,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5q";
+const APP_VERSION="v5r";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
