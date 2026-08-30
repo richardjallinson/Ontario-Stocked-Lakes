@@ -687,7 +687,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6p";
+const APP_VERSION="v6q";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -964,7 +964,7 @@ const TrailControl=L.Control.extend({
  }
 });
 // Waypoint system: fishing spots, marked and named
-const SPOT_COLORS=[{key:"gold",hex:"#D4A017",label:"Gold"},{key:"blue",hex:"#4A90E2",label:"Blue"},{key:"purple",hex:"#9B59B6",label:"Purple"},{key:"red",hex:"#E74C3C",label:"Red"},{key:"green",hex:"#27AE60",label:"Green"}];
+const SPOT_COLORS=[{key:"gold",hex:"#D4A017",label:"Gold"},{key:"blue",hex:"#4A90E2",label:"Blue"},{key:"purple",hex:"#9B59B6",label:"Purple"},{key:"red",hex:"#E74C3C",label:"Red"},{key:"green",hex:"#27AE60",label:"Green"},{key:"orange",hex:"#E67E22",label:"Orange"}];
 let savedSpots={},shownSpotIds={},spotCreationMode=false,currentLakeForSpots=null;
 const spotLines={main:{},detail:{}};
 try{savedSpots=JSON.parse(localStorage.getItem("osl-spots")||"{}")}catch(e){}
@@ -1012,7 +1012,9 @@ const SPOT_ICONS=[
  /* One buoy, two jobs: the colour picker makes it port (red) or starboard
     (green), same as the water. Body, top light, waterline. */
  {key:"buoy",label:"Buoy",svg:'<circle cx="12" cy="3.6" r="1.4"/><path d="M9.6 5.6h4.8l-.9 8.8h-3z"/><path d="M4 17h16" fill="none" stroke-width="2"/><path d="M6.5 20h11" fill="none" stroke-width="2"/>'},
- {key:"tent",label:"Camp",svg:'<path d="M12 3.6 22.2 19.6H1.8z"/><path d="M12 10.4l3.4 9.2H8.6z" fill="#13263C" stroke="none"/>'}
+ {key:"tent",label:"Camp",svg:'<path d="M8.6 1.8L12 5.6l3.4-3.8 1.2 1L13 7 22 19H2L11 7 7.4 2.8z"/><path d="M12 11l3.2 8H8.8z" fill="#13263C" stroke="none"/><path d="M1.5 19h21" fill="none" stroke-width="1.6"/>'},
+ {key:"ramp",label:"Ramp",svg:'<path d="M3 19.5 21 9.8v9.7z"/><path d="M11.6 8.9l6.4-3.6 1.1 1.9-6.4 3.7z"/>'},
+ {key:"park",label:"Park",svg:'<rect x="4" y="7.6" width="16" height="2.6" rx="1"/><path d="M8.2 10.2 5.4 19M15.8 10.2 18.6 19" fill="none" stroke-width="2"/><rect x="2.2" y="13.4" width="6.2" height="2.2" rx="1"/><rect x="15.6" y="13.4" width="6.2" height="2.2" rx="1"/>'}
 ];
 function spotIconSvg(iconKey,hex,size){
  const ic=SPOT_ICONS.find(x=>x.key===iconKey)||SPOT_ICONS[0];
