@@ -251,6 +251,8 @@ const I18N={
   depthZoomIn:"Zoom in to a lake to see depth contours.",
   expandMap:"Expand map",closeMap:"Close full screen",
   tilesOffline:"Map tiles unavailable offline \u2014 everything else still works.",tapMarker:"Tap a marker for details",loading:"Loading\u2026",
+  baseHint:"Tap Map, Topo or Depth to change the view.",
+  tilesSlow:"Topo and Depth pull live map imagery and can take a moment to load, especially the first time.",
   officialSources:"Official Ontario sources",
   regsSummaryNote:"Regulations in this app are a summary. These are the authoritative sources \u2014 open them before you fish.",
   regsSummaryTitle:"Fishing Regulations Summary",regsSummarySub:"Seasons, limits and slot sizes by zone",
@@ -518,6 +520,8 @@ const I18N={
   depthZoomIn:"Zoomez sur un lac pour voir les courbes de profondeur.",
   expandMap:"Agrandir la carte",closeMap:"Quitter le plein \u00e9cran",
   tilesOffline:"Tuiles de carte indisponibles hors ligne \u2014 tout le reste fonctionne.",tapMarker:"Touchez un rep\u00e8re pour les d\u00e9tails",loading:"Chargement\u2026",
+  baseHint:"Touchez Carte, Topo ou Profondeur pour changer l'affichage.",
+  tilesSlow:"Topo et Profondeur chargent des images cartographiques en direct et peuvent prendre un moment, surtout la premi\u00e8re fois.",
   officialSources:"Sources officielles de l'Ontario",
   regsSummaryNote:"Les r\u00e8glements pr\u00e9sent\u00e9s ici sont un r\u00e9sum\u00e9. Voici les sources officielles \u2014 consultez-les avant de p\u00eacher.",
   regsSummaryTitle:"R\u00e9sum\u00e9 des r\u00e8glements de p\u00eache",regsSummarySub:"Saisons, limites et fourchettes de taille par zone",
@@ -582,7 +586,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5a";
+const APP_VERSION="v5b";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -915,9 +919,24 @@ function setBasemap(key){
      per failure, cleared as soon as any tile loads. */
   baseLayer.on("tileerror",()=>{if(!navigator.onLine||!baseLayer._tilesLoaded)mapNotice(t("tilesOffline"))});
   baseLayer.on("load",()=>{baseLayer._tilesLoaded=true;
-   if(($("mapNotice")||{}).textContent===t("tilesOffline"))mapNotice("")});
+   const n0=$("mapNotice");
+   if(n0&&(n0.textContent===t("tilesOffline")||n0.textContent===t("tilesSlow")))mapNotice("")});
  }
  refreshMainContours();
+ /* Topo and Depth pull live imagery from NRCan/OSM rather than shipping with
+    the app, so the first look at a new area can sit on grey a beat longer
+    than Map does. Said only after refreshMainContours has had its say --
+    the zoom-floor notice for Depth takes priority -- and only if the tiles
+    are still not in by the time someone would notice, so a cached repeat
+    view stays silent. */
+ if((key==="topo"||key==="depth")&&b.url){
+  const layerAtSwitch=baseLayer;
+  setTimeout(()=>{
+   if(layerAtSwitch!==baseLayer||layerAtSwitch._tilesLoaded)return;
+   const n=$("mapNotice");
+   if(n&&n.classList.contains("hidden"))mapNotice(t("tilesSlow"));
+  },350);
+ }
 }
 
 /* The map used to sit wherever it was last dragged while the list below it

@@ -759,6 +759,11 @@ body.filtering .sectiontitle{margin-top:14px}
 .baseSwitch button.on{background:var(--green);color:#fff;font-weight:800}
 .mapsub{padding:7px 14px;border-bottom:1px solid var(--line);background:#fff}
 .mapsub span{font-size:11.5px;color:var(--muted)}
+/* Points people at the Map/Topo/Depth buttons, which otherwise look like a
+   plain segmented control worth ignoring. Sits above mapsub rather than
+   replacing it -- mapCount's text changes with search results and shouldn't
+   carry this too. */
+.mapHint{padding:6px 14px 0;font-size:11.5px;color:var(--muted)}
 
 
 /* Four stats now, not five — the 151,000-row historical dataset was removed.

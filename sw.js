@@ -3,7 +3,7 @@
    load isn't blocked on ~12 MB. Live government API calls always go to the
    network so regulations and advisories are never served stale. */
 
-const VERSION = "v5a";
+const VERSION = "v5b";
 const SHELL = `osl-shell-${VERSION}`;
 /* Deliberately NOT versioned. The data cache used to be osl-data-${VERSION},
    and activate deletes every cache that is not current — so every app update
@@ -12,6 +12,16 @@ const SHELL = `osl-shell-${VERSION}`;
    The app code changes constantly; the datasets change rarely. They get
    different lifetimes now. */
 const DATA  = "osl-data";
+/* Map basemap tiles, also unversioned like DATA. OSM raster and NRCan
+   Toporama imagery changes on the order of months, nothing like the live
+   regulatory/stocking data this app is careful to always re-fetch -- so
+   caching them costs nothing in staleness and buys back the fact that,
+   before this, EVERY tile was re-downloaded from the network on EVERY
+   view, even the same spot seen a minute earlier. That is why Topo and
+   Depth felt slow, especially full screen where more tiles are on
+   screen at once. Capped below so it can't grow without bound. */
+const TILES = "osl-tiles";
+const TILE_CACHE_MAX = 800;
 
 const SHELL_FILES = [
   "./",
@@ -61,20 +71,58 @@ self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(k => k !== SHELL && k !== DATA).map(k => caches.delete(k))
+        keys.filter(k => k !== SHELL && k !== DATA && k !== TILES).map(k => caches.delete(k))
       ))
       .then(() => self.clients.claim())
   );
 });
+
+// OSM raster tiles (Map, Depth's base) and NRCan Toporama WMS images
+// (Topo). Matched by host + path shape rather than an exact file list,
+// since Toporama's query string carries the bbox and changes every pan.
+function isTileRequest(url) {
+  if (url.hostname === "tile.openstreetmap.org" && /\/\d+\/\d+\/\d+\.png$/.test(url.pathname)) return true;
+  if (url.hostname === "maps.geogratis.gc.ca" && url.pathname.indexOf("/wms/toporama_en") !== -1) return true;
+  return false;
+}
+
+// Cache API has no expiry of its own. Trimmed after every write rather than
+// on a schedule -- keys() order is insertion order in the engines this app
+// ships on, so this evicts the oldest tiles first, same idea as an LRU.
+async function trimTileCache(c) {
+  const keys = await c.keys();
+  const excess = keys.length - TILE_CACHE_MAX;
+  if (excess <= 0) return;
+  for (let i = 0; i < excess; i++) await c.delete(keys[i]);
+}
 
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
+
+  // Basemap tiles: cache-first, refreshed in the background. The one
+  // cross-origin exception to "network only" below -- see the note by
+  // isTileRequest for why tiles are safe to keep and everything else isn't.
+  if (isTileRequest(url)) {
+    e.respondWith(
+      caches.open(TILES).then(async c => {
+        const hit = await c.match(req);
+        const network = fetch(req).then(res => {
+          if (res.ok) { c.put(req, res.clone()); trimTileCache(c); }
+          return res;
+        }).catch(() => hit);
+        return hit || network;
+      })
+    );
+    return;
+  }
+
   const sameOrigin = url.origin === self.location.origin;
 
-  // Live government APIs and map tiles: network only, never cached.
+  // Live government APIs (regulations, contour queries, weather alerts):
+  // network only, never cached.
   if (!sameOrigin) return;
 
   // Navigations: network first so a new release is picked up immediately.
