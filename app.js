@@ -576,7 +576,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4u";
+const APP_VERSION="v4w";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -673,16 +673,35 @@ async function loadDetailContours(l){
     line also carries a fat transparent twin underneath purely as a tap target
     for the popup. Labels are thinned to one per distinct depth per lake:
     a lake with forty 3 m segments should say "3 m" once, not forty times. */
+ /* The raw DEPTH values need cleaning before anyone sees them. Real Moira
+    Lake responses contained -9.100000381469727 (negative, with float noise),
+    -3 from a neighbouring pond caught by the envelope, and a 2568 that no
+    Ontario lake can justify — a junk record. So: absolute value, one decimal,
+    and anything deeper than 250 m is treated as data error and skipped.
+    De-duplication keys on the ROUNDED value, otherwise five floats that all
+    mean 9.1 m each earn their own label. */
+ const cleanDepth=v=>{
+  if(v==null)return null;
+  const a=Math.abs(Number(v));
+  if(!Number.isFinite(a)||a===0||a>250)return null;
+  /* Ontario publishes these in metres; the map shows feet. Anglers here read
+     water in feet — sounders, charts and conversation all use it — so the
+     contours do too, regardless of the catch log's metric/imperial setting,
+     which governs fish length and weight rather than depth. Whole feet: the
+     source surveys were sounded by lead line and rounded metres, so a decimal
+     would imply precision the 1950s data never had. */
+  return Math.round(a*3.28084);
+ };
  const labelled=new Set();
  detailContours=L.geoJSON(gj,{
   style:()=>({color:"#1D5FA0",weight:1.2,opacity:.85}),
   onEachFeature:(f,ly)=>{
-   const v=f.properties&&f.properties.DEPTH;
+   const v=cleanDepth(f.properties&&f.properties.DEPTH);
    if(v==null)return;
-   ly.bindPopup(`${t("depth")}: ${v} m`);
+   ly.bindPopup(`${t("depth")}: ${v} ft`);
    if(!labelled.has(v)){
     labelled.add(v);
-    ly.bindTooltip(`${v} m`,{permanent:true,direction:"center",
+    ly.bindTooltip(`${v} ft`,{permanent:true,direction:"center",
                              className:"depthLabel",opacity:1});
    }
   }
@@ -691,8 +710,8 @@ async function loadDetailContours(l){
  L.geoJSON(gj,{style:()=>({color:"#1D5FA0",weight:14,opacity:0})})
   .addTo(detailContours)
   .eachLayer(ly=>{
-   const f=ly.feature,v=f&&f.properties&&f.properties.DEPTH;
-   if(v!=null)ly.bindPopup(`${t("depth")}: ${v} m`);
+   const f=ly.feature,v=cleanDepth(f&&f.properties&&f.properties.DEPTH);
+   if(v!=null)ly.bindPopup(`${t("depth")}: ${v} ft`);
   });
  try{detailMap.attributionControl.addAttribution(t("bathyNote"))}catch(e){}
 }
