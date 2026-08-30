@@ -701,7 +701,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6w";
+const APP_VERSION="v6x";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -770,7 +770,7 @@ const TRAIL_MIN_M=12,TRAIL_MAX_POINTS=3000;
 /* Whether tracking lays crumbs at all. Separate from tracking itself --
    "follow me" and "record where I went" are different wants, and the person
    asked for exactly this split. Remembered across launches; default on. */
-let trailRecording=localStorage.getItem("osl-trail-on")!=="0";
+let trailRecording=false;
 let trail=[];
 try{trail=JSON.parse(localStorage.getItem("osl-trail")||"[]")||[]}catch(e){trail=[]}
 const trailLines={main:null,detail:null};
@@ -836,7 +836,6 @@ function paintTrailToggles(){
 }
 function setTrailRecording(on){
  trailRecording=on;
- try{localStorage.setItem("osl-trail-on",on?"1":"0")}catch(e){}
  paintTrailToggles();
 }
 const TrailToggleControl=L.Control.extend({
