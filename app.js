@@ -247,7 +247,8 @@ const I18N={
   showAccess:"Show fishing access points",showFMZ:"Show Fisheries Management Zones",
   showDepth:"Show lake depth contours",accessStatus:"Boat launches \u2022 shore access \u2022 docks/piers",
   depthStatus:"Government bathymetry \u2022 not for navigation",
-  lakeMap:"Lake map",baseMap:"Map",baseTopo:"Topo",baseCanada:"Canada",basePlain:"Plain",tapMarker:"Tap a marker for details",loading:"Loading\u2026",
+  lakeMap:"Lake map",baseMap:"Map",baseTopo:"Topo",baseDepth:"Depth",basePlain:"Plain",
+  depthZoomIn:"Zoom in to a lake to see depth contours.",tapMarker:"Tap a marker for details",loading:"Loading\u2026",
   officialSources:"Official Ontario sources",
   regsSummaryNote:"Regulations in this app are a summary. These are the authoritative sources \u2014 open them before you fish.",
   regsSummaryTitle:"Fishing Regulations Summary",regsSummarySub:"Seasons, limits and slot sizes by zone",
@@ -511,7 +512,8 @@ const I18N={
   showAccess:"Afficher les acc\u00e8s de p\u00eache",showFMZ:"Afficher les zones de gestion des p\u00eaches",
   showDepth:"Afficher les courbes de profondeur",accessStatus:"Mises \u00e0 l'eau \u2022 acc\u00e8s riverain \u2022 quais",
   depthStatus:"Bathym\u00e9trie gouvernementale \u2022 pas pour la navigation",
-  lakeMap:"Carte du lac",baseMap:"Carte",baseTopo:"Topo",baseCanada:"Canada",basePlain:"\u00c9pur\u00e9e",tapMarker:"Touchez un rep\u00e8re pour les d\u00e9tails",loading:"Chargement\u2026",
+  lakeMap:"Carte du lac",baseMap:"Carte",baseTopo:"Topo",baseDepth:"Profondeur",basePlain:"\u00c9pur\u00e9e",
+  depthZoomIn:"Zoomez sur un lac pour voir les courbes de profondeur.",tapMarker:"Touchez un rep\u00e8re pour les d\u00e9tails",loading:"Chargement\u2026",
   officialSources:"Sources officielles de l'Ontario",
   regsSummaryNote:"Les r\u00e8glements pr\u00e9sent\u00e9s ici sont un r\u00e9sum\u00e9. Voici les sources officielles \u2014 consultez-les avant de p\u00eacher.",
   regsSummaryTitle:"R\u00e9sum\u00e9 des r\u00e8glements de p\u00eache",regsSummarySub:"Saisons, limites et fourchettes de taille par zone",
@@ -576,7 +578,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4w";
+const APP_VERSION="v4x";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -643,6 +645,17 @@ let detailLakeKey=null;
    where they exist and the sheet stays uncluttered where they don't.
    Cached per lake so reopening is instant; capped so a long browse session
    does not hoard geometry. */
+/* Ontario stores these in metres, negative, with float noise, and the odd
+   impossible outlier — a 2568 turned up near Moira. Shown in feet: anglers
+   here read water in feet, whatever the catch log's unit setting says. Whole
+   feet only; the source was sounded by lead line and rounded, so decimals
+   would imply precision the 1950s surveys never had. */
+function cleanContourDepth(v){
+ if(v==null)return null;
+ const a=Math.abs(Number(v));
+ if(!Number.isFinite(a)||a===0||a>250)return null;
+ return Math.round(a*3.28084);
+}
 let detailContours=null,contourToken=0;
 const contourCache=new Map();
 async function loadDetailContours(l){
@@ -680,18 +693,8 @@ async function loadDetailContours(l){
     and anything deeper than 250 m is treated as data error and skipped.
     De-duplication keys on the ROUNDED value, otherwise five floats that all
     mean 9.1 m each earn their own label. */
- const cleanDepth=v=>{
-  if(v==null)return null;
-  const a=Math.abs(Number(v));
-  if(!Number.isFinite(a)||a===0||a>250)return null;
-  /* Ontario publishes these in metres; the map shows feet. Anglers here read
-     water in feet — sounders, charts and conversation all use it — so the
-     contours do too, regardless of the catch log's metric/imperial setting,
-     which governs fish length and weight rather than depth. Whole feet: the
-     source surveys were sounded by lead line and rounded metres, so a decimal
-     would imply precision the 1950s data never had. */
-  return Math.round(a*3.28084);
- };
+ const cleanDepth=cleanContourDepth;
+
  const labelled=new Set();
  detailContours=L.geoJSON(gj,{
   style:()=>({color:"#1D5FA0",weight:1.2,opacity:.85}),
@@ -791,13 +794,13 @@ const BASEMAPS={
         attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}
  },
  topo:{
-  label:"Ontario topo",
-  // ArcGIS tile caches are {z}/{y}/{x} — row before column, unlike XYZ.
-  url:"https://ws.lioservices.lrc.gov.on.ca/arcgis1/rest/services/LIO_Cartographic/LIO_Topographic/MapServer/tile/{z}/{y}/{x}",
-  opts:{maxZoom:17,attribution:'Topographic data &copy; Government of Ontario'}
- },
- canada:{
-  label:"Canada topo",
+  /* NRCan's Toporama replaced Ontario's own topographic cache here. Ontario's
+     drew nicely but stopped dead at the provincial border, and it was one of
+     two topo buttons doing the same job; Toporama covers the whole country,
+     which also means this basemap carries over to a Manitoba build unchanged.
+     Anyone whose stored preference was the old "canada" key falls back to Map
+     through the guard in setBasemap. */
+  label:"Topo",
   // NRCan's Toporama, a WMS rather than a tile cache — Leaflet renders it
   // through L.tileLayer.wms, hence the wms flag the two layer-construction
   // sites branch on. Layer name and PNG support confirmed from the service's
@@ -808,6 +811,18 @@ const BASEMAPS={
   url:"https://maps.geogratis.gc.ca/wms/toporama_en",
   opts:{layers:"WMS-Toporama",format:"image/png",transparent:false,
         maxZoom:17,attribution:'Toporama &copy; Natural Resources Canada'}
+ },
+ depth:{
+  /* Depth is the Map basemap plus live contours; the contour lines alone,
+     floating on nothing, give an angler no way to tell which lake they are
+     looking at. Contours are fetched for the visible extent rather than
+     bundled: the province holds ~239k lines, far too many to ship or to draw
+     at once, so they load only once zoomed into lake level. */
+  label:"Depth",
+  url:"https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+  opts:{maxZoom:19,
+        attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'},
+  contours:true
  },
  plain:{
   label:"Plain",
@@ -821,6 +836,55 @@ const BASEMAPS={
 };
 let baseLayer=null,baseKey=localStorage.getItem("osl-basemap")||"map";
 
+/* Contours on the main map. Same source as the lake sheet's, but driven by the
+   visible extent instead of one lake, so it needs a zoom floor: below z12 the
+   query would ask for a slab of the province and return either nothing useful
+   or far too much. The notice says so rather than leaving an empty map to be
+   read as broken — the same courtesy the FMZ row already extends. */
+const MAIN_CONTOUR_MIN_ZOOM=12;
+let mainContours=null,mainContourToken=0;
+function clearMainContours(){
+ if(mainContours){try{map.removeLayer(mainContours)}catch(e){}mainContours=null}
+}
+function mapNotice(msg){
+ const n=$("mapNotice");if(!n)return;
+ if(msg){n.textContent=msg;n.classList.remove("hidden")}
+ else n.classList.add("hidden");
+}
+async function refreshMainContours(){
+ if(!mapAvailable||!(BASEMAPS[baseKey]||{}).contours){clearMainContours();mapNotice("");return}
+ if(map.getZoom()<MAIN_CONTOUR_MIN_ZOOM){
+  clearMainContours();mapNotice(t("depthZoomIn"));return;
+ }
+ mapNotice("");
+ const token=++mainContourToken,b=map.getBounds();
+ let gj=null;
+ try{
+  const u=`${BATHY_URL}/${BATHY_LAYER}/query`+
+   `?geometry=${b.getWest()},${b.getSouth()},${b.getEast()},${b.getNorth()}`+
+   "&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects"+
+   "&outFields=DEPTH&returnGeometry=true&outSR=4326&f=geojson";
+  const r=await fetch(u);
+  gj=r.ok?await r.json():null;
+ }catch(e){gj=null}
+ if(token!==mainContourToken||!(BASEMAPS[baseKey]||{}).contours)return;
+ clearMainContours();
+ if(!gj||!gj.features||!gj.features.length)return;
+ const labelled=new Set();
+ mainContours=L.geoJSON(gj,{
+  style:()=>({color:"#1D5FA0",weight:1.2,opacity:.85}),
+  onEachFeature:(f,ly)=>{
+   const v=cleanContourDepth(f.properties&&f.properties.DEPTH);
+   if(v==null)return;
+   ly.bindPopup(`${t("depth")}: ${v} ft`);
+   if(!labelled.has(v)){
+    labelled.add(v);
+    ly.bindTooltip(`${v} ft`,{permanent:true,direction:"center",
+                              className:"depthLabel",opacity:1});
+   }
+  }
+ }).addTo(map);
+}
 function setBasemap(key){
  if(!BASEMAPS[key])key="map";
  baseKey=key;localStorage.setItem("osl-basemap",key);
@@ -834,6 +898,7 @@ function setBasemap(key){
   baseLayer=(b.wms?L.tileLayer.wms(b.url,b.opts):L.tileLayer(b.url,b.opts)).addTo(map);
   baseLayer.bringToBack&&baseLayer.bringToBack();
  }
+ refreshMainContours();
 }
 
 /* The map used to sit wherever it was last dragged while the list below it
@@ -3359,6 +3424,12 @@ function syncTabs(){
 }
 const fs2=$("favSearch");if(fs2)fs2.oninput=()=>{clearTimeout(fs2._t);fs2._t=setTimeout(apply,200)};
 $("showFMZ").onchange=()=>{$("showFMZ").checked?loadFMZ(true):renderFMZ()};
+/* Contours follow the view when Depth is selected. Debounced: a pinch-zoom
+   fires moveend repeatedly and each one is a query against a 239k-line layer. */
+if(mapAvailable&&map&&map.on){
+ let mt=null;
+ map.on("moveend zoomend",()=>{clearTimeout(mt);mt=setTimeout(refreshMainContours,400)});
+}
 
 $("searchBtn").onclick=runSearch;
 
