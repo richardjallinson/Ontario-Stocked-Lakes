@@ -255,6 +255,10 @@ const I18N={
   tilesSlow:"Topo and Depth pull live map imagery and can take a moment to load, especially the first time.",
   findMe:"Find me",
   goToMap:"Go To Map",
+  offlineSave:"Save for offline",
+  offlineSaved:"Saved \u2713",
+  offlineWorking:"Saving\u2026",
+  offlineUnavailable:"Offline saving needs the app to finish loading. Try again in a moment.",
   trackingOn:"Stop tracking",
   trackingOff:"Track Location",
   officialSources:"Official Ontario sources",
@@ -528,6 +532,10 @@ const I18N={
   tilesSlow:"Topo et Profondeur chargent des images cartographiques en direct et peuvent prendre un moment, surtout la premi\u00e8re fois.",
   findMe:"Me trouver",
   goToMap:"Voir la carte",
+  offlineSave:"Enregistrer hors ligne",
+  offlineSaved:"Enregistr\u00e9 \u2713",
+  offlineWorking:"Enregistrement\u2026",
+  offlineUnavailable:"L'enregistrement hors ligne n\u00e9cessite que l'application ait fini de charger. R\u00e9essayez dans un instant.",
   trackingOn:"Arrêter le suivi",
   trackingOff:"Suivre ma position",
   officialSources:"Sources officielles de l'Ontario",
@@ -594,7 +602,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5j";
+const APP_VERSION="v5k";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -702,6 +710,91 @@ const LocationControl=L.Control.extend({
  }
 });
 new LocationControl().addTo(map);
+
+/* ---- Saving a lake for offline use -------------------------------------
+   The tile cache already keeps whatever you have looked at, but it is capped
+   and it only holds what you happened to pan across. This deliberately walks
+   the tile grid around one lake, at the zooms someone actually fishes at, and
+   hands the URLs to the service worker to store in a cache that is never
+   trimmed. After that the lake draws with no signal at all.
+   Both basemaps are covered: OSM (Map, and Depth's base) as plain XYZ, and
+   Toporama, which is a WMS and needs a bbox per tile rather than x/y/z --
+   computed here exactly as Leaflet computes it, or the saved images would
+   never match what the map later asks for. */
+const OFFLINE_ZOOMS=[11,12,13,14,15];
+function lonToTileX(lon,z){return Math.floor((lon+180)/360*Math.pow(2,z))}
+function latToTileY(lat,z){
+ const r=lat*Math.PI/180;
+ return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*Math.pow(2,z));
+}
+function tileToLon(x,z){return x/Math.pow(2,z)*360-180}
+function tileToLat(y,z){
+ const n=Math.PI-2*Math.PI*y/Math.pow(2,z);
+ return 180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n)));
+}
+// Web Mercator metres, the CRS Leaflet asks Toporama for.
+function lonToM(lon){return lon*20037508.34/180}
+function latToM(lat){
+ const y=Math.log(Math.tan((90+lat)*Math.PI/360))/(Math.PI/180);
+ return y*20037508.34/180;
+}
+function offlineTileUrls(lat,lon){
+ const urls=[];
+ OFFLINE_ZOOMS.forEach(z=>{
+  // A wider net at closer zooms: one tile covers less ground the further in
+  // you go, and close zooms are where the lake itself is actually read.
+  const r=z<=11?0:z===12?1:z===13?1:z===14?2:3;
+  const cx=lonToTileX(lon,z),cy=latToTileY(lat,z),max=Math.pow(2,z);
+  for(let x=cx-r;x<=cx+r;x++)for(let y=cy-r;y<=cy+r;y++){
+   if(x<0||y<0||x>=max||y>=max)continue;
+   urls.push(`https://tile.openstreetmap.org/${z}/${x}/${y}.png`);
+   const w=lonToM(tileToLon(x,z)),e=lonToM(tileToLon(x+1,z)),
+         n=latToM(tileToLat(y,z)),s=latToM(tileToLat(y+1,z));
+   urls.push("https://maps.geogratis.gc.ca/wms/toporama_en?"+
+    "SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=WMS-Toporama"+
+    "&STYLES=&FORMAT=image%2Fpng&TRANSPARENT=false&SRS=EPSG%3A3857"+
+    `&BBOX=${w},${s},${e},${n}&WIDTH=256&HEIGHT=256`);
+  }
+ });
+ return urls;
+}
+let savedAreas={};
+try{savedAreas=JSON.parse(localStorage.getItem("osl-offline-areas")||"{}")||{}}catch(e){savedAreas={}}
+function saveAreasIndex(){try{localStorage.setItem("osl-offline-areas",JSON.stringify(savedAreas))}catch(e){}}
+function areaKeyFor(l){return String(l.id||l.waterbodyId||`${l.lat},${l.lon}`)}
+function offlineBtnEl(){return document.getElementById("offlineBtn")}
+function paintOfflineBtn(l,state,extra){
+ const b=offlineBtnEl();if(!b||!l)return;
+ const key=areaKeyFor(l),have=!!savedAreas[key];
+ b.disabled=state==="working";
+ b.classList.toggle("saved",have&&state!=="working");
+ b.textContent=state==="working"?extra:(have?t("offlineSaved"):t("offlineSave"));
+}
+function requestOffline(l,remove){
+ const sw=navigator.serviceWorker&&navigator.serviceWorker.controller;
+ const key=areaKeyFor(l);
+ if(!sw){mapNotice(t("offlineUnavailable"));return}
+ const urls=offlineTileUrls(l.lat,l.lon);
+ if(remove){
+  sw.postMessage({type:"removeArea",key,urls});
+  delete savedAreas[key];saveAreasIndex();paintOfflineBtn(l,"idle");
+ }else{
+  paintOfflineBtn(l,"working",t("offlineWorking"));
+  sw.postMessage({type:"saveArea",key,urls});
+ }
+}
+navigator.serviceWorker&&navigator.serviceWorker.addEventListener("message",ev=>{
+ const m=ev.data||{};
+ if(!detailLakeObj||areaKeyFor(detailLakeObj)!==m.key)return;
+ if(m.type==="saveProgress"){
+  paintOfflineBtn(detailLakeObj,"working",`${Math.round(m.done/m.total*100)}%`);
+ }else if(m.type==="saveDone"){
+  savedAreas[m.key]={ts:Date.now(),n:m.saved};saveAreasIndex();
+  paintOfflineBtn(detailLakeObj,"idle");
+ }else if(m.type==="removeDone"){
+  paintOfflineBtn(detailLakeObj,"idle");
+ }
+});
 
 /* The lake sheet gets its own map.
 
@@ -859,6 +952,7 @@ function showDetailMap(l){
      main map's choice: the sheet grew its own Map/Topo/Depth switch. */
   detailLakeObj=l;
   applyDetailBase();
+  paintOfflineBtn(l,"idle");
   detailMap.setView([l.lat,l.lon],12);
   if(detailMarker)detailMap.removeLayer(detailMarker);
   detailMarker=L.circleMarker([l.lat,l.lon],
@@ -3044,7 +3138,7 @@ function detail(l){
  const fav=favoriteKeys.has(l.key),history=l.records.map(r=>`<div class="historyrow"><div><b>${esc(r.Stocking_Year||"—")}</b><span>${esc(r.Species?speciesLabel(r.Species):t("speciesUnavailable"))}</span></div><div class="historyright"><b>${num(r.Number_of_Fish_Stocked)}</b><span>${esc(r.Developmental_Stage?stageLabel(r.Developmental_Stage):"")}</span></div></div>`).join("");
  $("detail").innerHTML=`<div class="detailhead"><div><h2>${esc(l.name)}</h2><div class="species">${esc(displaySpecies(l).slice(0,6).map(speciesLabel).join(" • "))}${displaySpecies(l).length>6?` <span class="more">+${displaySpecies(l).length-6}</span>`:""}</div></div><button class="bigstar ${fav?"saved":""}" id="detailFav">${fav?"★":"☆"}</button></div>
  ${whereLine(l)}
- <div class="detailMapBlock"><div class="detailMapHead"><div class="baseSwitch detailBaseSwitch" role="group" aria-label="Basemap"><button type="button" data-dbase="map">${t("baseMap")}</button><button type="button" data-dbase="topo">${t("baseTopo")}</button><button type="button" data-dbase="depth">${t("baseDepth")}</button></div></div>
+ <div class="detailMapBlock"><div class="detailMapHead"><button type="button" id="offlineBtn" class="offlineBtn">${t("offlineSave")}</button><div class="baseSwitch detailBaseSwitch" role="group" aria-label="Basemap"><button type="button" data-dbase="map">${t("baseMap")}</button><button type="button" data-dbase="topo">${t("baseTopo")}</button><button type="button" data-dbase="depth">${t("baseDepth")}</button></div></div>
  <div class="detailMapWrap"><div id="detailMap" role="img" aria-label="${t('lakeMapLabel')}"></div><button type="button" class="mapExpand detailMapExpand" aria-label="${t("expandMap")}">${EXPAND_ICON}</button></div></div>
  <div class="detailgrid">${l.stocked?`<div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div>`:`<div><small>Stocking</small><b>Not stocked</b></div>`}${userLoc?`<div><small>Distance from you</small><b>${esc(distanceLabel(l))}</b></div>`:""}${l.district?`<div><small>MNRF district</small><b>${esc(l.district)}</b></div>`:""}
  <div><small>Fisheries Management Zone</small><b>${l.fmz?`FMZ ${l.fmz}`:"Loading / unavailable"}</b></div><div><small>Waterbody ID</small><b>${esc(l.waterbodyId||"—")}</b></div></div>
@@ -3617,6 +3711,9 @@ document.addEventListener("click",e=>{
     the sheet's HTML on every open, which would orphan a per-button handler. */
  const db=e.target.closest(".detailBaseSwitch button");
  if(db)setDetailBasemap(db.dataset.dbase);
+ /* Save this lake's map tiles for offline use, or give them back. */
+ const ob=e.target.closest("#offlineBtn");
+ if(ob&&detailLakeObj)requestOffline(detailLakeObj,!!savedAreas[areaKeyFor(detailLakeObj)]);
  /* The lake sheet's fullscreen button — same treatment as the main map's,
     delegated for the same rebuild reason. The contours are the thing that
     earns the whole screen, and they live here more than anywhere. */

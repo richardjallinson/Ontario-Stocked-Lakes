@@ -3,7 +3,7 @@
    load isn't blocked on ~12 MB. Live government API calls always go to the
    network so regulations and advisories are never served stale. */
 
-const VERSION = "v5j";
+const VERSION = "v5k";
 const SHELL = `osl-shell-${VERSION}`;
 /* Deliberately NOT versioned. The data cache used to be osl-data-${VERSION},
    and activate deletes every cache that is not current — so every app update
@@ -22,6 +22,11 @@ const DATA  = "osl-data";
    screen at once. Capped below so it can't grow without bound. */
 const TILES = "osl-tiles";
 const TILE_CACHE_MAX = 800;
+/* Tiles a user deliberately saved for a lake, kept apart from TILES because
+   TILES is trimmed to a cap and would quietly evict the very tiles someone
+   saved for a trip. Nothing here is ever evicted automatically -- it goes
+   when the user removes that lake's saved area, and not before. */
+const OFFLINE = "osl-offline";
 
 const SHELL_FILES = [
   "./",
@@ -71,7 +76,7 @@ self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(k => k !== SHELL && k !== DATA && k !== TILES).map(k => caches.delete(k))
+        keys.filter(k => k !== SHELL && k !== DATA && k !== TILES && k !== OFFLINE).map(k => caches.delete(k))
       ))
       .then(() => self.clients.claim())
   );
@@ -96,6 +101,46 @@ async function trimTileCache(c) {
   for (let i = 0; i < excess; i++) await c.delete(keys[i]);
 }
 
+/* Saving a lake for offline use. The page works out which tile URLs cover the
+   lake and posts them here; the fetching happens in the worker so it survives
+   the user scrolling around, and progress goes back to the page as it lands.
+   Sequential rather than parallel on purpose: these are other people's free
+   public tile servers, and a burst of a hundred parallel requests from every
+   user is exactly the sort of thing that gets an app blocked. */
+self.addEventListener("message", e => {
+  const msg = e.data || {};
+  const reply = m => { try { e.source && e.source.postMessage(m); } catch (_) {} };
+
+  if (msg.type === "saveArea" && Array.isArray(msg.urls)) {
+    e.waitUntil((async () => {
+      const c = await caches.open(OFFLINE);
+      let done = 0, failed = 0;
+      for (const u of msg.urls) {
+        try {
+          if (await c.match(u)) { done++; }
+          else {
+            const res = await fetch(u, { mode: "cors" });
+            if (res && res.ok) { await c.put(u, res.clone()); done++; }
+            else failed++;
+          }
+        } catch (_) { failed++; }
+        reply({ type: "saveProgress", key: msg.key, done: done + failed, total: msg.urls.length });
+      }
+      reply({ type: "saveDone", key: msg.key, saved: done, failed });
+    })());
+    return;
+  }
+
+  if (msg.type === "removeArea" && Array.isArray(msg.urls)) {
+    e.waitUntil((async () => {
+      const c = await caches.open(OFFLINE);
+      for (const u of msg.urls) { try { await c.delete(u); } catch (_) {} }
+      reply({ type: "removeDone", key: msg.key });
+    })());
+    return;
+  }
+});
+
 self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
@@ -106,16 +151,19 @@ self.addEventListener("fetch", e => {
   // cross-origin exception to "network only" below -- see the note by
   // isTileRequest for why tiles are safe to keep and everything else isn't.
   if (isTileRequest(url)) {
-    e.respondWith(
-      caches.open(TILES).then(async c => {
-        const hit = await c.match(req);
-        const network = fetch(req).then(res => {
-          if (res.ok) { c.put(req, res.clone()); trimTileCache(c); }
-          return res;
-        }).catch(() => hit);
-        return hit || network;
-      })
-    );
+    e.respondWith((async () => {
+      // Deliberately saved tiles win, and are answered without touching the
+      // network at all -- the whole point is a lake that works with no signal.
+      const saved = await caches.open(OFFLINE).then(c => c.match(req));
+      if (saved) return saved;
+      const c = await caches.open(TILES);
+      const hit = await c.match(req);
+      const network = fetch(req).then(res => {
+        if (res.ok) { c.put(req, res.clone()); trimTileCache(c); }
+        return res;
+      }).catch(() => hit);
+      return hit || network;
+    })());
     return;
   }
 
