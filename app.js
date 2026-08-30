@@ -247,8 +247,9 @@ const I18N={
   showAccess:"Show fishing access points",showFMZ:"Show Fisheries Management Zones",
   showDepth:"Show lake depth contours",accessStatus:"Boat launches \u2022 shore access \u2022 docks/piers",
   depthStatus:"Government bathymetry \u2022 not for navigation",
-  lakeMap:"Lake map",baseMap:"Map",baseTopo:"Topo",baseDepth:"Depth",basePlain:"Plain",
-  depthZoomIn:"Zoom in to a lake to see depth contours.",tapMarker:"Tap a marker for details",loading:"Loading\u2026",
+  lakeMap:"Lake map",baseMap:"Map",baseTopo:"Topo",baseDepth:"Depth",
+  depthZoomIn:"Zoom in to a lake to see depth contours.",
+  tilesOffline:"Map tiles unavailable offline \u2014 everything else still works.",tapMarker:"Tap a marker for details",loading:"Loading\u2026",
   officialSources:"Official Ontario sources",
   regsSummaryNote:"Regulations in this app are a summary. These are the authoritative sources \u2014 open them before you fish.",
   regsSummaryTitle:"Fishing Regulations Summary",regsSummarySub:"Seasons, limits and slot sizes by zone",
@@ -512,8 +513,9 @@ const I18N={
   showAccess:"Afficher les acc\u00e8s de p\u00eache",showFMZ:"Afficher les zones de gestion des p\u00eaches",
   showDepth:"Afficher les courbes de profondeur",accessStatus:"Mises \u00e0 l'eau \u2022 acc\u00e8s riverain \u2022 quais",
   depthStatus:"Bathym\u00e9trie gouvernementale \u2022 pas pour la navigation",
-  lakeMap:"Carte du lac",baseMap:"Carte",baseTopo:"Topo",baseDepth:"Profondeur",basePlain:"\u00c9pur\u00e9e",
-  depthZoomIn:"Zoomez sur un lac pour voir les courbes de profondeur.",tapMarker:"Touchez un rep\u00e8re pour les d\u00e9tails",loading:"Chargement\u2026",
+  lakeMap:"Carte du lac",baseMap:"Carte",baseTopo:"Topo",baseDepth:"Profondeur",
+  depthZoomIn:"Zoomez sur un lac pour voir les courbes de profondeur.",
+  tilesOffline:"Tuiles de carte indisponibles hors ligne \u2014 tout le reste fonctionne.",tapMarker:"Touchez un rep\u00e8re pour les d\u00e9tails",loading:"Chargement\u2026",
   officialSources:"Sources officielles de l'Ontario",
   regsSummaryNote:"Les r\u00e8glements pr\u00e9sent\u00e9s ici sont un r\u00e9sum\u00e9. Voici les sources officielles \u2014 consultez-les avant de p\u00eacher.",
   regsSummaryTitle:"R\u00e9sum\u00e9 des r\u00e8glements de p\u00eache",regsSummarySub:"Saisons, limites et fourchettes de taille par zone",
@@ -578,7 +580,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4y";
+const APP_VERSION="v4z";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -832,16 +834,15 @@ const BASEMAPS={
   opts:{maxZoom:19,
         attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'},
   contours:true
- },
- plain:{
-  label:"Plain",
-  // Genuinely plain now: no tile layer at all, just the marker on a calm
-  // background. It used to be CARTO's light style, which made "Plain" the
-  // oddest of the three to need a network — this one is the only basemap
-  // that works at a lake with no signal.
-  url:null,
-  opts:{attribution:""}
  }
+ /* "Plain" — no tile layer at all — was removed in v4z. It was meant as the
+    offline fallback, but the app already bundles its data offline: search,
+    stocking history, regulations, access points and catch logs all work with
+    no signal on any basemap, so Plain rescued nothing. What it did do was
+    render a grey rectangle that reads as a broken map — it fooled the app's
+    own author three times in one evening, and an angler has less context to
+    work from. The genuine offline case is answered where it belongs instead,
+    by the notice below when tiles fail. */
 };
 let baseLayer=null,baseKey=localStorage.getItem("osl-basemap")||"map";
 
@@ -906,6 +907,13 @@ function setBasemap(key){
  if(b.url){
   baseLayer=(b.wms?L.tileLayer.wms(b.url,b.opts):L.tileLayer(b.url,b.opts)).addTo(map);
   baseLayer.bringToBack&&baseLayer.bringToBack();
+  /* Tiles that never arrive used to leave an unexplained grey rectangle —
+     the commonest way this map looks broken when it is merely offline. Say
+     so, the way the Fisheries Management Zones row already does. One notice
+     per failure, cleared as soon as any tile loads. */
+  baseLayer.on("tileerror",()=>{if(!navigator.onLine||!baseLayer._tilesLoaded)mapNotice(t("tilesOffline"))});
+  baseLayer.on("load",()=>{baseLayer._tilesLoaded=true;
+   if(($("mapNotice")||{}).textContent===t("tilesOffline"))mapNotice("")});
  }
  refreshMainContours();
 }
