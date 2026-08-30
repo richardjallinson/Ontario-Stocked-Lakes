@@ -687,7 +687,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6q";
+const APP_VERSION="v6r";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -4687,7 +4687,8 @@ document.addEventListener("DOMContentLoaded",()=>{
    Rows carry their own edit controls so tidying up never costs a trip to
    the lake and back, while tapping the row opens the lake itself -- the
    planning case, which is the common one. */
-let allSpotsFilter=null,allSpotsQuery="",allSpotsEditing=null;
+let allSpotsFilter=null,allSpotsIconFilter=null,allSpotsQuery="",allSpotsEditing=null;
+let allSpotsCollapsed={};
 function lakeByKey(k){
  return lakes.find(l=>String(l.key)===String(k))||
         lakes.find(l=>String(l.waterbodyId||"")===String(k))||null;
@@ -4701,7 +4702,7 @@ function allSpotsRows(){
   });
  });
  const c=userLoc;
- out.forEach(r=>{r.km=c?distance(c.lat,c.lon,r.sp.lat,r.sp.lon):null});
+ out.forEach(r=>{r.km=(c&&c.length===2)?distance(c[0],c[1],r.sp.lat,r.sp.lon):null});
  /* Nearest first: "what is close to me this weekend" is the question this
     list exists to answer. Without a fix, newest first. */
  out.sort((a,b)=>{
@@ -4717,6 +4718,7 @@ function renderAllSpots(){
  if(!host)return;
  let rows=allSpotsRows();
  if(allSpotsFilter)rows=rows.filter(r=>r.sp.color===allSpotsFilter);
+ if(allSpotsIconFilter)rows=rows.filter(r=>(r.sp.icon||"pin")===allSpotsIconFilter);
  const q=allSpotsQuery.trim().toLowerCase();
  if(q)rows=rows.filter(r=>(r.sp.name||"").toLowerCase().includes(q)||(r.lakeName||"").toLowerCase().includes(q));
  const total=allSpotsRows().length;
@@ -4729,36 +4731,65 @@ function renderAllSpots(){
  h+='<div class="asFilters"><button type="button" data-asfilter="" class="'+(allSpotsFilter?"":"on")+'">'+t("allSpots")+'</button>';
  SPOT_COLORS.forEach(c=>{h+='<button type="button" data-asfilter="'+c.key+'" class="asDot'+(allSpotsFilter===c.key?" on":"")+'" style="background:'+c.hex+'" aria-label="'+c.label+'"></button>'});
  h+='</div>';
+ /* Second filter axis: the icon. Combined with colour and search, "red +
+    fish + moira" answers itself. */
+ h+='<div class="asFilters asIconFilters">';
+ SPOT_ICONS.forEach(ic=>{h+='<button type="button" data-asiconfilter="'+ic.key+'" class="asIconChip'+(allSpotsIconFilter===ic.key?" on":"")+'" aria-label="'+ic.label+'">'+spotIconSvg(ic.key,allSpotsIconFilter===ic.key?"#13263C":"#8A99A8",20)+'</button>'});
+ h+='</div>';
  h+='<p class="asCount">'+rows.length+" "+(rows.length===1?t("spotOne"):t("spotMany"))+'</p>';
  if(!rows.length){
   h+='<p class="asEmpty">'+t("noSpotsMatch")+'</p>';
   host.innerHTML=h;return;
  }
- h+='<div class="asList">';
+ /* Grouped by lake, nearest lake first: a hundred markers over ten lakes
+    becomes ten headers. Tap a header to fold that lake away. */
+ const groups=new Map();
  rows.forEach(r=>{
-  const hex=(SPOT_COLORS.find(x=>x.key===r.sp.color)||{}).hex||"#D4A017";
-  const editing=allSpotsEditing===r.sp.id;
-  h+='<div class="asRow'+(editing?" editing":"")+'">';
-  h+='<button type="button" class="asMain" data-asopen="'+escHtml(r.lk)+'" data-asid="'+r.sp.id+'"'+(r.lake?"":" disabled")+'>'+
-     '<span class="asIcon">'+spotIconSvg(r.sp.icon||"pin",hex,22)+'</span>'+
-     '<span class="asMeta"><span class="asName">'+escHtml(r.sp.name)+'</span>'+
-     '<span class="asSub">'+escHtml(r.lakeName)+(r.km!=null?" \u00b7 "+r.km.toFixed(1)+" km":"")+'</span></span></button>';
-  h+='<button type="button" class="asEdit" data-asedit="'+r.sp.id+'" aria-label="Edit">'+
-     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 19h3l9-9-3-3-9 9zM14 5l3 3"/></svg></button>';
-  h+='</div>';
-  if(editing){
-   h+='<div class="asEditor"><input class="asRename" data-asid="'+r.sp.id+'" data-aslk="'+escHtml(r.lk)+'" maxlength="50" value="'+escHtml(r.sp.name)+'">';
-   h+='<div class="asColors">';
-   SPOT_COLORS.forEach(c=>{h+='<button type="button" class="asSwatch'+(r.sp.color===c.key?" sel":"")+'" data-ascolor="'+c.key+'" data-asid="'+r.sp.id+'" data-aslk="'+escHtml(r.lk)+'" style="background:'+c.hex+'" aria-label="'+c.label+'"></button>'});
-   h+='</div><div class="asIcons">';
-   SPOT_ICONS.forEach(ic=>{h+='<button type="button" class="asIconBtn'+((r.sp.icon||"pin")===ic.key?" sel":"")+'" data-asicon="'+ic.key+'" data-asid="'+r.sp.id+'" data-aslk="'+escHtml(r.lk)+'" aria-label="'+ic.label+'">'+spotIconSvg(ic.key,"#5B6B7C",20)+'</button>'});
-   h+='</div><div class="asEditBtns">'+
-      '<button type="button" class="asSave" data-assave="'+r.sp.id+'" data-aslk="'+escHtml(r.lk)+'">'+t("saveChanges")+'</button>'+
-      '<button type="button" class="asDel" data-asdel="'+r.sp.id+'" data-aslk="'+escHtml(r.lk)+'">'+t("deleteSpot")+'</button>'+
-      '</div></div>';
-  }
+  if(!groups.has(r.lk))groups.set(r.lk,{lk:r.lk,lakeName:r.lakeName,lake:r.lake,rows:[],km:null});
+  const g=groups.get(r.lk);
+  g.rows.push(r);
+  if(r.km!=null&&(g.km==null||r.km<g.km))g.km=r.km;
  });
- h+='</div>';
+ const glist=[...groups.values()].sort((a,b)=>{
+  if(a.km!=null&&b.km!=null)return a.km-b.km;
+  if(a.km!=null)return -1;
+  if(b.km!=null)return 1;
+  return a.lakeName.localeCompare(b.lakeName);
+ });
+ glist.forEach(g=>{
+  const folded=!!allSpotsCollapsed[g.lk];
+  h+='<button type="button" class="asLakeHead'+(folded?" folded":"")+'" data-asfold="'+escHtml(g.lk)+'">'+
+     '<span class="asLakeName">'+escHtml(g.lakeName)+'</span>'+
+     '<span class="asLakeMeta">'+g.rows.length+" "+(g.rows.length===1?t("spotOne"):t("spotMany"))+
+     (g.km!=null?" \u00b7 "+g.km.toFixed(1)+" km":"")+'</span>'+
+     '<span class="asChevron">'+(folded?"\u25b8":"\u25be")+'</span></button>';
+  if(folded)return;
+  h+='<div class="asList">';
+  g.rows.forEach(r=>{
+   const hex=(SPOT_COLORS.find(x=>x.key===r.sp.color)||{}).hex||"#D4A017";
+   const editing=allSpotsEditing===r.sp.id;
+   h+='<div class="asRow'+(editing?" editing":"")+'">';
+   h+='<button type="button" class="asMain" data-asopen="'+escHtml(r.lk)+'" data-asid="'+r.sp.id+'"'+(r.lake?"":" disabled")+'>'+
+      '<span class="asIcon">'+spotIconSvg(r.sp.icon||"pin",hex,22)+'</span>'+
+      '<span class="asMeta"><span class="asName">'+escHtml(r.sp.name)+'</span>'+
+      '<span class="asSub">'+(r.km!=null?r.km.toFixed(1)+" km":"")+'</span></span></button>';
+   h+='<button type="button" class="asEdit" data-asedit="'+r.sp.id+'" aria-label="Edit">'+
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 19h3l9-9-3-3-9 9zM14 5l3 3"/></svg></button>';
+   h+='</div>';
+   if(editing){
+    h+='<div class="asEditor"><input class="asRename" data-asid="'+r.sp.id+'" data-aslk="'+escHtml(r.lk)+'" maxlength="50" value="'+escHtml(r.sp.name)+'">';
+    h+='<div class="asColors">';
+    SPOT_COLORS.forEach(c=>{h+='<button type="button" class="asSwatch'+(r.sp.color===c.key?" sel":"")+'" data-ascolor="'+c.key+'" data-asid="'+r.sp.id+'" data-aslk="'+escHtml(r.lk)+'" style="background:'+c.hex+'" aria-label="'+c.label+'"></button>'});
+    h+='</div><div class="asIcons">';
+    SPOT_ICONS.forEach(ic=>{h+='<button type="button" class="asIconBtn'+((r.sp.icon||"pin")===ic.key?" sel":"")+'" data-asicon="'+ic.key+'" data-asid="'+r.sp.id+'" data-aslk="'+escHtml(r.lk)+'" aria-label="'+ic.label+'">'+spotIconSvg(ic.key,"#5B6B7C",20)+'</button>'});
+    h+='</div><div class="asEditBtns">'+
+       '<button type="button" class="asSave" data-assave="'+r.sp.id+'" data-aslk="'+escHtml(r.lk)+'">'+t("saveChanges")+'</button>'+
+       '<button type="button" class="asDel" data-asdel="'+r.sp.id+'" data-aslk="'+escHtml(r.lk)+'">'+t("deleteSpot")+'</button>'+
+       '</div></div>';
+   }
+  });
+  h+='</div>';
+ });
  host.innerHTML=h;
 }
 function updateSpotFields(lk,id,changes){
@@ -4776,6 +4807,14 @@ document.addEventListener("click",e=>{
  if(!b)return;
  if(b.hasAttribute("data-asfilter")){
   allSpotsFilter=b.dataset.asfilter||null;renderAllSpots();return;
+ }
+ if(b.dataset.asiconfilter){
+  allSpotsIconFilter=allSpotsIconFilter===b.dataset.asiconfilter?null:b.dataset.asiconfilter;
+  renderAllSpots();return;
+ }
+ if(b.dataset.asfold!==undefined&&b.classList.contains("asLakeHead")){
+  allSpotsCollapsed[b.dataset.asfold]=!allSpotsCollapsed[b.dataset.asfold];
+  renderAllSpots();return;
  }
  if(b.dataset.asedit){
   allSpotsEditing=allSpotsEditing===b.dataset.asedit?null:b.dataset.asedit;
