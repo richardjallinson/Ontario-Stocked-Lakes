@@ -576,7 +576,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4q";
+const APP_VERSION="v4r";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -3264,6 +3264,22 @@ function syncTabs(){
 }
 const fs2=$("favSearch");if(fs2)fs2.oninput=()=>{clearTimeout(fs2._t);fs2._t=setTimeout(apply,200)};
 $("showFMZ").onchange=()=>{$("showFMZ").checked?loadFMZ(true):renderFMZ()};
+/* The bathymetry layer has existed since the depth work but was never added to
+   a map, so the contours have never once been visible. It is a plain overlay
+   with no data to fetch up front — the server draws each tile on request — so
+   the toggle only has to add and remove it.
+
+   Kept off by default. Coverage is roughly 11,000 of the province's lakes and
+   the surveys run from the 1940s to the 1990s, so an angler who switches it on
+   for a lake that was never surveyed sees nothing. That is a worse first
+   impression than not offering it, hence opt-in, and hence the standing
+   not-for-navigation note beside the control rather than buried in a dialog. */
+$("showDepth").onchange=()=>{
+ const on=$("showDepth").checked;
+ if(!mapAvailable)return;
+ if(on){bathyLayer.addTo(map);bathyLayer.bringToFront&&bathyLayer.bringToFront()}
+ else map.removeLayer(bathyLayer);
+};
 $("searchBtn").onclick=runSearch;
 
 /* The fifth way to search. Near Me carried "Use my location" until v2l folded
