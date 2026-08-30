@@ -1225,3 +1225,28 @@ body.filtering .searchAlt{display:flex}
  text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;
 }
 .leaflet-tooltip.depthLabel::before{display:none}
+
+/* Full-screen map. Contour labels and the shape of a lake bottom need room a
+   card on a phone cannot give; this is the one screen anglers will want to
+   fill. Fixed rather than the Fullscreen API, which iOS Safari does not offer
+   for arbitrary elements and which a WKWebView wrapper handles unevenly —
+   position:fixed behaves identically in the browser and in the shipped app. */
+.mapWrap{position:relative}
+.mapExpand{
+ position:absolute;top:10px;right:10px;z-index:500;
+ width:34px;height:34px;padding:0;border-radius:8px;
+ border:1px solid rgba(19,38,60,.25);background:#fff;
+ display:flex;align-items:center;justify-content:center;
+ box-shadow:0 1px 4px rgba(0,0,0,.25);cursor:pointer;
+}
+.mapExpand svg{width:18px;height:18px;fill:none;stroke:#13263C;stroke-width:2;
+ stroke-linecap:round;stroke-linejoin:round}
+.mapcard.isFull{
+ position:fixed;inset:0;z-index:4000;margin:0;border-radius:0;
+ display:flex;flex-direction:column;background:#fff;
+}
+.mapcard.isFull .mapWrap{flex:1;min-height:0}
+.mapcard.isFull #map{height:100%}
+/* Clear of the notch and the home indicator when filling the screen. */
+.mapcard.isFull .maphead{padding-top:max(12px,env(safe-area-inset-top))}
+.mapcard.isFull .mapExpand{top:max(10px,calc(env(safe-area-inset-top) + 4px))}

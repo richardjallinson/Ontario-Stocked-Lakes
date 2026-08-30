@@ -249,6 +249,7 @@ const I18N={
   depthStatus:"Government bathymetry \u2022 not for navigation",
   lakeMap:"Lake map",baseMap:"Map",baseTopo:"Topo",baseDepth:"Depth",
   depthZoomIn:"Zoom in to a lake to see depth contours.",
+  expandMap:"Expand map",closeMap:"Close full screen",
   tilesOffline:"Map tiles unavailable offline \u2014 everything else still works.",tapMarker:"Tap a marker for details",loading:"Loading\u2026",
   officialSources:"Official Ontario sources",
   regsSummaryNote:"Regulations in this app are a summary. These are the authoritative sources \u2014 open them before you fish.",
@@ -515,6 +516,7 @@ const I18N={
   depthStatus:"Bathym\u00e9trie gouvernementale \u2022 pas pour la navigation",
   lakeMap:"Carte du lac",baseMap:"Carte",baseTopo:"Topo",baseDepth:"Profondeur",
   depthZoomIn:"Zoomez sur un lac pour voir les courbes de profondeur.",
+  expandMap:"Agrandir la carte",closeMap:"Quitter le plein \u00e9cran",
   tilesOffline:"Tuiles de carte indisponibles hors ligne \u2014 tout le reste fonctionne.",tapMarker:"Touchez un rep\u00e8re pour les d\u00e9tails",loading:"Chargement\u2026",
   officialSources:"Sources officielles de l'Ontario",
   regsSummaryNote:"Les r\u00e8glements pr\u00e9sent\u00e9s ici sont un r\u00e9sum\u00e9. Voici les sources officielles \u2014 consultez-les avant de p\u00eacher.",
@@ -580,7 +582,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4z";
+const APP_VERSION="v5a";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -3440,6 +3442,28 @@ function syncTabs(){
  setView(map[currentView]||currentView);
 }
 const fs2=$("favSearch");if(fs2)fs2.oninput=()=>{clearTimeout(fs2._t);fs2._t=setTimeout(apply,200)};
+/* Full-screen map. A depth chart is the one thing in this app worth the whole
+   screen — contour labels crowd each other in a card. The button swaps to a
+   close cross while expanded, Escape backs out on a keyboard, and Leaflet is
+   told to re-measure after the CSS has applied or it draws into the old,
+   smaller box and leaves grey where the new edges are. */
+(function(){
+ const btn=$("mapExpand"),card=document.querySelector(".mapcard");
+ if(!btn||!card)return;
+ const OPEN='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+       SHUT='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+ function setFull(on){
+  card.classList.toggle("isFull",on);
+  btn.innerHTML=on?SHUT:OPEN;
+  btn.setAttribute("aria-label",on?t("closeMap"):t("expandMap"));
+  document.body.style.overflow=on?"hidden":"";
+  if(mapAvailable&&map)setTimeout(()=>{try{map.invalidateSize()}catch(e){}},80);
+ }
+ btn.onclick=()=>setFull(!card.classList.contains("isFull"));
+ document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&card.classList.contains("isFull"))setFull(false);
+ });
+})();
 $("showFMZ").onchange=()=>{$("showFMZ").checked?loadFMZ(true):renderFMZ()};
 /* Contours follow the view when Depth is selected. Debounced: a pinch-zoom
    fires moveend repeatedly and each one is a query against a 239k-line layer. */

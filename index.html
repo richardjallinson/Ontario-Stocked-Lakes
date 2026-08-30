@@ -149,7 +149,12 @@
   </div>
   <div class="mapsub"><span id="mapCount" data-i18n="tapMarker">Tap a marker for details</span></div>
   <div id="mapNotice" class="mapNotice hidden"></div>
-  <div id="map"></div>
+  <div class="mapWrap">
+    <div id="map"></div>
+    <button type="button" id="mapExpand" class="mapExpand" aria-label="Expand map">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+    </button>
+  </div>
 </section>
 
 <!-- The same warning the splash carries, repeated at the foot of Explore.
