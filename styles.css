@@ -1345,3 +1345,5 @@ body.filtering .searchAlt{display:flex}
 .spNote{font-size:12.5px;color:var(--muted);padding:4px 2px}
 body.spotCreating{cursor:crosshair}
 body.spotCreating .leaflet-container{cursor:crosshair}
+.spHeadBtns{display:flex;align-items:center;gap:8px}
+.spNew{border:0;background:var(--accent);color:var(--green);border-radius:9px;padding:7px 12px;font:inherit;font-weight:800;font-size:13px;cursor:pointer}
