@@ -1410,3 +1410,5 @@ body.spotCreating .leaflet-container{cursor:crosshair}
 .catchSpotBtn{border:1px solid var(--line);background:#fff;border-radius:9px;
  padding:6px 11px;font:inherit;font-weight:800;font-size:12px;cursor:pointer;color:var(--ink)}
 .catchSpotDone{font-size:12px;font-weight:800;color:#27AE60}
+.catchSpotRow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.catchNoLoc{font-size:11.5px;color:var(--muted)}

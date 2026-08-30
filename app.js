@@ -203,6 +203,8 @@ const I18N={
   bestMatch:"Best Match",closest:"Closest",recent:"Most recently stocked",quantity:"Most fish stocked",
   findStocked:"Find Fish Near Me",myLakes:"My Lakes",trips:"Trips",overview:"Overview",
   rulesTab:"Rules",
+  viewOnMap:"View on map",
+  noCatchLocation:"No location recorded",
   saveCatchAsSpot:"Mark this spot",
   catchMarked:"Marked on map",
   catchMarkedToast:"Spot saved to this lake",
@@ -521,6 +523,8 @@ const I18N={
   bestMatch:"Meilleure correspondance",closest:"Les plus proches",recent:"Ensemencement le plus récent",quantity:"Plus grand nombre ensemencé",
   findStocked:"Trouver du poisson près de moi",myLakes:"Mes lacs",trips:"Sorties",overview:"Aperçu",
   rulesTab:"R\u00e8gles",
+  viewOnMap:"Voir sur la carte",
+  noCatchLocation:"Aucune position enregistr\u00e9e",
   saveCatchAsSpot:"Marquer ce lieu",
   catchMarked:"Marqu\u00e9 sur la carte",
   catchMarkedToast:"Lieu enregistr\u00e9 pour ce lac",
@@ -683,7 +687,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6h";
+const APP_VERSION="v6i";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -3791,6 +3795,25 @@ function catchSpotMarkup(c,trip){
  if(existing)return `<span class="catchSpotDone">${t("catchMarked")}</span>`;
  return `<button type="button" class="catchSpotBtn" data-spotfromcatch="${c.id}" data-triplake="${esc(lk)}">${t("saveCatchAsSpot")}</button>`;
 }
+function viewCatchOnMap(tripId,catchId){
+ const trip=trips.find(x=>String(x.id)===String(tripId));if(!trip)return;
+ const c=(trip.catches||[]).find(x=>String(x.id)===String(catchId));
+ if(!c||!c.location)return;
+ const lake=tripLake(trip);if(!lake)return;
+ /* Open the lake sheet, then steer its map to the fish once the sheet's map
+    has had its moment to size itself -- the same settling delay the sheet
+    itself uses. A brief ring marks the point so the eye lands right. */
+ detail(lake);
+ setTimeout(()=>{
+  try{
+   if(!detailMap)return;
+   detailMap.setView([c.location.lat,c.location.lon],15,{animate:true});
+   const ring=L.circleMarker([c.location.lat,c.location.lon],
+    {radius:14,color:"#E74C3C",weight:3,fillOpacity:0,interactive:false}).addTo(detailMap);
+   setTimeout(()=>{try{detailMap.removeLayer(ring)}catch(_){}},4000);
+  }catch(_){}
+ },350);
+}
 function spotFromCatch(tripId,catchId){
  const trip=trips.find(x=>String(x.id)===String(tripId));if(!trip)return;
  const c=(trip.catches||[]).find(x=>String(x.id)===String(catchId));
@@ -3832,7 +3855,7 @@ function catchRowMarkup(c,active,trip){
   ${confirming?`<div class="confirmRow"><span class="confirmAsk">${t("deleteCatchAsk")}</span>
     <button data-confirmdel="${c.id}" class="dangerBtn">${t("delete")}</button>
     <button data-canceldel="${c.id}" class="secondaryAction">${t("cancel")}</button></div>`:""}</div>
-  ${c.location&&trip?`<div class="catchSpotRow">${catchSpotMarkup(c,trip)}</div>`:""}
+  ${c.location&&trip?`<div class="catchSpotRow"><button type="button" class="catchSpotBtn" data-viewcatch="${c.id}">${t("viewOnMap")}</button>${catchSpotMarkup(c,trip)}</div>`:`<div class="catchSpotRow"><span class="catchNoLoc">${t("noCatchLocation")}</span></div>`}
   ${active&&!confirming?`<div class="rowActions">
    <button data-editcatch="${c.id}" aria-label="${t("editCatch")}" title="${t("editCatch")}">✎</button>
    <button data-delcatch="${c.id}" aria-label="${t("deleteCatch")}" title="${t("deleteCatch")}">×</button>
@@ -3872,7 +3895,7 @@ function catchFormMarkup(tr){
    <option value="Kept"${kept?" selected":""}>${t("kept")}</option>
   </select>
   <textarea id="catchNotes" placeholder="${t("catchNotesPh")}">${esc(editing&&editing.notes?editing.notes:"")}</textarea>
-  ${editing?"":`<label class="checkline"><input id="catchLocation" type="checkbox"> ${t("saveCatchLocation")}</label>`}
+  ${editing?"":`<label class="checkline"><input id="catchLocation" type="checkbox"${localStorage.getItem("osl-catch-gps")==="0"?"":" checked"}> ${t("saveCatchLocation")}</label>`}
   <button id="addCatch">${editing?t("saveCatch"):t("addCatch")}</button>
  </div>`;
 }
@@ -3964,6 +3987,9 @@ function openTrip(id){
    trip.catches=trip.catches.filter(c=>c.id!==Number(b.dataset.confirmdel));
    confirmDeleteId=null;saveTrips();openTrip(id);toast(t("catchDeleted"));
   });
+  document.querySelectorAll("[data-viewcatch]").forEach(b=>b.onclick=()=>{
+   viewCatchOnMap(id,b.dataset.viewcatch);
+  });
   document.querySelectorAll("[data-spotfromcatch]").forEach(b=>b.onclick=()=>{
    spotFromCatch(id,b.dataset.spotfromcatch);
   });
@@ -4042,6 +4068,7 @@ function addCatch(id){
   saveTrips();openTrip(id);
  };
  const gps=$("catchLocation");
+ if(gps)try{localStorage.setItem("osl-catch-gps",gps.checked?"1":"0")}catch(_){}
  if(gps&&gps.checked&&navigator.geolocation)
   navigator.geolocation.getCurrentPosition(p=>finish({lat:p.coords.latitude,lon:p.coords.longitude}),()=>finish(null),{timeout:8000});
  else finish(null);
