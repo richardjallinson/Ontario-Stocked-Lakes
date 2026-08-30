@@ -1471,7 +1471,7 @@ body.spotCreating .leaflet-container{cursor:crosshair}
 .leaflet-touch .leaflet-bar.mapBarBtn a.recording,
 .leaflet-bar.mapBarBtn a.recording{background:#C0392B;color:#fff}
 /* Leaflet reserves space at the bottom for attribution; nudge it clear. */
-.leaflet-bottom.leaflet-right .leaflet-control-attribution{margin-bottom:52px}
+
 /* Trails panel: say how a trail starts, and make saving the obvious action. */
 .tpHint{font-size:12.5px;color:var(--muted);padding:8px 2px;line-height:1.45}
 .tpReady{font-size:12px;font-weight:800;color:#2F6FB5;margin:2px 0 6px}
@@ -1482,3 +1482,17 @@ body.spotCreating .leaflet-container{cursor:crosshair}
 .mapcard.isFull .leaflet-bar.mapBarBtn a,
 .detailMapBlock.isFull .leaflet-bar.mapBarBtn a{
  padding-bottom:calc(10px + env(safe-area-inset-bottom, 8px))}
+
+/* Attribution moves off the bottom edge, where it collided with the map bar
+   (on iPad it landed straight on "My Spots"). It now rides the top of the
+   map, centred: zoom sits far left, expand/close far right, and the middle
+   strip is empty on both phone and tablet. Still on-map and legible, which
+   is what the OSM and NRCan licences ask for. */
+.leaflet-container .leaflet-bottom.leaflet-right{
+ top:0;bottom:auto;right:0;left:0;display:flex;justify-content:center;
+ pointer-events:none}
+.leaflet-container .leaflet-bottom.leaflet-right .leaflet-control-attribution{
+ margin:6px 0 0;pointer-events:auto;
+ background:#FFFFFFD9;border-radius:0 0 8px 8px;
+ padding:3px 9px;font-size:10.5px;line-height:1.3;
+ max-width:62vw;text-align:center;box-shadow:0 1px 3px #13263C1A}
