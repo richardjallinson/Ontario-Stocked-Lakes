@@ -1334,39 +1334,14 @@ body.filtering .searchAlt{display:flex}
  padding:7px 10px;font:inherit;font-weight:800;font-size:12px;cursor:pointer}
 .tpRow button[data-act="toggle"].on{background:#7B3FA0;border-color:#7B3FA0;color:#fff}
 .tpNote{font-size:12.5px;color:var(--muted);padding:4px 2px}
-/* Waypoint/Fishing Spots system: panel for creating and listing marked locations.
-   Same card pattern as trails, sits above the bottom-left controls. */
-.spotPanel{position:fixed;left:12px;bottom:130px;z-index:6000;width:min(340px,calc(100vw - 24px));
- background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.25);
- padding:12px;max-height:55vh;overflow:auto}
+.spotPanel{position:fixed;left:12px;bottom:130px;z-index:6000;width:min(340px,calc(100vw - 24px));background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.25);padding:12px;max-height:55vh;overflow:auto}
 .spotPanel.hidden{display:none}
-.spHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.spHead b{font-size:15px}
-.spHead button{border:0;background:none;font-size:22px;line-height:1;cursor:pointer;color:var(--ink);padding:2px 6px}
-.spCreate{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
-.spCreate input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;
- padding:9px 10px;font:inherit;font-size:14px;margin-bottom:8px}
-.spColors{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
-.spColors label{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px}
-.spColors input{margin:0}
-.spColors span{width:20px;height:20px;border-radius:50%;border:2px solid transparent}
-.spColors input:checked+span{border-color:var(--ink)}
-.spBtns{display:flex;gap:6px}
-.spSave{flex:1;border:0;background:var(--accent);color:var(--green);border-radius:10px;
- padding:9px 12px;font:inherit;font-weight:800;cursor:pointer}
-.spCancel{flex:1;border:1px solid var(--line);background:#fff;border-radius:10px;
- padding:9px 12px;font:inherit;font-weight:800;cursor:pointer}
-.spList{display:flex;flex-direction:column;gap:6px}
-.spRow{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:8px}
-.spDot{width:16px;height:16px;border-radius:50%;flex-shrink:0}
-.spMeta{flex:1;min-width:0}
-.spName{font-weight:800;font-size:13.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.spRow button{border:1px solid var(--line);background:#fff;border-radius:9px;
- padding:6px 10px;font:inherit;font-weight:800;font-size:12px;cursor:pointer}
-.spRow button[data-act="toggle"].on{background:#27AE60;border-color:#27AE60;color:#fff}
-.spDanger{border:1px solid #E4B6B0;background:#FBEDEB;color:#9C2B1F}
-.spDanger.armed{background:#C0392B;border-color:#C0392B;color:#fff}
+.spHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.spHead b{font-size:15px}.spHead button{border:0;background:0;font-size:22px;line-height:1;cursor:pointer;color:var(--ink);padding:2px 6px}
+.spCreate{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}.spCreate input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:9px 10px;font:inherit;font-size:14px;margin-bottom:8px}
+.spColors{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.spColors label{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px}.spColors input{margin:0}.spColors span{width:16px;height:16px;border-radius:50%;display:inline-block;border:2px solid transparent}.spColors input:checked+span{border-color:var(--ink)}
+.spBtns{display:flex;gap:6px}.spSave{flex:1;border:0;background:var(--accent);color:var(--green);border-radius:10px;padding:9px 12px;font:inherit;font-weight:800;cursor:pointer}.spSave:active{filter:brightness(.95)}.spCancel{flex:1;border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 12px;font:inherit;font-weight:800;cursor:pointer}
+.spList{display:flex;flex-direction:column;gap:6px}.spRow{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:8px}.spDot{width:16px;height:16px;border-radius:50%;flex-shrink:0}.spMeta{flex:1;min-width:0}.spName{font-weight:800;font-size:13.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spRow button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:6px 10px;font:inherit;font-weight:800;font-size:12px;cursor:pointer}.spRow button[data-act="toggle"].on{background:#27AE60;border-color:#27AE60;color:#fff}.spDanger{border:1px solid #E4B6B0;background:#FBEDEB;color:#9C2B1F}.spDanger.armed{background:#C0392B;border-color:#C0392B;color:#fff}
 .spNote{font-size:12.5px;color:var(--muted);padding:4px 2px}
-/* When spot creation is armed, the cursor becomes a crosshair over the map. */
 body.spotCreating{cursor:crosshair}
 body.spotCreating .leaflet-container{cursor:crosshair}

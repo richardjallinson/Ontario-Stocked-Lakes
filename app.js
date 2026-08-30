@@ -263,13 +263,9 @@ const I18N={
   cancelSpot:"Cancel",
   spotNamePh:"Spot name",
   saveSpot:"Save spot",
-  showSpot:"Show",
-  hideSpot:"Hide",
-  noSpots:"No spots yet. Tap the Spots button, then the map, to mark a fishing location.",
-  spotsFull:"Spot list is full (50). Delete one to save another.",
+  spotsFull:"Spot list is full (50)",
+  noSpots:"No spots yet. Tap Spots, then the map, to mark a fishing location.",
   cancel:"Cancel",
-  hide:"Hide",
-  show:"Show",
   trailsTitle:"Trails",
   currentTrail:"Current trail",
   saveTrail:"Save trail",
@@ -559,18 +555,6 @@ const I18N={
   trailOn:"Trac\u00e9\u202f: activ\u00e9",
   trailOff:"Trac\u00e9\u202f: d\u00e9sactiv\u00e9",
   clearTrail:"Effacer",
-  spotsTitle:"Lieux de p\u00eache",
-  newSpot:"Nouveau lieu",
-  cancelSpot:"Annuler",
-  spotNamePh:"Nom du lieu",
-  saveSpot:"Enregistrer le lieu",
-  showSpot:"Afficher",
-  hideSpot:"Masquer",
-  noSpots:"Aucun lieu pour l'instant. Appuyez sur Lieux, puis sur la carte, pour marquer un emplacement de p\u00eache.",
-  spotsFull:"La liste des lieux est pleine (50). Supprimez-en un pour en enregistrer un autre.",
-  cancel:"Annuler",
-  hide:"Masquer",
-  show:"Afficher",
   trailsTitle:"Trac\u00e9s",
   currentTrail:"Trac\u00e9 en cours",
   saveTrail:"Enregistrer le trac\u00e9",
@@ -926,6 +910,31 @@ const TrailControl=L.Control.extend({
   return cn;
  }
 });
+// Waypoint system: fishing spots, marked and named
+const SPOT_COLORS=[{key:"gold",hex:"#D4A017",label:"Gold"},{key:"blue",hex:"#4A90E2",label:"Blue"},{key:"purple",hex:"#9B59B6",label:"Purple"},{key:"red",hex:"#E74C3C",label:"Red"},{key:"green",hex:"#27AE60",label:"Green"}];
+let savedSpots={},shownSpotIds={},spotCreationMode=false,currentLakeForSpots=null;
+const spotLines={main:{},detail:{}};
+try{savedSpots=JSON.parse(localStorage.getItem("osl-spots")||"{}")}catch(e){}
+try{shownSpotIds=JSON.parse(localStorage.getItem("osl-spots-shown")||"{}")}catch(e){}
+function lakeKeyForSpots(l){return String(l.id||l.waterbodyId||"unnamed")}
+function getSpots(lk){return savedSpots[lk]||[]}
+function setSpots(lk,spots){savedSpots[lk]=spots;try{localStorage.setItem("osl-spots",JSON.stringify(savedSpots))}catch(e){}}
+function getShownSpots(lk){return shownSpotIds[lk]||[]}
+function setShownSpots(lk,ids){shownSpotIds[lk]=ids;try{localStorage.setItem("osl-spots-shown",JSON.stringify(shownSpotIds))}catch(e){}}
+function spotMarker(lat,lon,colorKey){const c=SPOT_COLORS.find(x=>x.key===colorKey);const hex=c?c.hex:"#D4A017";return L.circleMarker([lat,lon],{radius:8,color:hex,weight:3,fillColor:hex,fillOpacity:.9,interactive:false,keyboard:false})}
+function drawSpots(which,mapObj){if(!mapObj||!currentLakeForSpots)return;Object.keys(spotLines[which]||{}).forEach(id=>{try{mapObj.removeLayer(spotLines[which][id])}catch(e){}});spotLines[which]={};const lk=lakeKeyForSpots(currentLakeForSpots);const shown=getShownSpots(lk);getSpots(lk).forEach(sp=>{if(shown.indexOf(sp.id)!==-1)spotLines[which][sp.id]=spotMarker(sp.lat,sp.lon,sp.color).addTo(mapObj)})}
+function redrawSpots(){drawSpots("main",map);drawSpots("detail",detailMap)}
+function setSpotCreation(on){spotCreationMode=on;document.body.classList.toggle("spotCreating",on)}
+function mapClickForSpot(e){if(!spotCreationMode||!currentLakeForSpots)return;setSpotCreation(false);showSpotCreate(e.latlng.lat,e.latlng.lng)}
+function escHtml(x){return String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+let spotPanelEl=null;
+function spotPanel(){if(spotPanelEl)return spotPanelEl;spotPanelEl=document.createElement("div");spotPanelEl.id="spotPanel";spotPanelEl.className="spotPanel hidden";document.body.appendChild(spotPanelEl);spotPanelEl.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const act=b.dataset.act,id=b.dataset.id,lk=b.dataset.lk;if(act==="close")toggleSpotPanel(false);else if(act==="save"){const inp=spotPanelEl.querySelector("#spotNameInput"),col=spotPanelEl.querySelector("input[name='spotColor']:checked"),nm=inp&&inp.value.trim(),c=col&&col.value;if(nm&&c)saveSpot(lk,Number(b.dataset.lat),Number(b.dataset.lon),nm,c)}else if(act==="toggle"){const shown=getShownSpots(lk),i=shown.indexOf(id);if(i===-1)shown.push(id);else shown.splice(i,1);setShownSpots(lk,shown);redrawSpots();renderSpotList(lk)}else if(act==="del"){if(b.dataset.armed){let spots=getSpots(lk);spots=spots.filter(x=>x.id!==id);setSpots(lk,spots);redrawSpots();renderSpotList(lk)}else{b.dataset.armed="1";b.classList.add("armed");b.textContent=t("tapAgain")}}});return spotPanelEl}
+function saveSpot(lk,lat,lon,nm,col){let spots=getSpots(lk);if(spots.length>=50)return;const sp={id:"s"+Date.now(),lat:Number(lat.toFixed(6)),lon:Number(lon.toFixed(6)),name:nm.slice(0,50),color:col,ts:Date.now()};spots.unshift(sp);setSpots(lk,spots);const shown=getShownSpots(lk);if(shown.indexOf(sp.id)===-1)shown.push(sp.id);setShownSpots(lk,shown);redrawSpots();renderSpotList(lk)}
+function showSpotCreate(lat,lon){const p=spotPanel();if(!p)return;const lk=lakeKeyForSpots(currentLakeForSpots);let h='<div class="spHead"><b>'+t("newSpot")+'</b><button type="button" data-act="close" aria-label="Close">×</button></div><div class="spCreate"><input id="spotNameInput" maxlength="50" placeholder="'+t("spotNamePh")+'"><div class="spColors">';SPOT_COLORS.forEach(c=>{h+='<label><input type="radio" name="spotColor" value="'+c.key+'" '+(c.key==="gold"?"checked":"")+' style="margin:0"><span style="background:'+c.hex+';width:16px;height:16px;border-radius:50%;display:inline-block"></span> '+c.label+'</label>'});h+='</div><div class="spBtns"><button type="button" class="spSave" data-act="save" data-lk="'+lk+'" data-lat="'+lat+'" data-lon="'+lon+'">'+t("saveSpot")+'</button><button type="button" data-act="close">'+t("cancel")+'</button></div></div>';if(savedSpots[lk]&&savedSpots[lk].length>=50)h+='<div class="spNote">'+t("spotsFull")+'</div>';p.innerHTML=h;toggleSpotPanel(true)}
+function renderSpotList(lk){const p=spotPanel();if(!p)return;const spots=getSpots(lk),shown=getShownSpots(lk);let h='<div class="spHead"><b>'+t("spotsTitle")+'</b><button type="button" data-act="close" aria-label="Close">×</button></div>';if(spots.length){h+='<div class="spList">'+spots.map(sp=>{const on=shown.indexOf(sp.id)!==-1,hex=SPOT_COLORS.find(x=>x.key===sp.color)?.hex||"#D4A017";return '<div class="spRow"><div class="spDot" style="background:'+hex+'"></div><div class="spMeta"><span class="spName">'+escHtml(sp.name)+'</span></div><button type="button" data-act="toggle" data-id="'+sp.id+'" data-lk="'+lk+'" class="'+(on?"on":"")+'">'+(on?t("hide"):t("show"))+'</button><button type="button" class="spDanger" data-act="del" data-id="'+sp.id+'" data-lk="'+lk+'">🗑</button></div>'}).join("")+'</div>'}else{h+='<div class="spNote">'+t("noSpots")+'</div>'}p.innerHTML=h}
+function toggleSpotPanel(on){const p=spotPanel();if(!p)return;const show=on===undefined?p.classList.contains("hidden"):on;if(show)renderSpotList(lakeKeyForSpots(currentLakeForSpots));p.classList.toggle("hidden",!show)}
+const SpotsControl=L.Control.extend({options:{position:"bottomleft"},onAdd:function(m){const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapLocationControl");const btn=L.DomUtil.create("a","",cn);btn.href="#";btn.setAttribute("aria-label",t("newSpot"));btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9h-7v2h7v-2z" fill="currentColor"/></svg><span class="locLabel">'+t("newSpot")+'</span>';L.DomEvent.on(btn,"click",L.DomEvent.preventDefault);L.DomEvent.on(btn,"click",()=>setSpotCreation(!spotCreationMode));return cn}});
+
 function dotIcon(){
  /* A divIcon rather than a circleMarker so CSS can animate it: solid blue
     centre, plus a ring that swells and fades on a loop. */
