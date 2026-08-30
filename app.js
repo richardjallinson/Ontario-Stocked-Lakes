@@ -271,7 +271,7 @@ const I18N={
   spotNamePh:"Spot name",
   saveSpot:"Save spot",
   spotsFull:"Spot list is full (50)",
-  noSpots:"No spots yet. Centre the map where you want the pin, then tap + New Spot.",
+  noSpots:"No spots yet. Tap + New Spot to mark the map centre, or press and hold anywhere on the map.",
   cancel:"Cancel",
   trailsTitle:"Trails",
   currentTrail:"Current trail",
@@ -573,7 +573,7 @@ const I18N={
   spotNamePh:"Nom du lieu",
   saveSpot:"Enregistrer le lieu",
   spotsFull:"Liste pleine (50)",
-  noSpots:"Aucun lieu pour l'instant. Centrez la carte o\u00f9 vous voulez le rep\u00e8re, puis appuyez sur + Nouveau lieu.",
+  noSpots:"Aucun lieu pour l'instant. Appuyez sur + Nouveau lieu pour marquer le centre de la carte, ou maintenez votre doigt sur la carte.",
   tapMapForSpot:"Touchez la carte pour marquer un lieu.",
   cancel:"Annuler",
   trailsTitle:"Trac\u00e9s",
@@ -655,7 +655,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5y";
+const APP_VERSION="v6a";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -905,7 +905,7 @@ function renderTrailPanel(){
    return '<div class="tpRow"><div class="tpMeta"><span class="tpName">'+escHtml(tr.name)+'</span>'+
     '<span class="tpSub">'+tr.km.toFixed(1)+' km</span></div>'+
     '<button type="button" data-act="toggle" data-id="'+tr.id+'" class="'+(on?"on":"")+'">'+(on?t("hideTrail"):t("showTrail"))+'</button>'+
-    '<button type="button" class="tpDanger" data-act="del" data-id="'+tr.id+'">\ud83d\uddd1</button></div>';
+    '<button type="button" class="tpDanger" data-act="del" data-id="'+tr.id+'" aria-label="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M10 4h4M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button></div>';
   }).join("")+'</div>';
  }
  if(trail.length<2&&!savedTrails.length)h+='<div class="tpNote">'+t("noTrails")+'</div>';
@@ -964,6 +964,14 @@ function spotMarker(lat,lon,colorKey,iconKey){
 function drawSpots(which,mapObj){if(!mapObj||!currentLakeForSpots)return;Object.keys(spotLines[which]||{}).forEach(id=>{try{mapObj.removeLayer(spotLines[which][id])}catch(e){}});spotLines[which]={};const lk=lakeKeyForSpots(currentLakeForSpots);const shown=getShownSpots(lk);getSpots(lk).forEach(sp=>{if(shown.indexOf(sp.id)!==-1)spotLines[which][sp.id]=spotMarker(sp.lat,sp.lon,sp.color,sp.icon).addTo(mapObj)})}
 function redrawSpots(){drawSpots("main",map);drawSpots("detail",detailMap)}
 function setSpotCreation(on){spotCreationMode=on;document.body.classList.toggle("spotCreating",on)}
+function spotLongPress(e){
+ /* Press and hold anywhere on the map to drop a pin there -- tomorrow's
+    spots, an access point across the bay. Leaflet turns an iOS long-press
+    into its contextmenu event, so no hand-rolled touch timers. */
+ if(!currentLakeForSpots)return;
+ if(e.originalEvent&&e.originalEvent.preventDefault)try{e.originalEvent.preventDefault()}catch(_){}
+ showSpotCreate(e.latlng.lat,e.latlng.lng);
+}
 function mapClickForSpot(e){if(!spotCreationMode||!currentLakeForSpots)return;setSpotCreation(false);showSpotCreate(e.latlng.lat,e.latlng.lng)}
 function escHtml(x){return String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 let spotPanelEl=null,tempSpotMarker=null,tempSpotMap=null;
@@ -1019,7 +1027,7 @@ function renderSpotList(lk){const p=spotPanel();if(!p)return;
   h+='<div class="spList">'+spots.map(sp=>{
    const on=shown.indexOf(sp.id)!==-1;
    const hex=(SPOT_COLORS.find(x=>x.key===sp.color)||{}).hex||"#D4A017";
-   return '<div class="spRow"><span class="spRowIcon">'+spotIconSvg(sp.icon||"pin",hex,22)+'</span><div class="spMeta"><span class="spName">'+escHtml(sp.name)+'</span></div><button type="button" data-act="toggle" data-id="'+sp.id+'" data-lk="'+lk+'" class="'+(on?"on":"")+'">'+(on?t("hide"):t("show"))+'</button><button type="button" class="spDanger" data-act="del" data-id="'+sp.id+'" data-lk="'+lk+'">\ud83d\uddd1</button></div>';
+   return '<div class="spRow"><span class="spRowIcon">'+spotIconSvg(sp.icon||"pin",hex,22)+'</span><div class="spMeta"><span class="spName">'+escHtml(sp.name)+'</span></div><button type="button" data-act="toggle" data-id="'+sp.id+'" data-lk="'+lk+'" class="'+(on?"on":"")+'">'+(on?t("hide"):t("show"))+'</button><button type="button" class="spDanger" data-act="del" data-id="'+sp.id+'" data-lk="'+lk+'" aria-label="Delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M10 4h4M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button></div>';
   }).join("")+'</div>';
  }else if(all.length){
   h+='<div class="spNote">'+t("noSpotsInCategory")+'</div>';
@@ -1127,6 +1135,7 @@ drawTrail("main",map);
 drawSavedTrails("main",map);
 drawSpots("main",map);
 map.on("click",mapClickForSpot);
+map.on("contextmenu",spotLongPress);
 
 /* ---- Saving a lake for offline use -------------------------------------
    The tile cache already keeps whatever you have looked at, but it is capped
@@ -1370,6 +1379,7 @@ function showDetailMap(l){
    new TrailToggleControl().addTo(detailMap);
    new TrailControl().addTo(detailMap);
    detailMap.on("click",mapClickForSpot);
+   detailMap.on("contextmenu",spotLongPress);
   }
   /* The base layer is rebuilt on every open, not just when the map is first
      created -- it used to keep whatever layer it was born with for the rest
