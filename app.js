@@ -258,6 +258,18 @@ const I18N={
   trailOn:"Trail: On",
   trailOff:"Trail: Off",
   clearTrail:"Clear",
+  spotsTitle:"Fishing Spots",
+  newSpot:"New Spot",
+  cancelSpot:"Cancel",
+  spotNamePh:"Spot name",
+  saveSpot:"Save spot",
+  showSpot:"Show",
+  hideSpot:"Hide",
+  noSpots:"No spots yet. Tap the Spots button, then the map, to mark a fishing location.",
+  spotsFull:"Spot list is full (50). Delete one to save another.",
+  cancel:"Cancel",
+  hide:"Hide",
+  show:"Show",
   trailsTitle:"Trails",
   currentTrail:"Current trail",
   saveTrail:"Save trail",
@@ -547,6 +559,18 @@ const I18N={
   trailOn:"Trac\u00e9\u202f: activ\u00e9",
   trailOff:"Trac\u00e9\u202f: d\u00e9sactiv\u00e9",
   clearTrail:"Effacer",
+  spotsTitle:"Lieux de p\u00eache",
+  newSpot:"Nouveau lieu",
+  cancelSpot:"Annuler",
+  spotNamePh:"Nom du lieu",
+  saveSpot:"Enregistrer le lieu",
+  showSpot:"Afficher",
+  hideSpot:"Masquer",
+  noSpots:"Aucun lieu pour l'instant. Appuyez sur Lieux, puis sur la carte, pour marquer un emplacement de p\u00eache.",
+  spotsFull:"La liste des lieux est pleine (50). Supprimez-en un pour en enregistrer un autre.",
+  cancel:"Annuler",
+  hide:"Masquer",
+  show:"Afficher",
   trailsTitle:"Trac\u00e9s",
   currentTrail:"Trac\u00e9 en cours",
   saveTrail:"Enregistrer le trac\u00e9",
@@ -626,7 +650,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5s";
+const APP_VERSION="v5t";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -971,9 +995,12 @@ const LocationControl=L.Control.extend({
 });
 new LocationControl().addTo(map);
 new TrailToggleControl().addTo(map);
+new SpotsControl().addTo(map);
 new TrailControl().addTo(map);
 drawTrail("main",map);
 drawSavedTrails("main",map);
+drawSpots("main",map);
+map.on("click",mapClickForSpot);
 
 /* ---- Saving a lake for offline use -------------------------------------
    The tile cache already keeps whatever you have looked at, but it is capped
@@ -1208,19 +1235,22 @@ function showDetailMap(l){
    detailMap=null;detailMarker=null;detailBase=null;
    /* The old map took its dot with it; forget the stale reference or the
       next fix would try to move a marker that is no longer on any map. */
-   userDots.detail=null;trailLines.detail=null;savedTrailLines.detail={};
+   userDots.detail=null;trailLines.detail=null;savedTrailLines.detail={};spotLines.detail={};
   }
   if(!detailMap){
    detailMap=L.map(host,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});
    new LocationControl().addTo(detailMap);
+   new SpotsControl().addTo(detailMap);
    new TrailToggleControl().addTo(detailMap);
    new TrailControl().addTo(detailMap);
+   detailMap.on("click",mapClickForSpot);
   }
   /* The base layer is rebuilt on every open, not just when the map is first
      created -- it used to keep whatever layer it was born with for the rest
      of the session. Driven by the sheet's own detailBaseKey now, not the
      main map's choice: the sheet grew its own Map/Topo/Depth switch. */
   detailLakeObj=l;
+  currentLakeForSpots=l;
   applyDetailBase();
   paintOfflineBtn(l,"idle");
   detailMap.setView([l.lat,l.lon],12);
@@ -1229,6 +1259,7 @@ function showDetailMap(l){
   if(userTracking&&lastFix)placeDot("detail",detailMap,lastFix.lat,lastFix.lon);
   drawTrail("detail",detailMap);
   drawSavedTrails("detail",detailMap);
+  drawSpots("detail",detailMap);
   if(detailMarker)detailMap.removeLayer(detailMarker);
   detailMarker=L.circleMarker([l.lat,l.lon],
    {radius:9,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:.95})
