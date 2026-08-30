@@ -576,7 +576,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4r";
+const APP_VERSION="v4s";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -630,7 +630,7 @@ const markerLayer=L.layerGroup().addTo(map);
    that, is cheaper than it sounds: it shares the tile cache with the main
    map, so the tiles for a lake you just looked at are usually already there,
    which matters on a weak signal at a lake. */
-let detailMap=null,detailMarker=null;
+let detailMap=null,detailMarker=null,detailBase=null;
 /* Which lake the detail sheet is currently showing. */
 let detailLakeKey=null;
 function showDetailMap(l){
@@ -644,12 +644,25 @@ function showDetailMap(l){
      down properly and build against the new node. */
   if(detailMap&&detailMap.getContainer()!==host){
    try{detailMap.remove()}catch(e){}
-   detailMap=null;detailMarker=null;
+   detailMap=null;detailMarker=null;detailBase=null;
   }
   if(!detailMap){
    detailMap=L.map(host,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});
+  }
+  /* The base layer is rebuilt on every open, not just when the map is first
+     created. It used to be added inside the block above, which meant the sheet
+     map kept whatever layer it was born with for the rest of the session: open
+     one lake while "Plain" is selected — a basemap that deliberately draws no
+     tiles — and every sheet afterwards stayed blank, however many times the
+     main map was switched back. The marker still drew, so it read as a broken
+     map rather than an empty one. */
+  if(detailBase){try{detailMap.removeLayer(detailBase)}catch(e){}detailBase=null}
+  {
    const b=BASEMAPS[baseKey]||BASEMAPS.map;
-   if(b.url)(b.wms?L.tileLayer.wms(b.url,b.opts):L.tileLayer(b.url,b.opts)).addTo(detailMap);
+   if(b.url){
+    detailBase=b.wms?L.tileLayer.wms(b.url,b.opts):L.tileLayer(b.url,b.opts);
+    detailBase.addTo(detailMap);
+   }
   }
   detailMap.setView([l.lat,l.lon],12);
   if(detailMarker)detailMap.removeLayer(detailMarker);
