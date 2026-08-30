@@ -1475,3 +1475,10 @@ body.spotCreating .leaflet-container{cursor:crosshair}
 /* Trails panel: say how a trail starts, and make saving the obvious action. */
 .tpHint{font-size:12.5px;color:var(--muted);padding:8px 2px;line-height:1.45}
 .tpReady{font-size:12px;font-weight:800;color:#2F6FB5;margin:2px 0 6px}
+/* In fullscreen the bar sits on the true bottom edge of the phone, where
+   iOS draws the home indicator across it. Pad the buttons by the device's
+   own safe-area inset (plus a hair) so labels sit clear of the line.
+   Inline maps are unaffected -- they never touch the screen edge. */
+.mapcard.isFull .leaflet-bar.mapBarBtn a,
+.detailMapBlock.isFull .leaflet-bar.mapBarBtn a{
+ padding-bottom:calc(10px + env(safe-area-inset-bottom, 8px))}
