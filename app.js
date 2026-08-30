@@ -203,6 +203,9 @@ const I18N={
   bestMatch:"Best Match",closest:"Closest",recent:"Most recently stocked",quantity:"Most fish stocked",
   findStocked:"Find Fish Near Me",myLakes:"My Lakes",trips:"Trips",overview:"Overview",
   rulesTab:"Rules",
+  lakeOne:"lake",lakeMany:"lakes",
+  dbLoadErrTitle:"Ontario lake database didn't load.",
+  dbLoadErrBody:"Reload the app and try again. Saved lakes and regulations are still available.",
   viewOnMap:"View on map",
   noCatchLocation:"No location recorded",
   saveCatchAsSpot:"Mark this spot",
@@ -283,7 +286,7 @@ const I18N={
   hide:"Hide",
   show:"Show",
   newSpot:"New Spot",
-  cancelSpot:"Cancel",
+  
   spotNamePh:"Spot name",
   saveSpot:"Save spot",
   spotsFull:"Spot list is full (50)",
@@ -523,6 +526,9 @@ const I18N={
   bestMatch:"Meilleure correspondance",closest:"Les plus proches",recent:"Ensemencement le plus récent",quantity:"Plus grand nombre ensemencé",
   findStocked:"Trouver du poisson près de moi",myLakes:"Mes lacs",trips:"Sorties",overview:"Aperçu",
   rulesTab:"R\u00e8gles",
+  lakeOne:"lac",lakeMany:"lacs",
+  dbLoadErrTitle:"La base de donn\u00e9es des lacs de l'Ontario n'a pas pu \u00eatre charg\u00e9e.",
+  dbLoadErrBody:"Rechargez l'application et r\u00e9essayez. Les lacs enregistr\u00e9s et les r\u00e8glements restent disponibles.",
   viewOnMap:"Voir sur la carte",
   noCatchLocation:"Aucune position enregistr\u00e9e",
   saveCatchAsSpot:"Marquer ce lieu",
@@ -687,7 +693,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6r";
+const APP_VERSION="v6s";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -2224,7 +2230,7 @@ async function load(){
   afterStockingLoaded();
  }catch(e){
   waterbodiesLoaded=false;waterbodiesState="unavailable";
-  $("results").innerHTML=`<div class="error"><b>Ontario lake database didn't load.</b><br>Reload the app and try again. Saved lakes and regulations are still available.</div>`;
+  $("results").innerHTML=`<div class="error"><b>${t("dbLoadErrTitle")}</b><br>${t("dbLoadErrBody")}</div>`;
   $("count").textContent="Unavailable";
   ["statLakes","statRecords","statSpecies","statLatest"].forEach(id=>{const el=$(id);if(el)el.textContent="—"});
   toast("Ontario lake database didn't load. Reload the app.");
@@ -2993,7 +2999,7 @@ function buildLakes(){
 function updateDashboard(){
  const speciesCount=new Set(rows.map(r=>r.Species).filter(Boolean)).size;
  const latestYear=rows.reduce((m,r)=>Math.max(m,Number(r.Stocking_Year)||0),0);
- $("statLakes").textContent=num(lakes.length);
+ $("statLakes").textContent=num(lakes.filter(l=>l.stocked).length);
  $("statRecords").textContent=num(rows.length);
  $("statSpecies").textContent=num(speciesCount);
  $("statLatest").textContent=latestYear||"—";
@@ -3190,7 +3196,7 @@ function render(){
  fitToResults();
  shown.slice(0,400).forEach(l=>{const m=L.circleMarker([l.lat,l.lon],{radius:8,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:l.stocked?.92:.85}).addTo(markerLayer).bindPopup(`<b>${esc(l.name)}</b><br>${esc(displaySpecies(l).slice(0,4).map(speciesLabel).join(", "))}<br>${l.stocked?(t("latestStocking")+": "+esc(l.latestYear||"—")):t("notStocked")}`);m.on("click",()=>detail(l))});
 }
-function lakeCount(n){return num(n)+" "+(n===1?"lake":"lakes")}
+function lakeCount(n){return num(n)+" "+(n===1?t("lakeOne"):t("lakeMany"))}
 
 /* ---------------------------------------------------------------------------
    Search matching.
@@ -4170,7 +4176,7 @@ function fishingConditionsCard(l){
  <p>Check current Environment Canada conditions and active weather alerts before heading out. Wind and storms can make lake conditions unsafe even when the fishing looks good.</p>
  <div id="weatherAlertBox"><span class="weatherLoading">Checking Environment Canada alerts…</span></div>
  <div class="weatherActions"><a target="_blank" rel="noopener" href="${ECCC_WEATHER_HOME}">Environment Canada Weather</a><button id="refreshAlerts">${t("refreshAlerts")}</button></div>
- <p class="microcopy">V1R does not claim to predict whether fish will bite. Weather is trip-planning information only.</p></div>`;
+ <p class="microcopy">Ontario Stocked Lakes does not claim to predict whether fish will bite. Weather is trip-planning information only.</p></div>`;
 }
 async function wireWeather(l){
  const box=$("weatherAlertBox");if(!box)return;

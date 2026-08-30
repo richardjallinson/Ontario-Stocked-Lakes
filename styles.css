@@ -64,14 +64,20 @@ main{max-width:850px;margin:auto;padding:16px}/* The hero is a raised card now, 
    size in this file — 1rem was the odd one out. Freed from the dead narrow-
    column layout above, 15px now has the card's full width to sit in. */
 .quick button b{display:block;font-size:15px;line-height:1.2;margin-bottom:3px}.quick b,.quick span{display:block}.quick span{font-size:12px;color:var(--muted);margin-top:4px}
-.filters{display:flex;gap:10px;margin-bottom:12px}/* Pills: the icon is a sibling of the <select>, absolutely placed, because a
+.filters{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}/* Pills: the icon is a sibling of the <select>, absolutely placed, because a
    <select> cannot contain markup. Left padding on the select makes room. */
 .fpill{position:relative;flex:1;display:flex}
 .fpill .fi{position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--accent-dark);opacity:.9}
 .fpill .fi svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .filters select{flex:1;width:100%;background:white;border:1px solid var(--line);
- border-radius:16px;padding:14px 12px 14px 37px;font-size:14px;font-weight:600;
- box-shadow:0 2px 8px #13263C0D}
+ border-radius:16px;padding:14px 28px 14px 37px;font-size:14px;font-weight:600;
+ box-shadow:0 2px 8px #13263C0D;
+ /* iOS ignores padding on natively-drawn selects, which shoved the label
+    under the icon and clipped long French options. appearance:none makes
+    the padding real; the chevron is redrawn since the native one goes. */
+ -webkit-appearance:none;appearance:none;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B6B7C' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+ background-repeat:no-repeat;background-position:right 9px center;background-size:15px}
 .mapcard{background:white;padding:5px;border-radius:18px;box-shadow:0 3px 12px #0000000b}.mapcard #map{height:310px;border-radius:14px}
 .sectiontitle{display:flex;justify-content:space-between;align-items:center;margin:20px 2px 8px}.sectiontitle h3{margin:0}.sectiontitle span{font-size:13px;color:var(--muted)}
 .results{display:grid;gap:10px}.record{background:white;border:1px solid var(--line);border-radius:16px;padding:15px;cursor:pointer}.topline{display:flex;justify-content:space-between;gap:10px}.record h4{font-size:18px;margin:0 0 3px}.pill{white-space:nowrap;background:#E7EFF7;color:var(--green);font-weight:800;font-size:12px;border-radius:20px;padding:6px 9px;height:max-content}.species{font-weight:700;color:var(--green2)}.meta{display:flex;flex-wrap:wrap;gap:7px 14px;margin-top:10px;font-size:13px;color:var(--muted)}
@@ -1430,3 +1436,6 @@ body.spotCreating .leaflet-container{cursor:crosshair}
 .asLakeHead .asLakeMeta{font-size:12.5px;color:var(--muted);flex:1}
 .asLakeHead .asChevron{font-size:14px;color:var(--muted)}
 .asLakeHead.folded{opacity:.75}
+
+/* Filter pills: two per row so French labels have room to breathe. */
+.fpill{flex:1 1 45%;min-width:45%}
