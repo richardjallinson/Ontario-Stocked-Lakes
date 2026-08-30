@@ -255,11 +255,7 @@ const I18N={
   tilesSlow:"Topo and Depth pull live map imagery and can take a moment to load, especially the first time.",
   findMe:"Find me",
   trackingOn:"Stop tracking",
-  trackingOff:"Track my location",
-  dropFlag:"Mark a spot",
-  dropFlagHint:"Tap the map to place a flag.",
-  flagTitle:"Marked spot",
-  flagDelete:"Remove flag",
+  trackingOff:"Track Location",
   officialSources:"Official Ontario sources",
   regsSummaryNote:"Regulations in this app are a summary. These are the authoritative sources \u2014 open them before you fish.",
   regsSummaryTitle:"Fishing Regulations Summary",regsSummarySub:"Seasons, limits and slot sizes by zone",
@@ -532,10 +528,6 @@ const I18N={
   findMe:"Me trouver",
   trackingOn:"Arrêter le suivi",
   trackingOff:"Suivre ma position",
-  dropFlag:"Marquer un endroit",
-  dropFlagHint:"Touchez la carte pour placer un drapeau.",
-  flagTitle:"Endroit marqué",
-  flagDelete:"Retirer le drapeau",
   officialSources:"Sources officielles de l'Ontario",
   regsSummaryNote:"Les r\u00e8glements pr\u00e9sent\u00e9s ici sont un r\u00e9sum\u00e9. Voici les sources officielles \u2014 consultez-les avant de p\u00eacher.",
   regsSummaryTitle:"R\u00e9sum\u00e9 des r\u00e8glements de p\u00eache",regsSummarySub:"Saisons, limites et fourchettes de taille par zone",
@@ -600,7 +592,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5g";
+const APP_VERSION="v5h";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -658,7 +650,7 @@ const LocationControl=L.Control.extend({
   const btn=L.DomUtil.create("a","",cn);
   btn.href="#";
   btn.setAttribute("aria-label",t("trackingOff"));
-  btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8-8-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+  btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8-8-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="locLabel">'+t("trackingOff")+'</span>';
   const self=this;
   L.DomEvent.on(btn,"click",L.DomEvent.preventDefault);
   L.DomEvent.on(btn,"click",()=>{
@@ -672,6 +664,7 @@ const LocationControl=L.Control.extend({
  startTracking:function(btn){
   btn.classList.add("tracking");
   btn.setAttribute("aria-label",t("trackingOn"));
+  const lb=btn.querySelector(".locLabel");if(lb)lb.textContent=t("trackingOn");
   if(!navigator.geolocation)return;
   locationWatchId=navigator.geolocation.watchPosition(
    pos=>{
@@ -691,6 +684,7 @@ const LocationControl=L.Control.extend({
  stopTracking:function(btn){
   btn.classList.remove("tracking");
   btn.setAttribute("aria-label",t("trackingOff"));
+  const lb=btn.querySelector(".locLabel");if(lb)lb.textContent=t("trackingOff");
   if(locationWatchId!==null){
    navigator.geolocation.clearWatch(locationWatchId);
    locationWatchId=null;
@@ -702,53 +696,6 @@ const LocationControl=L.Control.extend({
  }
 });
 new LocationControl().addTo(map);
-
-/* User-dropped flags — marked spots that persist on the device. Drawn on the
-   map itself, so they ride on top of every basemap: Map, Topo and Depth alike.
-   Tap the flag button, then tap the map to place one; tap a flag for its
-   coordinates and a remove button. Stored in localStorage, on-device only,
-   same as everything else. */
-let flagMarking=false;
-let userFlags=[];
-try{userFlags=JSON.parse(localStorage.getItem("osl-flags")||"[]")||[]}catch(e){userFlags=[]}
-const flagLayer=L.layerGroup().addTo(map);
-const flagIcon=L.divIcon({className:"flagPin",html:"\ud83d\udea9",iconSize:[28,28],iconAnchor:[5,26]});
-function saveFlags(){try{localStorage.setItem("osl-flags",JSON.stringify(userFlags))}catch(e){}}
-function drawFlags(){
- flagLayer.clearLayers();
- userFlags.forEach((f,i)=>{
-  L.marker([f.lat,f.lon],{icon:flagIcon})
-   .bindPopup(`<b>${t("flagTitle")}</b><br>${f.lat.toFixed(5)}, ${f.lon.toFixed(5)}<br><button type="button" class="flagDelBtn" data-fi="${i}">${t("flagDelete")}</button>`)
-   .addTo(flagLayer);
- });
-}
-drawFlags();
-let flagBtnRef=null;
-function setFlagMode(on){
- flagMarking=on;
- if(flagBtnRef)flagBtnRef.classList.toggle("tracking",on);
- mapNotice(on?t("dropFlagHint"):"");
-}
-const FlagControl=L.Control.extend({
- options:{position:"bottomleft"},
- onAdd:function(m){
-  const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapLocationControl");
-  const btn=L.DomUtil.create("a","",cn);
-  btn.href="#";btn.setAttribute("aria-label",t("dropFlag"));
-  btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4m0 0h11l-2.5 4L17 12H6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
-  flagBtnRef=btn;
-  L.DomEvent.on(btn,"click",L.DomEvent.preventDefault);
-  L.DomEvent.on(btn,"click",()=>setFlagMode(!flagMarking));
-  return cn;
- }
-});
-new FlagControl().addTo(map);
-map.on("click",e=>{
- if(!flagMarking)return;
- userFlags.push({lat:e.latlng.lat,lon:e.latlng.lng,ts:Date.now()});
- saveFlags();drawFlags();
- setFlagMode(false);
-});
 
 /* The lake sheet gets its own map.
 
@@ -3657,12 +3604,6 @@ document.addEventListener("click",e=>{
     the sheet's HTML on every open, which would orphan a per-button handler. */
  const db=e.target.closest(".detailBaseSwitch button");
  if(db)setDetailBasemap(db.dataset.dbase);
- /* Remove a dropped flag from its popup button. */
- const fd=e.target.closest(".flagDelBtn");
- if(fd){
-  const i=Number(fd.dataset.fi);
-  if(Number.isFinite(i)){userFlags.splice(i,1);saveFlags();drawFlags();map.closePopup()}
- }
  /* The lake sheet's fullscreen button — same treatment as the main map's,
     delegated for the same rebuild reason. The contours are the thing that
     earns the whole screen, and they live here more than anywhere. */
