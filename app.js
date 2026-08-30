@@ -655,7 +655,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6c";
+const APP_VERSION="v6d";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -1404,10 +1404,12 @@ function showDetailMap(l){
   drawTrail("detail",detailMap);
   drawSavedTrails("detail",detailMap);
   drawSpots("detail",detailMap);
-  if(detailMarker)detailMap.removeLayer(detailMarker);
-  detailMarker=L.circleMarker([l.lat,l.lon],
-   {radius:9,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:.95})
-   .addTo(detailMap).bindPopup(`<b>${esc(l.name)}</b>`);
+  /* No lake marker on the sheet map. The sheet is already this one lake and
+     the map opens centred on it, so the marker said nothing -- and being a
+     blue-ish dot it competed with the live location dot, which is the one
+     circle on a map that must never be ambiguous. Markers on the main
+     Explore map are untouched: there, many lakes share a screen. */
+  if(detailMarker){try{detailMap.removeLayer(detailMarker)}catch(e){}detailMarker=null}
   // A map created inside a hidden sheet measures itself as zero and renders a
   // grey box. Re-measure once the sheet is actually on screen.
   setTimeout(()=>{try{detailMap.invalidateSize()}catch(e){}},60);
