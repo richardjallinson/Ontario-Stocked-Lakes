@@ -592,7 +592,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5h";
+const APP_VERSION="v5i";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -670,7 +670,11 @@ const LocationControl=L.Control.extend({
    pos=>{
     const{latitude:lat,longitude:lon}=pos.coords;
     if(!userLocationDot){
-     userLocationDot=L.circleMarker([lat,lon],{radius:7,color:"#1976D2",weight:2,fillColor:"#42A5F5",fillOpacity:.8});
+     /* A divIcon rather than a circleMarker so CSS can animate it: solid blue
+        centre, plus a ring that swells and fades on a loop — the familiar
+        "this dot is live" pulse. */
+     const icon=L.divIcon({className:"userDotWrap",html:'<div class="userDotPulse"></div><div class="userDot"></div>',iconSize:[18,18],iconAnchor:[9,9]});
+     userLocationDot=L.marker([lat,lon],{icon,interactive:false,keyboard:false});
      userLocationDot.addTo(map);
     }else{
      userLocationDot.setLatLng([lat,lon]);

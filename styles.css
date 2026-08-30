@@ -1281,3 +1281,15 @@ body.filtering .searchAlt{display:flex}
 .mapLocationControl a.tracking{background:#1976D2;color:#fff;border-color:#1976D2}
 .mapLocationControl a.tracking:hover{background:#1565C0}
 .mapLocationControl svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+/* The live-location dot: solid blue centre with a white edge, and a ring that
+   swells and fades in a loop while tracking is on. */
+.userDotWrap{position:relative}
+.userDot{position:absolute;inset:0;margin:auto;width:14px;height:14px;border-radius:50%;
+ background:#1976D2;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.userDotPulse{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;
+ border-radius:50%;background:rgba(25,118,210,.45);animation:userPulse 2s ease-out infinite}
+@keyframes userPulse{
+ 0%{transform:scale(1);opacity:.7}
+ 70%{transform:scale(3.2);opacity:0}
+ 100%{transform:scale(3.2);opacity:0}
+}
