@@ -260,6 +260,16 @@ const I18N={
   clearTrail:"Clear",
   spotsTitle:"Fishing Spots",
   spotsBtn:"My Spots",
+  spotsNav:"Spots",
+  spotsNavTitle:"My Fishing Spots",
+  spotSearchPh:"Search spots or lakes",
+  spotOne:"spot",
+  spotMany:"spots",
+  spotUnfiled:"Unfiled",
+  saveChanges:"Save",
+  deleteSpot:"Delete",
+  noSpotsAnywhere:"No spots yet. Open a lake, then press and hold the map, or use + New Spot.",
+  noSpotsMatch:"No spots match.",
   allSpots:"All",
   noSpotsInCategory:"No spots in this colour yet.",
   openLakeFirst:"Open a lake first \u2014 fishing spots are saved per lake.",
@@ -564,6 +574,16 @@ const I18N={
   clearTrail:"Effacer",
   spotsTitle:"Lieux de p\u00eache",
   spotsBtn:"Mes lieux",
+  spotsNav:"Lieux",
+  spotsNavTitle:"Mes lieux de p\u00eache",
+  spotSearchPh:"Rechercher un lieu ou un lac",
+  spotOne:"lieu",
+  spotMany:"lieux",
+  spotUnfiled:"Non class\u00e9",
+  saveChanges:"Enregistrer",
+  deleteSpot:"Supprimer",
+  noSpotsAnywhere:"Aucun lieu pour l\u0027instant. Ouvrez un lac, puis maintenez votre doigt sur la carte.",
+  noSpotsMatch:"Aucun lieu correspondant.",
   allSpots:"Tous",
   noSpotsInCategory:"Aucun lieu de cette couleur pour l\u0027instant.",
   openLakeFirst:"Ouvrez d\u0027abord un lac \u2014 les lieux de p\u00eache sont enregistr\u00e9s par lac.",
@@ -655,7 +675,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6e";
+const APP_VERSION="v6f";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -4111,6 +4131,7 @@ function setView(v){
  window.scrollTo({top:0,behavior:"smooth"});
 
  if(v==="resources")return;
+ if(v==="spots")return renderAllSpots();
  if(v==="trips")return renderTrips();
  apply();
 }
@@ -4568,4 +4589,147 @@ document.addEventListener("DOMContentLoaded",()=>{
  migrateTrips();
  setLanguage(appLang);wireShell();
  refreshLocationQuietly();
+});
+
+/* ---- The master Spots screen -------------------------------------------
+   The map panel answers "what is on this lake"; this answers "where are all
+   my spots". Same storage, second door: anything long-pressed onto a lake
+   map appears here at once, and a delete here removes it there too.
+   Rows carry their own edit controls so tidying up never costs a trip to
+   the lake and back, while tapping the row opens the lake itself -- the
+   planning case, which is the common one. */
+let allSpotsFilter=null,allSpotsQuery="",allSpotsEditing=null;
+function lakeByKey(k){
+ return lakes.find(l=>String(l.key)===String(k))||
+        lakes.find(l=>String(l.waterbodyId||"")===String(k))||null;
+}
+function allSpotsRows(){
+ const out=[];
+ Object.keys(savedSpots||{}).forEach(lk=>{
+  const lake=lakeByKey(lk);
+  (savedSpots[lk]||[]).forEach(sp=>{
+   out.push({sp,lk,lake,lakeName:lake?lake.name:t("spotUnfiled")});
+  });
+ });
+ const c=userLoc;
+ out.forEach(r=>{r.km=c?distance(c.lat,c.lon,r.sp.lat,r.sp.lon):null});
+ /* Nearest first: "what is close to me this weekend" is the question this
+    list exists to answer. Without a fix, newest first. */
+ out.sort((a,b)=>{
+  if(a.km!=null&&b.km!=null)return a.km-b.km;
+  if(a.km!=null)return -1;
+  if(b.km!=null)return 1;
+  return (b.sp.ts||0)-(a.sp.ts||0);
+ });
+ return out;
+}
+function renderAllSpots(){
+ const host=document.getElementById("allSpotsView");
+ if(!host)return;
+ let rows=allSpotsRows();
+ if(allSpotsFilter)rows=rows.filter(r=>r.sp.color===allSpotsFilter);
+ const q=allSpotsQuery.trim().toLowerCase();
+ if(q)rows=rows.filter(r=>(r.sp.name||"").toLowerCase().includes(q)||(r.lakeName||"").toLowerCase().includes(q));
+ const total=allSpotsRows().length;
+ let h='';
+ if(!total){
+  h='<p class="asEmpty">'+t("noSpotsAnywhere")+'</p>';
+  host.innerHTML=h;return;
+ }
+ h+='<div class="asTools"><input id="allSpotsSearch" type="search" placeholder="'+t("spotSearchPh")+'" value="'+escHtml(allSpotsQuery)+'"></div>';
+ h+='<div class="asFilters"><button type="button" data-asfilter="" class="'+(allSpotsFilter?"":"on")+'">'+t("allSpots")+'</button>';
+ SPOT_COLORS.forEach(c=>{h+='<button type="button" data-asfilter="'+c.key+'" class="asDot'+(allSpotsFilter===c.key?" on":"")+'" style="background:'+c.hex+'" aria-label="'+c.label+'"></button>'});
+ h+='</div>';
+ h+='<p class="asCount">'+rows.length+" "+(rows.length===1?t("spotOne"):t("spotMany"))+'</p>';
+ if(!rows.length){
+  h+='<p class="asEmpty">'+t("noSpotsMatch")+'</p>';
+  host.innerHTML=h;return;
+ }
+ h+='<div class="asList">';
+ rows.forEach(r=>{
+  const hex=(SPOT_COLORS.find(x=>x.key===r.sp.color)||{}).hex||"#D4A017";
+  const editing=allSpotsEditing===r.sp.id;
+  h+='<div class="asRow'+(editing?" editing":"")+'">';
+  h+='<button type="button" class="asMain" data-asopen="'+escHtml(r.lk)+'" data-asid="'+r.sp.id+'"'+(r.lake?"":" disabled")+'>'+
+     '<span class="asIcon">'+spotIconSvg(r.sp.icon||"pin",hex,22)+'</span>'+
+     '<span class="asMeta"><span class="asName">'+escHtml(r.sp.name)+'</span>'+
+     '<span class="asSub">'+escHtml(r.lakeName)+(r.km!=null?" \u00b7 "+r.km.toFixed(1)+" km":"")+'</span></span></button>';
+  h+='<button type="button" class="asEdit" data-asedit="'+r.sp.id+'" aria-label="Edit">'+
+     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 19h3l9-9-3-3-9 9zM14 5l3 3"/></svg></button>';
+  h+='</div>';
+  if(editing){
+   h+='<div class="asEditor"><input class="asRename" data-asid="'+r.sp.id+'" data-aslk="'+escHtml(r.lk)+'" maxlength="50" value="'+escHtml(r.sp.name)+'">';
+   h+='<div class="asColors">';
+   SPOT_COLORS.forEach(c=>{h+='<button type="button" class="asSwatch'+(r.sp.color===c.key?" sel":"")+'" data-ascolor="'+c.key+'" data-asid="'+r.sp.id+'" data-aslk="'+escHtml(r.lk)+'" style="background:'+c.hex+'" aria-label="'+c.label+'"></button>'});
+   h+='</div><div class="asIcons">';
+   SPOT_ICONS.forEach(ic=>{h+='<button type="button" class="asIconBtn'+((r.sp.icon||"pin")===ic.key?" sel":"")+'" data-asicon="'+ic.key+'" data-asid="'+r.sp.id+'" data-aslk="'+escHtml(r.lk)+'" aria-label="'+ic.label+'">'+spotIconSvg(ic.key,"#5B6B7C",20)+'</button>'});
+   h+='</div><div class="asEditBtns">'+
+      '<button type="button" class="asSave" data-assave="'+r.sp.id+'" data-aslk="'+escHtml(r.lk)+'">'+t("saveChanges")+'</button>'+
+      '<button type="button" class="asDel" data-asdel="'+r.sp.id+'" data-aslk="'+escHtml(r.lk)+'">'+t("deleteSpot")+'</button>'+
+      '</div></div>';
+  }
+ });
+ h+='</div>';
+ host.innerHTML=h;
+}
+function updateSpotFields(lk,id,changes){
+ const spots=getSpots(lk);
+ const sp=spots.find(x=>x.id===id);
+ if(!sp)return;
+ Object.assign(sp,changes);
+ setSpots(lk,spots);
+ redrawSpots();
+}
+document.addEventListener("click",e=>{
+ const host=document.getElementById("allSpotsView");
+ if(!host||host.hidden||!host.contains(e.target))return;
+ const b=e.target.closest("button");
+ if(!b)return;
+ if(b.hasAttribute("data-asfilter")){
+  allSpotsFilter=b.dataset.asfilter||null;renderAllSpots();return;
+ }
+ if(b.dataset.asedit){
+  allSpotsEditing=allSpotsEditing===b.dataset.asedit?null:b.dataset.asedit;
+  renderAllSpots();return;
+ }
+ if(b.dataset.ascolor){
+  updateSpotFields(b.dataset.aslk,b.dataset.asid,{color:b.dataset.ascolor});renderAllSpots();return;
+ }
+ if(b.dataset.asicon){
+  updateSpotFields(b.dataset.aslk,b.dataset.asid,{icon:b.dataset.asicon});renderAllSpots();return;
+ }
+ if(b.dataset.assave){
+  const inp=host.querySelector('.asRename[data-asid="'+b.dataset.assave+'"]');
+  const nm=inp&&inp.value.trim();
+  if(nm)updateSpotFields(b.dataset.aslk,b.dataset.assave,{name:nm.slice(0,50)});
+  allSpotsEditing=null;renderAllSpots();return;
+ }
+ if(b.dataset.asdel){
+  /* Tap-again, as everywhere else destructive in this app. */
+  if(b.dataset.armed){
+   const lk=b.dataset.aslk;
+   setSpots(lk,getSpots(lk).filter(x=>x.id!==b.dataset.asdel));
+   setShownSpots(lk,getShownSpots(lk).filter(x=>x!==b.dataset.asdel));
+   redrawSpots();allSpotsEditing=null;renderAllSpots();
+  }else{b.dataset.armed="1";b.classList.add("armed");b.textContent=t("tapAgain")}
+  return;
+ }
+ const open=b.closest("[data-asopen]");
+ if(open){
+  const lake=lakeByKey(open.dataset.asopen);
+  /* Straight into the lake sheet: depth, regs, stocking and the marker in
+     one tap -- the planning case this list exists for. */
+  if(lake&&typeof detail==="function")detail(lake);
+  return;
+ }
+},true);
+document.addEventListener("input",e=>{
+ if(e.target&&e.target.id==="allSpotsSearch"){
+  allSpotsQuery=e.target.value;
+  const host=document.getElementById("allSpotsView");
+  const pos=e.target.selectionStart;
+  renderAllSpots();
+  const again=document.getElementById("allSpotsSearch");
+  if(again){again.focus();try{again.setSelectionRange(pos,pos)}catch(_){}}
+ }
 });
