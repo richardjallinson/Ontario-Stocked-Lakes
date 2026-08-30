@@ -255,6 +255,8 @@ const I18N={
   tilesSlow:"Topo and Depth pull live map imagery and can take a moment to load, especially the first time.",
   findMe:"Find me",
   goToMap:"Go To Map",
+  trailOn:"Trail: On",
+  trailOff:"Trail: Off",
   clearTrail:"Clear trail",
   clearTrailAsk:"Clear the recorded trail? This cannot be undone.",
   offlineSave:"Save for offline",
@@ -534,6 +536,8 @@ const I18N={
   tilesSlow:"Topo et Profondeur chargent des images cartographiques en direct et peuvent prendre un moment, surtout la premi\u00e8re fois.",
   findMe:"Me trouver",
   goToMap:"Voir la carte",
+  trailOn:"Trac\u00e9\u202f: activ\u00e9",
+  trailOff:"Trac\u00e9\u202f: d\u00e9sactiv\u00e9",
   clearTrail:"Effacer le trac\u00e9",
   clearTrailAsk:"Effacer le trac\u00e9 enregistr\u00e9\u202f? Cette action est irr\u00e9versible.",
   offlineSave:"Enregistrer hors ligne",
@@ -606,7 +610,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5m";
+const APP_VERSION="v5n";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -672,6 +676,10 @@ const trackButtons=[];
    anchor doesn't pile up thousands of identical fixes, and capped so a long
    season cannot grow the store without bound. */
 const TRAIL_MIN_M=12,TRAIL_MAX_POINTS=3000;
+/* Whether tracking lays crumbs at all. Separate from tracking itself --
+   "follow me" and "record where I went" are different wants, and the person
+   asked for exactly this split. Remembered across launches; default on. */
+let trailRecording=localStorage.getItem("osl-trail-on")!=="0";
 let trail=[];
 try{trail=JSON.parse(localStorage.getItem("osl-trail")||"[]")||[]}catch(e){trail=[]}
 const trailLines={main:null,detail:null};
@@ -705,6 +713,7 @@ function drawTrail(which,mapObj){
 }
 function redrawTrails(){drawTrail("main",map);drawTrail("detail",detailMap);paintTrailButtons()}
 function addTrailPoint(lat,lon){
+ if(!trailRecording)return;
  const p=[Number(lat.toFixed(6)),Number(lon.toFixed(6))];
  const last=trail[trail.length-1];
  if(last&&metresBetween(last,p)<TRAIL_MIN_M)return;
@@ -728,6 +737,34 @@ function paintTrailButtons(){
   if(lb)lb.textContent=t("clearTrail")+(has?" \u00b7 "+km.toFixed(1)+" km":"");
  });
 }
+const trailToggleButtons=[];
+function paintTrailToggles(){
+ trailToggleButtons.forEach(b=>{
+  b.classList.toggle("tracking",trailRecording);
+  b.setAttribute("aria-label",trailRecording?t("trailOn"):t("trailOff"));
+  const lb=b.querySelector(".locLabel");
+  if(lb)lb.textContent=trailRecording?t("trailOn"):t("trailOff");
+ });
+}
+function setTrailRecording(on){
+ trailRecording=on;
+ try{localStorage.setItem("osl-trail-on",on?"1":"0")}catch(e){}
+ paintTrailToggles();
+}
+const TrailToggleControl=L.Control.extend({
+ options:{position:"bottomleft"},
+ onAdd:function(m){
+  const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapLocationControl");
+  const btn=L.DomUtil.create("a","",cn);
+  btn.href="#";
+  btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19c3-1 4-4 2-6S3 9 5 7s6-1 8 1 2 5 4 6 4 0 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="1 4"/></svg><span class="locLabel"></span>';
+  trailToggleButtons.push(btn);
+  L.DomEvent.on(btn,"click",L.DomEvent.preventDefault);
+  L.DomEvent.on(btn,"click",()=>setTrailRecording(!trailRecording));
+  paintTrailToggles();
+  return cn;
+ }
+});
 const TrailControl=L.Control.extend({
  options:{position:"bottomleft"},
  onAdd:function(m){
@@ -810,6 +847,7 @@ const LocationControl=L.Control.extend({
  }
 });
 new LocationControl().addTo(map);
+new TrailToggleControl().addTo(map);
 new TrailControl().addTo(map);
 drawTrail("main",map);
 
@@ -1051,6 +1089,7 @@ function showDetailMap(l){
   if(!detailMap){
    detailMap=L.map(host,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});
    new LocationControl().addTo(detailMap);
+   new TrailToggleControl().addTo(detailMap);
    new TrailControl().addTo(detailMap);
   }
   /* The base layer is rebuilt on every open, not just when the map is first
