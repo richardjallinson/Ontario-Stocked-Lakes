@@ -687,7 +687,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6k";
+const APP_VERSION="v6l";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -3800,6 +3800,9 @@ function viewCatchOnMap(tripId,catchId){
  const c=(trip.catches||[]).find(x=>String(x.id)===String(catchId));
  if(!c||!c.location)return;
  const lake=tripLake(trip);if(!lake)return;
+ /* Trips live in their own sheet, stacked over the lake sheet. Without this
+    line the lake opened invisibly underneath it -- "nothing happens". */
+ $("tripSheet").classList.add("hidden");
  /* Open the lake sheet, then steer its map to the fish once the sheet's map
     has had its moment to size itself -- the same settling delay the sheet
     itself uses. A brief ring marks the point so the eye lands right. */
