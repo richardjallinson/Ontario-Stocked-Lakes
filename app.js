@@ -253,6 +253,7 @@ const I18N={
   tilesOffline:"Map tiles unavailable offline \u2014 everything else still works.",tapMarker:"Tap a marker for details",loading:"Loading\u2026",
   baseHint:"Tap Map, Topo or Depth to change the view.",
   tilesSlow:"Topo and Depth pull live map imagery and can take a moment to load, especially the first time.",
+  findMe:"Find me",
   officialSources:"Official Ontario sources",
   regsSummaryNote:"Regulations in this app are a summary. These are the authoritative sources \u2014 open them before you fish.",
   regsSummaryTitle:"Fishing Regulations Summary",regsSummarySub:"Seasons, limits and slot sizes by zone",
@@ -522,6 +523,7 @@ const I18N={
   tilesOffline:"Tuiles de carte indisponibles hors ligne \u2014 tout le reste fonctionne.",tapMarker:"Touchez un rep\u00e8re pour les d\u00e9tails",loading:"Chargement\u2026",
   baseHint:"Touchez Carte, Topo ou Profondeur pour changer l'affichage.",
   tilesSlow:"Topo et Profondeur chargent des images cartographiques en direct et peuvent prendre un moment, surtout la premi\u00e8re fois.",
+  findMe:"Me trouver",
   officialSources:"Sources officielles de l'Ontario",
   regsSummaryNote:"Les r\u00e8glements pr\u00e9sent\u00e9s ici sont un r\u00e9sum\u00e9. Voici les sources officielles \u2014 consultez-les avant de p\u00eacher.",
   regsSummaryTitle:"R\u00e9sum\u00e9 des r\u00e8glements de p\u00eache",regsSummarySub:"Saisons, limites et fourchettes de taille par zone",
@@ -586,7 +588,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5d";
+const APP_VERSION="v5e";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -631,6 +633,21 @@ if (!mapAvailable) {
 const map=L.map("map").setView([46.2,-81.0],5);
 
 const markerLayer=L.layerGroup().addTo(map);
+
+/* Location button — sits on the map, triggers locate() to fetch the user's
+   position and center the map on it. A Leaflet control in the bottom-left
+   next to the zoom buttons. */
+L.Control.extend({
+ onAdd:function(m){
+  const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapLocationControl");
+  const btn=L.DomUtil.create("a","",cn);
+  btn.href="#";btn.title=t("findMe");btn.setAttribute("aria-label",t("findMe"));
+  btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  L.DomEvent.on(btn,"click",L.DomEvent.preventDefault);
+  L.DomEvent.on(btn,"click",()=>locate(runSearch));
+  return cn;
+ }
+}).addTo(map);
 
 /* The lake sheet gets its own map.
 
