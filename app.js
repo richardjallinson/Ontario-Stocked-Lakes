@@ -247,7 +247,7 @@ const I18N={
   showAccess:"Show fishing access points",showFMZ:"Show Fisheries Management Zones",
   showDepth:"Show lake depth contours",accessStatus:"Boat launches \u2022 shore access \u2022 docks/piers",
   depthStatus:"Government bathymetry \u2022 not for navigation",
-  lakeMap:"Lake map",baseMap:"Map",baseTopo:"Topo",basePlain:"Plain",tapMarker:"Tap a marker for details",loading:"Loading\u2026",
+  lakeMap:"Lake map",baseMap:"Map",baseTopo:"Topo",baseCanada:"Canada",basePlain:"Plain",tapMarker:"Tap a marker for details",loading:"Loading\u2026",
   officialSources:"Official Ontario sources",
   regsSummaryNote:"Regulations in this app are a summary. These are the authoritative sources \u2014 open them before you fish.",
   regsSummaryTitle:"Fishing Regulations Summary",regsSummarySub:"Seasons, limits and slot sizes by zone",
@@ -511,7 +511,7 @@ const I18N={
   showAccess:"Afficher les acc\u00e8s de p\u00eache",showFMZ:"Afficher les zones de gestion des p\u00eaches",
   showDepth:"Afficher les courbes de profondeur",accessStatus:"Mises \u00e0 l'eau \u2022 acc\u00e8s riverain \u2022 quais",
   depthStatus:"Bathym\u00e9trie gouvernementale \u2022 pas pour la navigation",
-  lakeMap:"Carte du lac",baseMap:"Carte",baseTopo:"Topo",basePlain:"\u00c9pur\u00e9e",tapMarker:"Touchez un rep\u00e8re pour les d\u00e9tails",loading:"Chargement\u2026",
+  lakeMap:"Carte du lac",baseMap:"Carte",baseTopo:"Topo",baseCanada:"Canada",basePlain:"\u00c9pur\u00e9e",tapMarker:"Touchez un rep\u00e8re pour les d\u00e9tails",loading:"Chargement\u2026",
   officialSources:"Sources officielles de l'Ontario",
   regsSummaryNote:"Les r\u00e8glements pr\u00e9sent\u00e9s ici sont un r\u00e9sum\u00e9. Voici les sources officielles \u2014 consultez-les avant de p\u00eacher.",
   regsSummaryTitle:"R\u00e9sum\u00e9 des r\u00e8glements de p\u00eache",regsSummarySub:"Saisons, limites et fourchettes de taille par zone",
@@ -576,7 +576,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4p";
+const APP_VERSION="v4q";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -649,7 +649,7 @@ function showDetailMap(l){
   if(!detailMap){
    detailMap=L.map(host,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});
    const b=BASEMAPS[baseKey]||BASEMAPS.map;
-   if(b.url)L.tileLayer(b.url,b.opts).addTo(detailMap);
+   if(b.url)(b.wms?L.tileLayer.wms(b.url,b.opts):L.tileLayer(b.url,b.opts)).addTo(detailMap);
   }
   detailMap.setView([l.lat,l.lon],12);
   if(detailMarker)detailMap.removeLayer(detailMarker);
@@ -701,6 +701,19 @@ const BASEMAPS={
   url:"https://ws.lioservices.lrc.gov.on.ca/arcgis1/rest/services/LIO_Cartographic/LIO_Topographic/MapServer/tile/{z}/{y}/{x}",
   opts:{maxZoom:17,attribution:'Topographic data &copy; Government of Ontario'}
  },
+ canada:{
+  label:"Canada topo",
+  // NRCan's Toporama, a WMS rather than a tile cache — Leaflet renders it
+  // through L.tileLayer.wms, hence the wms flag the two layer-construction
+  // sites branch on. Layer name and PNG support confirmed from the service's
+  // own GetCapabilities. Open Government Licence – Canada; the attribution
+  // line is part of that licence, same as OSM's. Keyless, like everything
+  // else this app talks to.
+  wms:true,
+  url:"https://maps.geogratis.gc.ca/wms/toporama_en",
+  opts:{layers:"WMS-Toporama",format:"image/png",transparent:false,
+        maxZoom:17,attribution:'Toporama &copy; Natural Resources Canada'}
+ },
  plain:{
   label:"Plain",
   // Genuinely plain now: no tile layer at all, just the marker on a calm
@@ -723,7 +736,7 @@ function setBasemap(key){
  if(baseLayer){map.removeLayer(baseLayer);baseLayer=null}
  const b=BASEMAPS[key];
  if(b.url){
-  baseLayer=L.tileLayer(b.url,b.opts).addTo(map);
+  baseLayer=(b.wms?L.tileLayer.wms(b.url,b.opts):L.tileLayer(b.url,b.opts)).addTo(map);
   baseLayer.bringToBack&&baseLayer.bringToBack();
  }
 }
