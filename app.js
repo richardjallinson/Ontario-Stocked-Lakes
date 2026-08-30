@@ -202,6 +202,10 @@ const I18N={
   minimumStocked:"Minimum fish stocked",lakeName:"Lake name",sortResults:"Sort results",
   bestMatch:"Best Match",closest:"Closest",recent:"Most recently stocked",quantity:"Most fish stocked",
   findStocked:"Find Fish Near Me",myLakes:"My Lakes",trips:"Trips",overview:"Overview",
+  rulesTab:"Rules",
+  saveCatchAsSpot:"Mark this spot",
+  catchMarked:"Marked on map",
+  catchMarkedToast:"Spot saved to this lake",
   stocking:"Stocking",regulations:"Regulations",access:"Access",fishSpecies:"Fish Species",
   depth:"Depth",eatingAdvice:"Eating Advice",weather:"Weather",sportLimit:"Sport limit",
   conservationLimit:"Conservation limit",season:"Season",verify:"Verify Current Ontario Rule",
@@ -516,6 +520,10 @@ const I18N={
   minimumStocked:"Nombre minimal de poissons ensemencés",lakeName:"Nom du lac",sortResults:"Trier les résultats",
   bestMatch:"Meilleure correspondance",closest:"Les plus proches",recent:"Ensemencement le plus récent",quantity:"Plus grand nombre ensemencé",
   findStocked:"Trouver du poisson près de moi",myLakes:"Mes lacs",trips:"Sorties",overview:"Aperçu",
+  rulesTab:"R\u00e8gles",
+  saveCatchAsSpot:"Marquer ce lieu",
+  catchMarked:"Marqu\u00e9 sur la carte",
+  catchMarkedToast:"Lieu enregistr\u00e9 pour ce lac",
   stocking:"Ensemencement",regulations:"Règlements",access:"Accès",fishSpecies:"Espèces de poissons",
   depth:"Profondeur",eatingAdvice:"Conseils de consommation",weather:"Météo",sportLimit:"Limite sportive",
   conservationLimit:"Limite de conservation",season:"Saison",verify:"Vérifier le règlement actuel de l’Ontario",
@@ -675,7 +683,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6g";
+const APP_VERSION="v6h";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -3769,7 +3777,43 @@ function catchSpeciesOptions(tr){
  return [...set].filter(Boolean).sort((a,b)=>a.localeCompare(b));
 }
 
-function catchRowMarkup(c,active){
+/* ---- Catches and spots, joined --------------------------------------------
+   A logged catch that recorded GPS already knows where the fish was. Turning
+   that into a marked spot is the one step the angler would otherwise redo by
+   hand on the map, so it is a single button on the catch row. The spot is
+   keyed to the trip's own lake, so it lands in that lake's My Spots panel and
+   in the master Spots screen at once.
+   The link is kept on the catch (c.spotId), so the row can show "Marked" and
+   stop offering to make a second copy of the same fish. */
+function catchSpotMarkup(c,trip){
+ const lk=String(trip.lakeKey||"");
+ const existing=c.spotId&&getSpots(lk).some(x=>x.id===c.spotId);
+ if(existing)return `<span class="catchSpotDone">${t("catchMarked")}</span>`;
+ return `<button type="button" class="catchSpotBtn" data-spotfromcatch="${c.id}" data-triplake="${esc(lk)}">${t("saveCatchAsSpot")}</button>`;
+}
+function spotFromCatch(tripId,catchId){
+ const trip=trips.find(x=>String(x.id)===String(tripId));if(!trip)return;
+ const c=(trip.catches||[]).find(x=>String(x.id)===String(catchId));
+ if(!c||!c.location)return;
+ const lk=String(trip.lakeKey||"");
+ if(!lk)return;
+ const when=new Date(c.time).toLocaleDateString(appLang==="fr"?"fr-CA":"en-CA",{month:"short",day:"numeric"});
+ const spots=getSpots(lk);
+ if(spots.length>=50){toast(t("spotsFull"));return}
+ /* Red and a fish: the colour and symbol a caught fish should carry, so a
+    season of catches reads as one category on the map without extra taps. */
+ const sp={id:"s"+Date.now(),lat:Number(c.location.lat.toFixed(6)),lon:Number(c.location.lon.toFixed(6)),
+           name:(c.species+" \u00b7 "+when).slice(0,50),color:"red",icon:"fish",ts:Date.now()};
+ spots.unshift(sp);setSpots(lk,spots);
+ const shown=getShownSpots(lk);if(shown.indexOf(sp.id)===-1)shown.push(sp.id);
+ setShownSpots(lk,shown);
+ c.spotId=sp.id;saveTrips();
+ redrawSpots();
+ openTrip(trip.id);
+ toast(t("catchMarkedToast"));
+}
+
+function catchRowMarkup(c,active,trip){
  const len=lenOut(c.lenCm), wt=wtOut(c.wtKg);
  const bits=[];
  if(len!=null)bits.push(`${num1(len)} ${lenUnit()}`);
@@ -3788,6 +3832,7 @@ function catchRowMarkup(c,active){
   ${confirming?`<div class="confirmRow"><span class="confirmAsk">${t("deleteCatchAsk")}</span>
     <button data-confirmdel="${c.id}" class="dangerBtn">${t("delete")}</button>
     <button data-canceldel="${c.id}" class="secondaryAction">${t("cancel")}</button></div>`:""}</div>
+  ${c.location&&trip?`<div class="catchSpotRow">${catchSpotMarkup(c,trip)}</div>`:""}
   ${active&&!confirming?`<div class="rowActions">
    <button data-editcatch="${c.id}" aria-label="${t("editCatch")}" title="${t("editCatch")}">✎</button>
    <button data-delcatch="${c.id}" aria-label="${t("deleteCatch")}" title="${t("deleteCatch")}">×</button>
@@ -3886,7 +3931,7 @@ function openTrip(id){
     <button type="button" data-tripunits="metric" class="${u==="metric"?"on":""}">${t("unitCm")} / ${t("unitKg")}</button>
     <button type="button" data-tripunits="imperial" class="${u==="imperial"?"on":""}">${t("unitIn")} / ${t("unitLb")}</button>
    </div>
-   <div class="catchlist">${trip.catches.length?trip.catches.map(c=>catchRowMarkup(c,active)).join(""):`<div class="historynote">${t("noCatchesYet")}</div>`}</div>
+   <div class="catchlist">${trip.catches.length?trip.catches.map(c=>catchRowMarkup(c,active,trip)).join(""):`<div class="historynote">${t("noCatchesYet")}</div>`}</div>
    ${active?catchFormMarkup(trip):`<p class="setNote">${t("tripEndedNote")}</p>`}`;
  }else if(tab==="checklist"){
   body=checklistMarkup(trip);
@@ -3918,6 +3963,9 @@ function openTrip(id){
   document.querySelectorAll("[data-confirmdel]").forEach(b=>b.onclick=()=>{
    trip.catches=trip.catches.filter(c=>c.id!==Number(b.dataset.confirmdel));
    confirmDeleteId=null;saveTrips();openTrip(id);toast(t("catchDeleted"));
+  });
+  document.querySelectorAll("[data-spotfromcatch]").forEach(b=>b.onclick=()=>{
+   spotFromCatch(id,b.dataset.spotfromcatch);
   });
   document.querySelectorAll("[data-editcatch]").forEach(b=>b.onclick=()=>{
    editingCatchId=Number(b.dataset.editcatch);confirmDeleteId=null;openTrip(id);

@@ -1405,3 +1405,8 @@ body.spotCreating .leaflet-container{cursor:crosshair}
    five tabs the last one sits off-screen with nothing to say so. */
 .tabstrip::after{content:"";position:absolute;top:0;right:0;bottom:0;width:26px;
  pointer-events:none;background:linear-gradient(to right,transparent,var(--green))}
+/* Turning a logged catch into a marked spot, from the catch row itself. */
+.catchSpotRow{margin-top:6px}
+.catchSpotBtn{border:1px solid var(--line);background:#fff;border-radius:9px;
+ padding:6px 11px;font:inherit;font-weight:800;font-size:12px;cursor:pointer;color:var(--ink)}
+.catchSpotDone{font-size:12px;font-weight:800;color:#27AE60}
