@@ -687,7 +687,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6o";
+const APP_VERSION="v6p";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -1008,7 +1008,11 @@ const SPOT_ICONS=[
  {key:"star",label:"Star",svg:'<path d="M12 2.5l2.8 6 6.5.8-4.8 4.4 1.3 6.4L12 16.9l-5.8 3.2 1.3-6.4L2.7 9.3l6.5-.8z"/>'},
  {key:"hazard",label:"Hazard",svg:'<path d="M12 3.2 22 20.2H2z"/><rect x="11" y="9.2" width="2" height="5.6" rx="1" fill="#13263C" stroke="none"/><circle cx="12" cy="17.4" r="1.15" fill="#13263C" stroke="none"/>'},
  {key:"weeds",label:"Weeds",svg:'<path d="M6.2 20c-.6-4.6.3-7.8 2-10.6 1 2.8 1.3 6 .3 10.6z"/><path d="M11.2 20c-.6-5.6.3-9.6 1.1-12.6 1 3 1.5 7 .6 12.6z"/><path d="M16.4 20c-.5-3.8.5-6.6 2.1-8.6.7 2.4.6 4.9-.6 8.6z"/><path d="M3.5 20.4h17" fill="none" stroke-width="2"/>'},
- {key:"dock",label:"Dock",svg:'<rect x="3" y="8.5" width="18" height="3.4" rx="1"/><rect x="4.6" y="11.9" width="2.1" height="8"/><rect x="10.95" y="11.9" width="2.1" height="8"/><rect x="17.3" y="11.9" width="2.1" height="8"/>'}
+ {key:"dock",label:"Dock",svg:'<rect x="3" y="8.5" width="18" height="3.4" rx="1"/><rect x="4.6" y="11.9" width="2.1" height="8"/><rect x="10.95" y="11.9" width="2.1" height="8"/><rect x="17.3" y="11.9" width="2.1" height="8"/>'},
+ /* One buoy, two jobs: the colour picker makes it port (red) or starboard
+    (green), same as the water. Body, top light, waterline. */
+ {key:"buoy",label:"Buoy",svg:'<circle cx="12" cy="3.6" r="1.4"/><path d="M9.6 5.6h4.8l-.9 8.8h-3z"/><path d="M4 17h16" fill="none" stroke-width="2"/><path d="M6.5 20h11" fill="none" stroke-width="2"/>'},
+ {key:"tent",label:"Camp",svg:'<path d="M12 3.6 22.2 19.6H1.8z"/><path d="M12 10.4l3.4 9.2H8.6z" fill="#13263C" stroke="none"/>'}
 ];
 function spotIconSvg(iconKey,hex,size){
  const ic=SPOT_ICONS.find(x=>x.key===iconKey)||SPOT_ICONS[0];
