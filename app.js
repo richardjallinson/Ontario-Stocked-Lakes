@@ -86,7 +86,7 @@ const I18N={
   checklistLocked:"This trip has ended, so the checklist is kept as it was.",
   tripAlreadyOpen:"You already have a trip running on this lake — opened it instead.",
   lakeDepth:"Lake depth",
-  depthKnown:"Ontario's survey records give a maximum depth of {max} m and a mean of {mean} m.",
+  depthKnown:"Ontario's survey records give a maximum depth of {max} ft and a mean of {mean} ft.",
   depthUnknown:"Ontario has no depth on record for this lake. That means no survey figure exists, not that the lake is shallow.",
   depthNotForNav:"Depth figures vary in age and accuracy and must never be used for navigation.",
   accessNotLoaded:"Ontario's access-point list has not loaded. It needs a connection, so it may be unavailable at the lake.",
@@ -351,7 +351,7 @@ const I18N={
   checklistLocked:"Cette sortie est terminée; la liste est conservée telle quelle.",
   tripAlreadyOpen:"Une sortie est déjà en cours sur ce lac — elle a été ouverte.",
   lakeDepth:"Profondeur du lac",
-  depthKnown:"Les relevés de l’Ontario indiquent une profondeur maximale de {max} m et une moyenne de {mean} m.",
+  depthKnown:"Les relevés de l’Ontario indiquent une profondeur maximale de {max} pi et une moyenne de {mean} pi.",
   depthUnknown:"L’Ontario n’a aucune profondeur au dossier pour ce lac. Cela signifie qu’aucun relevé n’existe, non que le lac est peu profond.",
   depthNotForNav:"Les profondeurs varient en âge et en précision et ne doivent jamais servir à la navigation.",
   accessNotLoaded:"La liste des accès de pêche de l’Ontario n’est pas chargée. Elle exige une connexion et peut donc être indisponible au lac.",
@@ -578,7 +578,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4x";
+const APP_VERSION="v4y";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -655,6 +655,15 @@ function cleanContourDepth(v){
  const a=Math.abs(Number(v));
  if(!Number.isFinite(a)||a===0||a>250)return null;
  return Math.round(a*3.28084);
+}
+/* Survey depths arrive in metres and are shown in feet, matching the contour
+   labels. Both had to move together: the sheet said "5 ft" on the map and
+   "13.5 m deep" in the row beneath it, which is the kind of contradiction an
+   angler notices immediately. Whole feet, same reasoning as the contours. */
+function depthFt(m){
+ const n=Number(m);
+ if(!Number.isFinite(n)||n<=0)return null;
+ return Math.round(n*3.28084);
 }
 let detailContours=null,contourToken=0;
 const contourCache=new Map();
@@ -2422,7 +2431,7 @@ function render(){
   ].join("");
   const meta=where+(l.stocked
    ?`<span>${num(latestFish)} stocked</span><span>${l.records.length} record${l.records.length===1?"":"s"}</span>`
-   :`<span>${surveyMetaLabel(l)}</span>${l.depthMax?`<span>${l.depthMax} m deep</span>`:""}`);
+   :`<span>${surveyMetaLabel(l)}</span>${depthFt(l.depthMax)?`<span>${depthFt(l.depthMax)} ft deep</span>`:""}`);
   return `<article class="record" data-i="${i}"><div class="topline"><div><h4>${esc(l.name)}</h4><div class="species">${head}</div></div><div class="cardactions">${pill}<button class="star ${fav?"saved":""}" data-fav="${esc(l.key)}" aria-label="Favourite">${fav?"★":"☆"}</button></div></div><div class="meta">${meta}</div></article>`;
  }).join("")||`<div class="record empty">${emptyMessage()}</div>`;
  /* The species plate used to live in Find Fish, which no longer exists. It
@@ -2876,8 +2885,8 @@ function surveyMetaLabel(l){
 function presentBlock(l){
  const sp=anglerSpecies(l.present);
  const facts=[
-  l.depthMax?[t("maxDepth"),l.depthMax+" m"]:null,
-  l.depthMean?[t("meanDepth"),l.depthMean+" m"]:null,
+  depthFt(l.depthMax)?[t("maxDepth"),depthFt(l.depthMax)+" ft"]:null,
+  depthFt(l.depthMean)?[t("meanDepth"),depthFt(l.depthMean)+" ft"]:null,
   l.areaHa?[t("surfaceArea"),num(l.areaHa)+" ha"]:null,
   l.clarity?[t("waterClarity"),l.clarity+" m"]:null,
   l.thermal?[t("thermalRegime"),thermalLabel(l.thermal)]:null
@@ -2928,7 +2937,7 @@ ${presentBlock(l)}
  <div id="lake-species" class="tabAnchor"></div><div class="infoCard"><h3>${t("netHead")}</h3><p class="microcopy">${t("netSub")}</p>
  ${speciesLoaded?(l.observedSpecies&&l.observedSpecies.length?`<div class="specieschips netchips">${l.observedSpecies.map(s=>`<span>${esc(s.species)}<em>${s.caught>0?`${Number(s.caught).toLocaleString()} ${t("netCaught")}`:t("netNoCount")}</em></span>`).join("")}</div><p class="microcopy">Species shown come from Fish ON-Line survey records and are not a guarantee of current abundance.</p>`:`<p>${t("netNone")}</p>`):`<p>${t("netLoading")}</p>`}
  </div>
- <div id="lake-depth" class="tabAnchor"></div><div class="infoCard"><h3>🌊 ${t("lakeDepth")}</h3><p>${l.depthMax?t("depthKnown").replace("{max}",esc(l.depthMax)).replace("{mean}",l.depthMean?esc(l.depthMean):"—"):t("depthUnknown")}</p><p class="helpNote">${t("depthNotForNav")}</p></div>
+ <div id="lake-depth" class="tabAnchor"></div><div class="infoCard"><h3>🌊 ${t("lakeDepth")}</h3><p>${l.depthMax?t("depthKnown").replace("{max}",esc(depthFt(l.depthMax))).replace("{mean}",depthFt(l.depthMean)?esc(depthFt(l.depthMean)):"—"):t("depthUnknown")}</p><p class="helpNote">${t("depthNotForNav")}</p></div>
  <div id="lake-stocking" class="tabAnchor"></div><h3>Recent Stocking History</h3><div class="history">${history}</div>
  ${accessCard(l)}
  ${nearbyStaysCard(l)}
