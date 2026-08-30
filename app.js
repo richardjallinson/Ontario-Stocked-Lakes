@@ -269,7 +269,7 @@ const I18N={
   spotNamePh:"Spot name",
   saveSpot:"Save spot",
   spotsFull:"Spot list is full (50)",
-  noSpots:"No spots yet. Tap + New Spot above, then tap the map where you want the pin.",
+  noSpots:"No spots yet. Centre the map where you want the pin, then tap + New Spot.",
   cancel:"Cancel",
   trailsTitle:"Trails",
   currentTrail:"Current trail",
@@ -569,7 +569,7 @@ const I18N={
   spotNamePh:"Nom du lieu",
   saveSpot:"Enregistrer le lieu",
   spotsFull:"Liste pleine (50)",
-  noSpots:"Aucun lieu pour l'instant. Appuyez sur + Nouveau lieu, puis touchez la carte.",
+  noSpots:"Aucun lieu pour l'instant. Centrez la carte o\u00f9 vous voulez le rep\u00e8re, puis appuyez sur + Nouveau lieu.",
   tapMapForSpot:"Touchez la carte pour marquer un lieu.",
   cancel:"Annuler",
   trailsTitle:"Trac\u00e9s",
@@ -651,7 +651,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5v";
+const APP_VERSION="v5w";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -944,10 +944,25 @@ function redrawSpots(){drawSpots("main",map);drawSpots("detail",detailMap)}
 function setSpotCreation(on){spotCreationMode=on;document.body.classList.toggle("spotCreating",on)}
 function mapClickForSpot(e){if(!spotCreationMode||!currentLakeForSpots)return;setSpotCreation(false);showSpotCreate(e.latlng.lat,e.latlng.lng)}
 function escHtml(x){return String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
-let spotPanelEl=null;
-function spotPanel(){if(spotPanelEl)return spotPanelEl;spotPanelEl=document.createElement("div");spotPanelEl.id="spotPanel";spotPanelEl.className="spotPanel hidden";document.body.appendChild(spotPanelEl);spotPanelEl.addEventListener("click",e=>{try{const b=e.target.closest("button");if(!b)return;const act=b.dataset.act,id=b.dataset.id,lk=b.dataset.lk;if(act==="close")toggleSpotPanel(false);else if(act==="new"){toggleSpotPanel(false);setSpotCreation(true);if(typeof mapNotice==="function")mapNotice(t("tapMapForSpot"));}else if(act==="save"){const inp=spotPanelEl.querySelector("#spotNameInput"),col=spotPanelEl.querySelector("input[name='spotColor']:checked"),nm=inp&&inp.value.trim(),c=col&&col.value;if(nm&&c)saveSpot(lk,Number(b.dataset.lat),Number(b.dataset.lon),nm,c)}else if(act==="toggle"){const shown=getShownSpots(lk),i=shown.indexOf(id);if(i===-1)shown.push(id);else shown.splice(i,1);setShownSpots(lk,shown);redrawSpots();renderSpotList(lk)}else if(act==="del"){if(b.dataset.armed){let spots=getSpots(lk);spots=spots.filter(x=>x.id!==id);setSpots(lk,spots);redrawSpots();renderSpotList(lk)}else{b.dataset.armed="1";b.classList.add("armed");b.textContent=t("tapAgain")}}}catch(err){try{spotPanelEl.innerHTML='<div class="spNote">Spots error: '+String(err.message)+"</div>";spotPanelEl.classList.remove("hidden")}catch(_){}}});return spotPanelEl}
+let spotPanelEl=null,tempSpotMarker=null,tempSpotMap=null;
+function clearTempSpot(){if(tempSpotMarker&&tempSpotMap){try{tempSpotMap.removeLayer(tempSpotMarker)}catch(e){}}tempSpotMarker=null;tempSpotMap=null}
+function spotPanel(){if(spotPanelEl)return spotPanelEl;spotPanelEl=document.createElement("div");spotPanelEl.id="spotPanel";spotPanelEl.className="spotPanel hidden";document.body.appendChild(spotPanelEl);document.addEventListener("click",e=>{try{if(!spotPanelEl||spotPanelEl.classList.contains("hidden"))return;if(!spotPanelEl.contains(e.target))return;const b=e.target.closest("button");if(!b)return;const act=b.dataset.act,id=b.dataset.id,lk=b.dataset.lk;if(act==="close"){clearTempSpot();toggleSpotPanel(false);}else if(act==="new"){
+   /* The pin lands at the centre of whichever map is in front. With Track On
+      the map is centred on the boat, so this marks where you are right now --
+      the catch-a-fish-mark-the-spot flow, one tap, no modes. Pan the map
+      first to mark somewhere else. */
+   const m=(document.body.classList.contains("sheetOpen")&&detailMap)?detailMap:map;
+   const c=m.getCenter();
+   showSpotCreate(c.lat,c.lng);
+  }else if(act==="save"){const inp=spotPanelEl.querySelector("#spotNameInput"),col=spotPanelEl.querySelector("input[name='spotColor']:checked"),nm=inp&&inp.value.trim(),c=col&&col.value;if(nm&&c){clearTempSpot();saveSpot(lk,Number(b.dataset.lat),Number(b.dataset.lon),nm,c)}}else if(act==="toggle"){const shown=getShownSpots(lk),i=shown.indexOf(id);if(i===-1)shown.push(id);else shown.splice(i,1);setShownSpots(lk,shown);redrawSpots();renderSpotList(lk)}else if(act==="del"){if(b.dataset.armed){let spots=getSpots(lk);spots=spots.filter(x=>x.id!==id);setSpots(lk,spots);redrawSpots();renderSpotList(lk)}else{b.dataset.armed="1";b.classList.add("armed");b.textContent=t("tapAgain")}}}catch(err){try{spotPanelEl.innerHTML='<div class="spNote">Spots error: '+String(err.message)+"</div>";spotPanelEl.classList.remove("hidden")}catch(_){}}},true);return spotPanelEl}
 function saveSpot(lk,lat,lon,nm,col){let spots=getSpots(lk);if(spots.length>=50)return;const sp={id:"s"+Date.now(),lat:Number(lat.toFixed(6)),lon:Number(lon.toFixed(6)),name:nm.slice(0,50),color:col,ts:Date.now()};spots.unshift(sp);setSpots(lk,spots);const shown=getShownSpots(lk);if(shown.indexOf(sp.id)===-1)shown.push(sp.id);setShownSpots(lk,shown);redrawSpots();renderSpotList(lk)}
-function showSpotCreate(lat,lon){const p=spotPanel();if(!p)return;const lk=lakeKeyForSpots(currentLakeForSpots);let h='<div class="spHead"><b>'+t("newSpot")+'</b><button type="button" data-act="close" aria-label="Close">×</button></div><div class="spCreate"><input id="spotNameInput" maxlength="50" placeholder="'+t("spotNamePh")+'"><div class="spColors">';SPOT_COLORS.forEach(c=>{h+='<label><input type="radio" name="spotColor" value="'+c.key+'" '+(c.key==="gold"?"checked":"")+' style="margin:0"><span style="background:'+c.hex+';width:16px;height:16px;border-radius:50%;display:inline-block"></span> '+c.label+'</label>'});h+='</div><div class="spBtns"><button type="button" class="spSave" data-act="save" data-lk="'+lk+'" data-lat="'+lat+'" data-lon="'+lon+'">'+t("saveSpot")+'</button><button type="button" data-act="close">'+t("cancel")+'</button></div></div>';if(savedSpots[lk]&&savedSpots[lk].length>=50)h+='<div class="spNote">'+t("spotsFull")+'</div>';p.innerHTML=h;p.classList.remove("hidden")}
+function showSpotCreate(lat,lon){const p=spotPanel();if(!p)return;
+ /* A preview ring at the exact pin location, visible above the form while
+    the person names the spot; removed on save or cancel. */
+ clearTempSpot();
+ tempSpotMap=(document.body.classList.contains("sheetOpen")&&detailMap)?detailMap:map;
+ try{tempSpotMarker=L.circleMarker([lat,lon],{radius:10,color:"#13263C",weight:3,fillColor:"#fff",fillOpacity:.6,interactive:false}).addTo(tempSpotMap)}catch(e){}
+const lk=lakeKeyForSpots(currentLakeForSpots);let h='<div class="spHead"><b>'+t("newSpot")+'</b><button type="button" data-act="close" aria-label="Close">×</button></div><div class="spCreate"><input id="spotNameInput" maxlength="50" placeholder="'+t("spotNamePh")+'"><div class="spColors">';SPOT_COLORS.forEach(c=>{h+='<label><input type="radio" name="spotColor" value="'+c.key+'" '+(c.key==="gold"?"checked":"")+' style="margin:0"><span style="background:'+c.hex+';width:16px;height:16px;border-radius:50%;display:inline-block"></span> '+c.label+'</label>'});h+='</div><div class="spBtns"><button type="button" class="spSave" data-act="save" data-lk="'+lk+'" data-lat="'+lat+'" data-lon="'+lon+'">'+t("saveSpot")+'</button><button type="button" data-act="close">'+t("cancel")+'</button></div></div>';if(savedSpots[lk]&&savedSpots[lk].length>=50)h+='<div class="spNote">'+t("spotsFull")+'</div>';p.innerHTML=h;p.classList.remove("hidden")}
 function renderSpotList(lk){const p=spotPanel();if(!p)return;const spots=getSpots(lk),shown=getShownSpots(lk);let h='<div class="spHead"><b>'+t("spotsTitle")+'</b><span class="spHeadBtns"><button type="button" class="spNew" data-act="new">+ '+t("newSpot")+'</button><button type="button" data-act="close" aria-label="Close">×</button></span></div>';if(spots.length){h+='<div class="spList">'+spots.map(sp=>{const on=shown.indexOf(sp.id)!==-1,hex=SPOT_COLORS.find(x=>x.key===sp.color)?.hex||"#D4A017";return '<div class="spRow"><div class="spDot" style="background:'+hex+'"></div><div class="spMeta"><span class="spName">'+escHtml(sp.name)+'</span></div><button type="button" data-act="toggle" data-id="'+sp.id+'" data-lk="'+lk+'" class="'+(on?"on":"")+'">'+(on?t("hide"):t("show"))+'</button><button type="button" class="spDanger" data-act="del" data-id="'+sp.id+'" data-lk="'+lk+'">🗑</button></div>'}).join("")+'</div>'}else{h+='<div class="spNote">'+t("noSpots")+'</div>'}p.innerHTML=h}
 function toggleSpotPanel(on){
  try{
