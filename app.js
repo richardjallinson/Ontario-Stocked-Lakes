@@ -255,6 +255,8 @@ const I18N={
   tilesSlow:"Topo and Depth pull live map imagery and can take a moment to load, especially the first time.",
   findMe:"Find me",
   goToMap:"Go To Map",
+  clearTrail:"Clear trail",
+  clearTrailAsk:"Clear the recorded trail? This cannot be undone.",
   offlineSave:"Save for offline",
   offlineSaved:"Saved \u2713",
   offlineWorking:"Saving\u2026",
@@ -532,6 +534,8 @@ const I18N={
   tilesSlow:"Topo et Profondeur chargent des images cartographiques en direct et peuvent prendre un moment, surtout la premi\u00e8re fois.",
   findMe:"Me trouver",
   goToMap:"Voir la carte",
+  clearTrail:"Effacer le trac\u00e9",
+  clearTrailAsk:"Effacer le trac\u00e9 enregistr\u00e9\u202f? Cette action est irr\u00e9versible.",
   offlineSave:"Enregistrer hors ligne",
   offlineSaved:"Enregistr\u00e9 \u2713",
   offlineWorking:"Enregistrement\u2026",
@@ -602,7 +606,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5l";
+const APP_VERSION="v5m";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -659,6 +663,85 @@ const markerLayer=L.layerGroup().addTo(map);
 let locationWatchId=null,userTracking=false,lastFix=null;
 const userDots={main:null,detail:null};
 const trackButtons=[];
+/* ---- Breadcrumb trail ---------------------------------------------------
+   The path travelled while tracking is on, drawn on both maps. Recorded off
+   the same GPS watch as the dot -- no second watch, no extra battery -- and
+   kept on the device like everything else here. Useful for a trolling pass:
+   where exactly did that drift go, and can I run it again.
+   Points are thinned by distance rather than by time, so sitting still on
+   anchor doesn't pile up thousands of identical fixes, and capped so a long
+   season cannot grow the store without bound. */
+const TRAIL_MIN_M=12,TRAIL_MAX_POINTS=3000;
+let trail=[];
+try{trail=JSON.parse(localStorage.getItem("osl-trail")||"[]")||[]}catch(e){trail=[]}
+const trailLines={main:null,detail:null};
+let trailSaveTimer=null;
+function saveTrailSoon(){
+ /* Batched: writing localStorage on every GPS fix is a needless stall on the
+    main thread while someone is driving. */
+ if(trailSaveTimer)return;
+ trailSaveTimer=setTimeout(()=>{
+  trailSaveTimer=null;
+  try{localStorage.setItem("osl-trail",JSON.stringify(trail))}catch(e){}
+ },4000);
+}
+function metresBetween(a,b){
+ const R=6371000,dLat=(b[0]-a[0])*Math.PI/180,dLon=(b[1]-a[1])*Math.PI/180,
+       la=a[0]*Math.PI/180,lb=b[0]*Math.PI/180;
+ const h=Math.sin(dLat/2)**2+Math.cos(la)*Math.cos(lb)*Math.sin(dLon/2)**2;
+ return 2*R*Math.asin(Math.sqrt(h));
+}
+function trailLengthM(){
+ let m=0;for(let i=1;i<trail.length;i++)m+=metresBetween(trail[i-1],trail[i]);
+ return m;
+}
+function drawTrail(which,mapObj){
+ if(!mapObj)return;
+ if(trailLines[which]){try{mapObj.removeLayer(trailLines[which])}catch(e){}trailLines[which]=null}
+ if(trail.length<2)return;
+ trailLines[which]=L.polyline(trail,{color:"#C4941F",weight:4,opacity:.9,
+  lineJoin:"round",lineCap:"round",interactive:false}).addTo(mapObj);
+ trailLines[which].bringToFront&&trailLines[which].bringToFront();
+}
+function redrawTrails(){drawTrail("main",map);drawTrail("detail",detailMap);paintTrailButtons()}
+function addTrailPoint(lat,lon){
+ const p=[Number(lat.toFixed(6)),Number(lon.toFixed(6))];
+ const last=trail[trail.length-1];
+ if(last&&metresBetween(last,p)<TRAIL_MIN_M)return;
+ trail.push(p);
+ if(trail.length>TRAIL_MAX_POINTS)trail=trail.slice(-TRAIL_MAX_POINTS);
+ saveTrailSoon();redrawTrails();
+}
+function clearTrail(){
+ trail=[];
+ try{localStorage.removeItem("osl-trail")}catch(e){}
+ redrawTrails();
+}
+const trailButtons=[];
+function paintTrailButtons(){
+ const has=trail.length>1;
+ const km=has?(trailLengthM()/1000):0;
+ trailButtons.forEach(b=>{
+  const box=b.closest(".trailControl")||b;
+  box.style.display=has?"block":"none";
+  const lb=b.querySelector(".locLabel");
+  if(lb)lb.textContent=t("clearTrail")+(has?" \u00b7 "+km.toFixed(1)+" km":"");
+ });
+}
+const TrailControl=L.Control.extend({
+ options:{position:"bottomleft"},
+ onAdd:function(m){
+  const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapLocationControl trailControl");
+  const btn=L.DomUtil.create("a","",cn);
+  btn.href="#";btn.setAttribute("aria-label",t("clearTrail"));
+  btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19c3-1 4-4 2-6S3 9 5 7s6-1 8 1 2 5 4 6 4 0 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="locLabel"></span>';
+  trailButtons.push(btn);
+  L.DomEvent.on(btn,"click",L.DomEvent.preventDefault);
+  L.DomEvent.on(btn,"click",()=>{if(confirm(t("clearTrailAsk")))clearTrail()});
+  paintTrailButtons();
+  return cn;
+ }
+});
 function dotIcon(){
  /* A divIcon rather than a circleMarker so CSS can animate it: solid blue
     centre, plus a ring that swells and fades on a loop. */
@@ -686,6 +769,7 @@ function clearDot(which,mapObj){
 }
 function applyFix(lat,lon){
  lastFix={lat,lon};
+ addTrailPoint(lat,lon);
  placeDot("main",map,lat,lon);
  map.setView([lat,lon],map.getZoom(),{animate:true,duration:0.3});
  /* The sheet map only auto-pans while its sheet is actually open, so a fix
@@ -726,6 +810,8 @@ const LocationControl=L.Control.extend({
  }
 });
 new LocationControl().addTo(map);
+new TrailControl().addTo(map);
+drawTrail("main",map);
 
 /* ---- Saving a lake for offline use -------------------------------------
    The tile cache already keeps whatever you have looked at, but it is capped
@@ -960,11 +1046,12 @@ function showDetailMap(l){
    detailMap=null;detailMarker=null;detailBase=null;
    /* The old map took its dot with it; forget the stale reference or the
       next fix would try to move a marker that is no longer on any map. */
-   userDots.detail=null;
+   userDots.detail=null;trailLines.detail=null;
   }
   if(!detailMap){
    detailMap=L.map(host,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});
    new LocationControl().addTo(detailMap);
+   new TrailControl().addTo(detailMap);
   }
   /* The base layer is rebuilt on every open, not just when the map is first
      created -- it used to keep whatever layer it was born with for the rest
@@ -977,6 +1064,7 @@ function showDetailMap(l){
   /* If tracking is already running, this sheet's map opens with the dot
      already in place rather than waiting for the next GPS fix. */
   if(userTracking&&lastFix)placeDot("detail",detailMap,lastFix.lat,lastFix.lon);
+  drawTrail("detail",detailMap);
   if(detailMarker)detailMap.removeLayer(detailMarker);
   detailMarker=L.circleMarker([l.lat,l.lon],
    {radius:9,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:.95})

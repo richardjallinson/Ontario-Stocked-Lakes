@@ -1300,3 +1300,7 @@ body.filtering .searchAlt{display:flex}
  70%{transform:scale(3.2);opacity:0}
  100%{transform:scale(3.2);opacity:0}
 }
+/* The clear-trail control hides itself until a trail exists, so the map is
+   not carrying a button for something that has never been recorded. */
+.trailControl{display:none}
+.trailControl a{display:flex}
