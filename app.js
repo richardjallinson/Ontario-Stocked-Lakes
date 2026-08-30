@@ -259,7 +259,7 @@ const I18N={
   trailOff:"Trail: Off",
   clearTrail:"Clear",
   spotsTitle:"Fishing Spots",
-  spotsBtn:"Spots",
+  spotsBtn:"My Spots",
   allSpots:"All",
   noSpotsInCategory:"No spots in this colour yet.",
   openLakeFirst:"Open a lake first \u2014 fishing spots are saved per lake.",
@@ -563,7 +563,7 @@ const I18N={
   trailOff:"Trac\u00e9\u202f: d\u00e9sactiv\u00e9",
   clearTrail:"Effacer",
   spotsTitle:"Lieux de p\u00eache",
-  spotsBtn:"Lieux",
+  spotsBtn:"Mes lieux",
   allSpots:"Tous",
   noSpotsInCategory:"Aucun lieu de cette couleur pour l\u0027instant.",
   openLakeFirst:"Ouvrez d\u0027abord un lac \u2014 les lieux de p\u00eache sont enregistr\u00e9s par lac.",
@@ -655,7 +655,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6b";
+const APP_VERSION="v6c";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -1131,10 +1131,14 @@ const LocationControl=L.Control.extend({
   return cn;
  }
 });
+/* Bottom-left stack, reading top to bottom: My Spots, Trails, Trail, Track.
+   The two lists you open sit above the two switches you flick, and the
+   switches sit nearest the thumb. Leaflet prepends in this corner, so the
+   add order here is deliberately the reverse of the visible order. */
 new LocationControl().addTo(map);
 new TrailToggleControl().addTo(map);
-new SpotsControl().addTo(map);
 new TrailControl().addTo(map);
+new SpotsControl().addTo(map);
 drawTrail("main",map);
 drawSavedTrails("main",map);
 drawSpots("main",map);
@@ -1379,9 +1383,9 @@ function showDetailMap(l){
   if(!detailMap){
    detailMap=L.map(host,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});
    new LocationControl().addTo(detailMap);
-   new SpotsControl().addTo(detailMap);
    new TrailToggleControl().addTo(detailMap);
    new TrailControl().addTo(detailMap);
+   new SpotsControl().addTo(detailMap);
    detailMap.on("click",mapClickForSpot);
    detailMap.on("contextmenu",spotLongPress);
   }
