@@ -1400,3 +1400,8 @@ body.spotCreating .leaflet-container{cursor:crosshair}
 .asSave{flex:1;border:0;background:var(--accent);color:var(--green);border-radius:10px;padding:10px;font:inherit;font-weight:800;cursor:pointer}
 .asDel{border:1px solid #E4B6B0;background:#FBEDEB;color:#9C2B1F;border-radius:10px;padding:10px 16px;font:inherit;font-weight:800;cursor:pointer}
 .asDel.armed{background:#C0392B;border-color:#C0392B;color:#fff}
+
+/* A soft fade at the right edge of the tab strip: the bar scrolls, and with
+   five tabs the last one sits off-screen with nothing to say so. */
+.tabstrip::after{content:"";position:absolute;top:0;right:0;bottom:0;width:26px;
+ pointer-events:none;background:linear-gradient(to right,transparent,var(--green))}
