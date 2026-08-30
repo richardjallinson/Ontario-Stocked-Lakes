@@ -260,6 +260,8 @@ const I18N={
   clearTrail:"Clear",
   spotsTitle:"Fishing Spots",
   spotsBtn:"Spots",
+  allSpots:"All",
+  noSpotsInCategory:"No spots in this colour yet.",
   openLakeFirst:"Open a lake first \u2014 fishing spots are saved per lake.",
   tapMapForSpot:"Tap the map to mark a spot.",
   hide:"Hide",
@@ -562,6 +564,8 @@ const I18N={
   clearTrail:"Effacer",
   spotsTitle:"Lieux de p\u00eache",
   spotsBtn:"Lieux",
+  allSpots:"Tous",
+  noSpotsInCategory:"Aucun lieu de cette couleur pour l\u0027instant.",
   openLakeFirst:"Ouvrez d\u0027abord un lac \u2014 les lieux de p\u00eache sont enregistr\u00e9s par lac.",
   hide:"Masquer",
   show:"Afficher",
@@ -651,7 +655,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5x";
+const APP_VERSION="v5y";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -938,8 +942,26 @@ function getSpots(lk){return savedSpots[lk]||[]}
 function setSpots(lk,spots){savedSpots[lk]=spots;try{localStorage.setItem("osl-spots",JSON.stringify(savedSpots))}catch(e){}}
 function getShownSpots(lk){return shownSpotIds[lk]||[]}
 function setShownSpots(lk,ids){shownSpotIds[lk]=ids;try{localStorage.setItem("osl-spots-shown",JSON.stringify(shownSpotIds))}catch(e){}}
-function spotMarker(lat,lon,colorKey){const c=SPOT_COLORS.find(x=>x.key===colorKey);const hex=c?c.hex:"#D4A017";return L.circleMarker([lat,lon],{radius:8,color:hex,weight:3,fillColor:hex,fillOpacity:.9,interactive:false,keyboard:false})}
-function drawSpots(which,mapObj){if(!mapObj||!currentLakeForSpots)return;Object.keys(spotLines[which]||{}).forEach(id=>{try{mapObj.removeLayer(spotLines[which][id])}catch(e){}});spotLines[which]={};const lk=lakeKeyForSpots(currentLakeForSpots);const shown=getShownSpots(lk);getSpots(lk).forEach(sp=>{if(shown.indexOf(sp.id)!==-1)spotLines[which][sp.id]=spotMarker(sp.lat,sp.lon,sp.color).addTo(mapObj)})}
+/* Icon library for spots: what Navionics calls symbols. Each is a compact
+   SVG path drawn in the chosen colour, so a "blue fish" and a "red fish"
+   are the same shape in different category colours. */
+const SPOT_ICONS=[
+ {key:"pin",label:"Pin",svg:'<circle cx="12" cy="12" r="7"/>'},
+ {key:"fish",label:"Fish",svg:'<path d="M3 12c3-4 7-6 11-6 3 0 6 2 7 6-1 4-4 6-7 6-4 0-8-2-11-6zm11-2a1.3 1.3 0 100 2.6 1.3 1.3 0 000-2.6zM3 12l-2-4v8z"/>'},
+ {key:"boat",label:"Launch",svg:'<path d="M4 15l2-8h3l1 3h8l2 5zm-1 3h18l-2 3H5z"/>'},
+ {key:"anchor",label:"Anchor",svg:'<path d="M12 3a2.4 2.4 0 100 4.8A2.4 2.4 0 0012 3zm-1 5.6h2V19a7 7 0 006-4l2 1a9.5 9.5 0 01-16 0l2-1a7 7 0 006 4z"/>'},
+ {key:"star",label:"Star",svg:'<path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17l-6.1 3.6 1.4-6.8L2.2 9.1l6.9-.8z"/>'}
+];
+function spotIconSvg(iconKey,hex,size){
+ const ic=SPOT_ICONS.find(x=>x.key===iconKey)||SPOT_ICONS[0];
+ return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" style="display:block"><g fill="'+hex+'" stroke="#13263C" stroke-width="1.2" stroke-linejoin="round">'+ic.svg+'</g></svg>';
+}
+function spotMarker(lat,lon,colorKey,iconKey){
+ const c=SPOT_COLORS.find(x=>x.key===colorKey);const hex=c?c.hex:"#D4A017";
+ const icon=L.divIcon({className:"spotDiv",html:spotIconSvg(iconKey||"pin",hex,26),iconSize:[26,26],iconAnchor:[13,13]});
+ return L.marker([lat,lon],{icon,interactive:false,keyboard:false});
+}
+function drawSpots(which,mapObj){if(!mapObj||!currentLakeForSpots)return;Object.keys(spotLines[which]||{}).forEach(id=>{try{mapObj.removeLayer(spotLines[which][id])}catch(e){}});spotLines[which]={};const lk=lakeKeyForSpots(currentLakeForSpots);const shown=getShownSpots(lk);getSpots(lk).forEach(sp=>{if(shown.indexOf(sp.id)!==-1)spotLines[which][sp.id]=spotMarker(sp.lat,sp.lon,sp.color,sp.icon).addTo(mapObj)})}
 function redrawSpots(){drawSpots("main",map);drawSpots("detail",detailMap)}
 function setSpotCreation(on){spotCreationMode=on;document.body.classList.toggle("spotCreating",on)}
 function mapClickForSpot(e){if(!spotCreationMode||!currentLakeForSpots)return;setSpotCreation(false);showSpotCreate(e.latlng.lat,e.latlng.lng)}
@@ -948,6 +970,8 @@ let spotPanelEl=null,tempSpotMarker=null,tempSpotMap=null;
 function defaultSpotName(){const d=new Date();return d.toLocaleDateString(appLang==="fr"?"fr-CA":"en-CA",{month:"short",day:"numeric"})+" \u00b7 "+d.toLocaleTimeString(appLang==="fr"?"fr-CA":"en-CA",{hour:"numeric",minute:"2-digit"})}
 function clearTempSpot(){if(tempSpotMarker&&tempSpotMap){try{tempSpotMap.removeLayer(tempSpotMarker)}catch(e){}}tempSpotMarker=null;tempSpotMap=null}
 function spotPanel(){if(spotPanelEl)return spotPanelEl;spotPanelEl=document.createElement("div");spotPanelEl.id="spotPanel";spotPanelEl.className="spotPanel hidden";document.body.appendChild(spotPanelEl);document.addEventListener("click",e=>{try{if(!spotPanelEl||spotPanelEl.classList.contains("hidden"))return;if(!spotPanelEl.contains(e.target))return;const b=e.target.closest("button");if(!b)return;const act=b.dataset.act,id=b.dataset.id,lk=b.dataset.lk;if(act==="color"){spotPanelEl.querySelectorAll(".spSwatch").forEach(x=>x.classList.remove("sel"));b.classList.add("sel");}
+  else if(act==="icon"){spotPanelEl.querySelectorAll(".spIcon").forEach(x=>x.classList.remove("sel"));b.classList.add("sel");}
+  else if(act==="filter"){spotFilter=b.dataset.color||null;renderSpotList(lakeKeyForSpots(currentLakeForSpots));}
   else if(act==="close"){clearTempSpot();toggleSpotPanel(false);}else if(act==="new"){
    /* The pin lands at the centre of whichever map is in front. With Track On
       the map is centred on the boat, so this marks where you are right now --
@@ -959,20 +983,50 @@ function spotPanel(){if(spotPanelEl)return spotPanelEl;spotPanelEl=document.crea
   }else if(act==="save"){
    const inp=spotPanelEl.querySelector("#spotNameInput");
    const sel=spotPanelEl.querySelector(".spSwatch.sel");
+   const ico=spotPanelEl.querySelector(".spIcon.sel");
    const nm=(inp&&inp.value.trim())||defaultSpotName();
    const c=(sel&&sel.dataset.color)||"gold";
    clearTempSpot();
-   saveSpot(lk,Number(b.dataset.lat),Number(b.dataset.lon),nm,c);
+   saveSpot(lk,Number(b.dataset.lat),Number(b.dataset.lon),nm,c,(ico&&ico.dataset.icon)||"pin");
   }else if(act==="toggle"){const shown=getShownSpots(lk),i=shown.indexOf(id);if(i===-1)shown.push(id);else shown.splice(i,1);setShownSpots(lk,shown);redrawSpots();renderSpotList(lk)}else if(act==="del"){if(b.dataset.armed){let spots=getSpots(lk);spots=spots.filter(x=>x.id!==id);setSpots(lk,spots);redrawSpots();renderSpotList(lk)}else{b.dataset.armed="1";b.classList.add("armed");b.textContent=t("tapAgain")}}}catch(err){try{spotPanelEl.innerHTML='<div class="spNote">Spots error: '+String(err.message)+"</div>";spotPanelEl.classList.remove("hidden")}catch(_){}}},true);return spotPanelEl}
-function saveSpot(lk,lat,lon,nm,col){let spots=getSpots(lk);if(spots.length>=50)return;const sp={id:"s"+Date.now(),lat:Number(lat.toFixed(6)),lon:Number(lon.toFixed(6)),name:nm.slice(0,50),color:col,ts:Date.now()};spots.unshift(sp);setSpots(lk,spots);const shown=getShownSpots(lk);if(shown.indexOf(sp.id)===-1)shown.push(sp.id);setShownSpots(lk,shown);redrawSpots();renderSpotList(lk)}
+function saveSpot(lk,lat,lon,nm,col,ic){let spots=getSpots(lk);if(spots.length>=50)return;const sp={id:"s"+Date.now(),lat:Number(lat.toFixed(6)),lon:Number(lon.toFixed(6)),name:nm.slice(0,50),color:col,icon:ic||"pin",ts:Date.now()};spots.unshift(sp);setSpots(lk,spots);const shown=getShownSpots(lk);if(shown.indexOf(sp.id)===-1)shown.push(sp.id);setShownSpots(lk,shown);redrawSpots();renderSpotList(lk)}
 function showSpotCreate(lat,lon){const p=spotPanel();if(!p)return;
- /* A preview ring at the exact pin location, visible above the form while
-    the person names the spot; removed on save or cancel. */
  clearTempSpot();
  tempSpotMap=(document.body.classList.contains("sheetOpen")&&detailMap)?detailMap:map;
  try{tempSpotMarker=L.circleMarker([lat,lon],{radius:10,color:"#13263C",weight:3,fillColor:"#fff",fillOpacity:.6,interactive:false}).addTo(tempSpotMap)}catch(e){}
-const lk=lakeKeyForSpots(currentLakeForSpots);let h='<div class="spHead"><b>'+t("newSpot")+'</b><button type="button" data-act="close" aria-label="Close">×</button></div><div class="spCreate"><input id="spotNameInput" maxlength="50" placeholder="'+t("spotNamePh")+'"><div class="spColors">';SPOT_COLORS.forEach(c=>{h+='<button type="button" class="spSwatch'+(c.key==="gold"?" sel":"")+'" data-act="color" data-color="'+c.key+'" style="background:'+c.hex+'" aria-label="'+c.label+'"></button>'});h+='</div><div class="spBtns"><button type="button" class="spSave" data-act="save" data-lk="'+lk+'" data-lat="'+lat+'" data-lon="'+lon+'">'+t("saveSpot")+'</button><button type="button" data-act="close">'+t("cancel")+'</button></div></div>';if(savedSpots[lk]&&savedSpots[lk].length>=50)h+='<div class="spNote">'+t("spotsFull")+'</div>';p.innerHTML=h;p.classList.remove("hidden")}
-function renderSpotList(lk){const p=spotPanel();if(!p)return;const spots=getSpots(lk),shown=getShownSpots(lk);let h='<div class="spHead"><b>'+t("spotsTitle")+'</b><span class="spHeadBtns"><button type="button" class="spNew" data-act="new">+ '+t("newSpot")+'</button><button type="button" data-act="close" aria-label="Close">×</button></span></div>';if(spots.length){h+='<div class="spList">'+spots.map(sp=>{const on=shown.indexOf(sp.id)!==-1,hex=SPOT_COLORS.find(x=>x.key===sp.color)?.hex||"#D4A017";return '<div class="spRow"><div class="spDot" style="background:'+hex+'"></div><div class="spMeta"><span class="spName">'+escHtml(sp.name)+'</span></div><button type="button" data-act="toggle" data-id="'+sp.id+'" data-lk="'+lk+'" class="'+(on?"on":"")+'">'+(on?t("hide"):t("show"))+'</button><button type="button" class="spDanger" data-act="del" data-id="'+sp.id+'" data-lk="'+lk+'">🗑</button></div>'}).join("")+'</div>'}else{h+='<div class="spNote">'+t("noSpots")+'</div>'}p.innerHTML=h}
+ const lk=lakeKeyForSpots(currentLakeForSpots);
+ let h='<div class="spHead"><b>'+t("newSpot")+'</b><button type="button" data-act="close" aria-label="Close">\u00d7</button></div>'+
+   '<div class="spCreate"><input id="spotNameInput" maxlength="50" placeholder="'+t("spotNamePh")+'">'+
+   '<div class="spIconRow">';
+ SPOT_ICONS.forEach(ic=>{h+='<button type="button" class="spIcon'+(ic.key==="pin"?" sel":"")+'" data-act="icon" data-icon="'+ic.key+'" aria-label="'+ic.label+'">'+spotIconSvg(ic.key,"#5B6B7C",22)+'</button>'});
+ h+='</div><div class="spColorRow">';
+ SPOT_COLORS.forEach(c=>{h+='<button type="button" class="spSwatch'+(c.key==="gold"?" sel":"")+'" data-act="color" data-color="'+c.key+'" style="background:'+c.hex+'" aria-label="'+c.label+'"></button>'});
+ h+='</div><div class="spBtns"><button type="button" class="spSave" data-act="save" data-lk="'+lk+'" data-lat="'+lat+'" data-lon="'+lon+'">'+t("saveSpot")+'</button><button type="button" data-act="close">'+t("cancel")+'</button></div></div>';
+ if(savedSpots[lk]&&savedSpots[lk].length>=50)h+='<div class="spNote">'+t("spotsFull")+'</div>';
+ p.innerHTML=h;p.classList.remove("hidden")}
+let spotFilter=null;
+function renderSpotList(lk){const p=spotPanel();if(!p)return;
+ const all=getSpots(lk),shown=getShownSpots(lk);
+ const spots=spotFilter?all.filter(x=>x.color===spotFilter):all;
+ let h='<div class="spHead"><b>'+t("spotsTitle")+'</b><span class="spHeadBtns"><button type="button" class="spNew" data-act="new">+ '+t("newSpot")+'</button><button type="button" data-act="close" aria-label="Close">\u00d7</button></span></div>';
+ /* Category chips, Avenza-style: All plus one per colour. Tap a colour to
+    see only that category -- red for caught fish, blue for structure,
+    whatever system the angler has settled on. */
+ h+='<div class="spFilters"><button type="button" data-act="filter" data-color="" class="'+(spotFilter?"":"on")+'">'+t("allSpots")+'</button>';
+ SPOT_COLORS.forEach(c=>{h+='<button type="button" data-act="filter" data-color="'+c.key+'" class="spFilterDot'+(spotFilter===c.key?" on":"")+'" style="background:'+c.hex+'" aria-label="'+c.label+'"></button>'});
+ h+='</div>';
+ if(spots.length){
+  h+='<div class="spList">'+spots.map(sp=>{
+   const on=shown.indexOf(sp.id)!==-1;
+   const hex=(SPOT_COLORS.find(x=>x.key===sp.color)||{}).hex||"#D4A017";
+   return '<div class="spRow"><span class="spRowIcon">'+spotIconSvg(sp.icon||"pin",hex,22)+'</span><div class="spMeta"><span class="spName">'+escHtml(sp.name)+'</span></div><button type="button" data-act="toggle" data-id="'+sp.id+'" data-lk="'+lk+'" class="'+(on?"on":"")+'">'+(on?t("hide"):t("show"))+'</button><button type="button" class="spDanger" data-act="del" data-id="'+sp.id+'" data-lk="'+lk+'">\ud83d\uddd1</button></div>';
+  }).join("")+'</div>';
+ }else if(all.length){
+  h+='<div class="spNote">'+t("noSpotsInCategory")+'</div>';
+ }else{
+  h+='<div class="spNote">'+t("noSpots")+'</div>';
+ }
+ p.innerHTML=h}
 function toggleSpotPanel(on){
  try{
   const p=spotPanel();if(!p)return;
