@@ -687,7 +687,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6l";
+const APP_VERSION="v6m";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -3856,8 +3856,8 @@ function catchRowMarkup(c,active,trip){
   ${c.edited?`<span class="catchNote">${t("editedMark")}</span>`:""}
   ${c.disposition==="Kept"?`<span>🍽️ ${t("checkEatingAdvice")}</span>`:""}
   ${confirming?`<div class="confirmRow"><span class="confirmAsk">${t("deleteCatchAsk")}</span>
-    <button data-confirmdel="${c.id}" class="dangerBtn">${t("delete")}</button>
-    <button data-canceldel="${c.id}" class="secondaryAction">${t("cancel")}</button></div>`:""}</div>
+    <button data-confirmdel="${c.id}" class="dangerBtn" style="width:auto;height:auto;border:1px solid #E4B6B0;background:#C0392B;border-radius:9px;padding:7px 14px;font:inherit;font-weight:800;font-size:13px;color:#fff;white-space:nowrap;line-height:1.2">${t("delete")}</button>
+    <button data-canceldel="${c.id}" class="secondaryAction" style="width:auto;height:auto;border:1px solid #CBD5E0;background:#fff;border-radius:9px;padding:7px 14px;font:inherit;font-weight:800;font-size:13px;color:#13263C;white-space:nowrap;line-height:1.2">${t("cancel")}</button></div>`:""}</div>
   ${c.location&&trip?`<div class="catchSpotRow" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:7px"><button type="button" class="catchSpotBtn" style="width:auto;height:auto;border:1px solid #CBD5E0;background:#fff;border-radius:9px;padding:6px 11px;font:inherit;font-weight:800;font-size:12px;color:#13263C;white-space:nowrap;line-height:1.2;display:inline-block" data-viewcatch="${c.id}">${t("viewOnMap")}</button>${catchSpotMarkup(c,trip)}</div>`:`<div class="catchSpotRow" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:7px"><span class="catchNoLoc" style="display:inline;font-size:11.5px;color:#5B6B7C;margin:0">${t("noCatchLocation")}</span></div>`}
   ${active&&!confirming?`<div class="rowActions">
    <button data-editcatch="${c.id}" aria-label="${t("editCatch")}" title="${t("editCatch")}">✎</button>
