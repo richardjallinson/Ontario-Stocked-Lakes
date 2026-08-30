@@ -576,7 +576,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4s";
+const APP_VERSION="v4t";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -633,6 +633,50 @@ const markerLayer=L.layerGroup().addTo(map);
 let detailMap=null,detailMarker=null,detailBase=null;
 /* Which lake the detail sheet is currently showing. */
 let detailLakeKey=null;
+/* Per-lake depth contours, fetched as line features from Ontario's Bathymetry
+   Line layer rather than rendered server-side. The raster export of this same
+   layer ships with default visibility off and draws nothing — discovered the
+   hard way — but the query endpoint answers, carries a DEPTH value on every
+   line, and speaks GeoJSON, which L.geoJSON eats directly. Province-wide the
+   layer holds ~239k lines, but only some lakes have been digitised from the
+   1940s–90s paper maps, so absence is normal and silent: contours appear
+   where they exist and the sheet stays uncluttered where they don't.
+   Cached per lake so reopening is instant; capped so a long browse session
+   does not hoard geometry. */
+let detailContours=null,contourToken=0;
+const contourCache=new Map();
+async function loadDetailContours(l){
+ if(detailContours){try{detailMap.removeLayer(detailContours)}catch(e){}detailContours=null}
+ const key=l.id||`${l.lat},${l.lon}`,token=++contourToken;
+ let gj=contourCache.get(key);
+ if(gj===undefined){
+  try{
+   /* Envelope ~4 km around the lake centre. Big enough for most inland lakes,
+      small enough that the 5000-record cap is rarely a concern; a giant lake
+      truncates gracefully to its central contours. */
+   const dx=0.05,dy=0.036,
+   bbox=`${l.lon-dx},${l.lat-dy},${l.lon+dx},${l.lat+dy}`,
+   u=`${BATHY_URL}/${BATHY_LAYER}/query?geometry=${bbox}`+
+     "&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects"+
+     "&outFields=DEPTH&returnGeometry=true&outSR=4326&f=geojson";
+   const r=await fetch(u);
+   gj=r.ok?await r.json():null;
+  }catch(e){gj=null}
+  contourCache.set(key,gj);
+  if(contourCache.size>30)contourCache.delete(contourCache.keys().next().value);
+ }
+ /* The user may have opened a different lake while the fetch was in flight. */
+ if(token!==contourToken||!detailMap)return;
+ if(!gj||!gj.features||!gj.features.length)return;
+ detailContours=L.geoJSON(gj,{
+  style:()=>({color:"#1D5FA0",weight:1.2,opacity:.85}),
+  onEachFeature:(f,ly)=>{
+   const v=f.properties&&f.properties.DEPTH;
+   if(v!=null)ly.bindPopup(`${t("depth")}: ${v} m`);
+  }
+ }).addTo(detailMap);
+ try{detailMap.attributionControl.addAttribution(t("bathyNote"))}catch(e){}
+}
 function showDetailMap(l){
  if(!mapAvailable||!Number.isFinite(l.lat)||!Number.isFinite(l.lon))return;
  const host=$("detailMap");if(!host)return;
@@ -672,9 +716,9 @@ function showDetailMap(l){
   // A map created inside a hidden sheet measures itself as zero and renders a
   // grey box. Re-measure once the sheet is actually on screen.
   setTimeout(()=>{try{detailMap.invalidateSize()}catch(e){}},60);
+  loadDetailContours(l);
  }catch(e){ /* the map is a bonus here; the sheet's facts are the point */ }
 }
-const bathyLayer=L.tileLayer(`${BATHY_URL}/export?bbox={bbox-epsg-3857}&bboxSR=3857&layers=show:${BATHY_LAYER}&size=256,256&imageSR=3857&format=png32&transparent=true&f=image`,{opacity:.72,attribution:"Government of Ontario bathymetry"});
 const fmzLayer=L.geoJSON(null,{
  style:()=>({weight:2,fillOpacity:.06}),
  onEachFeature:(f,l)=>{const z=f.properties&&f.properties.FISHERIES_MANAGEMENT_ZONE_ID;l.bindPopup(`<b>Fisheries Management Zone ${z}</b><br><a target="_blank" rel="noopener" href="${REGS_BASE}${z}">View current Zone ${z} regulations</a>`)}
@@ -3277,22 +3321,7 @@ function syncTabs(){
 }
 const fs2=$("favSearch");if(fs2)fs2.oninput=()=>{clearTimeout(fs2._t);fs2._t=setTimeout(apply,200)};
 $("showFMZ").onchange=()=>{$("showFMZ").checked?loadFMZ(true):renderFMZ()};
-/* The bathymetry layer has existed since the depth work but was never added to
-   a map, so the contours have never once been visible. It is a plain overlay
-   with no data to fetch up front — the server draws each tile on request — so
-   the toggle only has to add and remove it.
 
-   Kept off by default. Coverage is roughly 11,000 of the province's lakes and
-   the surveys run from the 1940s to the 1990s, so an angler who switches it on
-   for a lake that was never surveyed sees nothing. That is a worse first
-   impression than not offering it, hence opt-in, and hence the standing
-   not-for-navigation note beside the control rather than buried in a dialog. */
-$("showDepth").onchange=()=>{
- const on=$("showDepth").checked;
- if(!mapAvailable)return;
- if(on){bathyLayer.addTo(map);bathyLayer.bringToFront&&bathyLayer.bringToFront()}
- else map.removeLayer(bathyLayer);
-};
 $("searchBtn").onclick=runSearch;
 
 /* The fifth way to search. Near Me carried "Use my location" until v2l folded
