@@ -655,7 +655,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6a";
+const APP_VERSION="v6b";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -956,12 +956,16 @@ function spotIconSvg(iconKey,hex,size){
  const ic=SPOT_ICONS.find(x=>x.key===iconKey)||SPOT_ICONS[0];
  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" style="display:block"><g fill="'+hex+'" stroke="#13263C" stroke-width="1.2" stroke-linejoin="round">'+ic.svg+'</g></svg>';
 }
-function spotMarker(lat,lon,colorKey,iconKey){
+function spotMarker(lat,lon,colorKey,iconKey,name){
  const c=SPOT_COLORS.find(x=>x.key===colorKey);const hex=c?c.hex:"#D4A017";
  const icon=L.divIcon({className:"spotDiv",html:spotIconSvg(iconKey||"pin",hex,26),iconSize:[26,26],iconAnchor:[13,13]});
- return L.marker([lat,lon],{icon,interactive:false,keyboard:false});
+ /* Tappable: a tap opens the spot's name in a bubble, same as the lake
+    marker's -- "which fish was that one again" answered on the map itself. */
+ const m=L.marker([lat,lon],{icon,keyboard:false});
+ if(name)m.bindPopup(escHtml(name),{closeButton:true,offset:[0,-6]});
+ return m;
 }
-function drawSpots(which,mapObj){if(!mapObj||!currentLakeForSpots)return;Object.keys(spotLines[which]||{}).forEach(id=>{try{mapObj.removeLayer(spotLines[which][id])}catch(e){}});spotLines[which]={};const lk=lakeKeyForSpots(currentLakeForSpots);const shown=getShownSpots(lk);getSpots(lk).forEach(sp=>{if(shown.indexOf(sp.id)!==-1)spotLines[which][sp.id]=spotMarker(sp.lat,sp.lon,sp.color,sp.icon).addTo(mapObj)})}
+function drawSpots(which,mapObj){if(!mapObj||!currentLakeForSpots)return;Object.keys(spotLines[which]||{}).forEach(id=>{try{mapObj.removeLayer(spotLines[which][id])}catch(e){}});spotLines[which]={};const lk=lakeKeyForSpots(currentLakeForSpots);const shown=getShownSpots(lk);getSpots(lk).forEach(sp=>{if(shown.indexOf(sp.id)!==-1)spotLines[which][sp.id]=spotMarker(sp.lat,sp.lon,sp.color,sp.icon,sp.name).addTo(mapObj)})}
 function redrawSpots(){drawSpots("main",map);drawSpots("detail",detailMap)}
 function setSpotCreation(on){spotCreationMode=on;document.body.classList.toggle("spotCreating",on)}
 function spotLongPress(e){
