@@ -586,7 +586,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5b";
+const APP_VERSION="v5d";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -640,6 +640,9 @@ const markerLayer=L.layerGroup().addTo(map);
    that, is cheaper than it sounds: it shares the tile cache with the main
    map, so the tiles for a lake you just looked at are usually already there,
    which matters on a weak signal at a lake. */
+/* Shared by the main map's expand button and every lake sheet's. */
+const EXPAND_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+      COLLAPSE_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 let detailMap=null,detailMarker=null,detailBase=null;
 /* Which lake the detail sheet is currently showing. */
 let detailLakeKey=null;
@@ -735,6 +738,34 @@ async function loadDetailContours(l){
   });
  try{detailMap.attributionControl.addAttribution(t("bathyNote"))}catch(e){}
 }
+/* The sheet's own basemap choice, independent of the main map's. Defaults to
+   Depth because contours are the reason the sheet map exists; remembered
+   across lakes and launches. "Same three tabs as the main map" was a direct
+   request -- Map and Topo without contours, Depth with them. */
+let detailLakeObj=null;
+let detailBaseKey=localStorage.getItem("osl-sheet-basemap")||"depth";
+function applyDetailBase(){
+ document.querySelectorAll(".detailBaseSwitch button").forEach(x=>x.classList.toggle("on",x.dataset.dbase===detailBaseKey));
+ if(!detailMap)return;
+ if(detailBase){try{detailMap.removeLayer(detailBase)}catch(e){}detailBase=null}
+ const b=BASEMAPS[detailBaseKey]||BASEMAPS.depth;
+ if(b.url){
+  detailBase=b.wms?L.tileLayer.wms(b.url,b.opts):L.tileLayer(b.url,b.opts);
+  detailBase.addTo(detailMap);
+  detailBase.bringToBack&&detailBase.bringToBack();
+ }
+}
+function setDetailBasemap(key){
+ if(!BASEMAPS[key])key="depth";
+ detailBaseKey=key;localStorage.setItem("osl-sheet-basemap",key);
+ applyDetailBase();
+ if((BASEMAPS[key]||{}).contours){
+  if(detailLakeObj)loadDetailContours(detailLakeObj);
+ }else if(detailContours){
+  try{detailMap.removeLayer(detailContours)}catch(e){}detailContours=null;
+  try{detailMap.attributionControl.removeAttribution(t("bathyNote"))}catch(e){}
+ }
+}
 function showDetailMap(l){
  if(!mapAvailable||!Number.isFinite(l.lat)||!Number.isFinite(l.lon))return;
  const host=$("detailMap");if(!host)return;
@@ -752,20 +783,11 @@ function showDetailMap(l){
    detailMap=L.map(host,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});
   }
   /* The base layer is rebuilt on every open, not just when the map is first
-     created. It used to be added inside the block above, which meant the sheet
-     map kept whatever layer it was born with for the rest of the session: open
-     one lake while "Plain" is selected — a basemap that deliberately draws no
-     tiles — and every sheet afterwards stayed blank, however many times the
-     main map was switched back. The marker still drew, so it read as a broken
-     map rather than an empty one. */
-  if(detailBase){try{detailMap.removeLayer(detailBase)}catch(e){}detailBase=null}
-  {
-   const b=BASEMAPS[baseKey]||BASEMAPS.map;
-   if(b.url){
-    detailBase=b.wms?L.tileLayer.wms(b.url,b.opts):L.tileLayer(b.url,b.opts);
-    detailBase.addTo(detailMap);
-   }
-  }
+     created -- it used to keep whatever layer it was born with for the rest
+     of the session. Driven by the sheet's own detailBaseKey now, not the
+     main map's choice: the sheet grew its own Map/Topo/Depth switch. */
+  detailLakeObj=l;
+  applyDetailBase();
   detailMap.setView([l.lat,l.lon],12);
   if(detailMarker)detailMap.removeLayer(detailMarker);
   detailMarker=L.circleMarker([l.lat,l.lon],
@@ -774,7 +796,7 @@ function showDetailMap(l){
   // A map created inside a hidden sheet measures itself as zero and renders a
   // grey box. Re-measure once the sheet is actually on screen.
   setTimeout(()=>{try{detailMap.invalidateSize()}catch(e){}},60);
-  loadDetailContours(l);
+  if((BASEMAPS[detailBaseKey]||{}).contours)loadDetailContours(l);
  }catch(e){ /* the map is a bonus here; the sheet's facts are the point */ }
 }
 const fmzLayer=L.geoJSON(null,{
@@ -2951,7 +2973,8 @@ function detail(l){
  const fav=favoriteKeys.has(l.key),history=l.records.map(r=>`<div class="historyrow"><div><b>${esc(r.Stocking_Year||"—")}</b><span>${esc(r.Species?speciesLabel(r.Species):t("speciesUnavailable"))}</span></div><div class="historyright"><b>${num(r.Number_of_Fish_Stocked)}</b><span>${esc(r.Developmental_Stage?stageLabel(r.Developmental_Stage):"")}</span></div></div>`).join("");
  $("detail").innerHTML=`<div class="detailhead"><div><h2>${esc(l.name)}</h2><div class="species">${esc(displaySpecies(l).slice(0,6).map(speciesLabel).join(" • "))}${displaySpecies(l).length>6?` <span class="more">+${displaySpecies(l).length-6}</span>`:""}</div></div><button class="bigstar ${fav?"saved":""}" id="detailFav">${fav?"★":"☆"}</button></div>
  ${whereLine(l)}
- <div class="detailMapWrap"><div id="detailMap" role="img" aria-label="${t('lakeMapLabel')}"></div></div>
+ <div class="detailMapBlock"><div class="detailMapHead"><div class="baseSwitch detailBaseSwitch" role="group" aria-label="Basemap"><button type="button" data-dbase="map">${t("baseMap")}</button><button type="button" data-dbase="topo">${t("baseTopo")}</button><button type="button" data-dbase="depth">${t("baseDepth")}</button></div></div>
+ <div class="detailMapWrap"><div id="detailMap" role="img" aria-label="${t('lakeMapLabel')}"></div><button type="button" class="mapExpand detailMapExpand" aria-label="${t("expandMap")}">${EXPAND_ICON}</button></div></div>
  <div class="detailgrid">${l.stocked?`<div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div>`:`<div><small>Stocking</small><b>Not stocked</b></div>`}${userLoc?`<div><small>Distance from you</small><b>${esc(distanceLabel(l))}</b></div>`:""}${l.district?`<div><small>MNRF district</small><b>${esc(l.district)}</b></div>`:""}
  <div><small>Fisheries Management Zone</small><b>${l.fmz?`FMZ ${l.fmz}`:"Loading / unavailable"}</b></div><div><small>Waterbody ID</small><b>${esc(l.waterbodyId||"—")}</b></div></div>
  ${l.fmz?`<a class="zoneAction${regsStale()?" stale":""}" target="_blank" rel="noopener" href="${REGS_BASE}${l.fmz}">${
@@ -3469,8 +3492,7 @@ const fs2=$("favSearch");if(fs2)fs2.oninput=()=>{clearTimeout(fs2._t);fs2._t=set
 (function(){
  const btn=$("mapExpand"),card=document.querySelector(".mapcard");
  if(!btn||!card)return;
- const OPEN='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
-       SHUT='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+ const OPEN=EXPAND_ICON,SHUT=COLLAPSE_ICON;
  function setFull(on){
   card.classList.toggle("isFull",on);
   btn.innerHTML=on?SHUT:OPEN;
@@ -3513,6 +3535,29 @@ $("year").onchange=markFiltersDirty;
 $("radius").onchange=markFiltersDirty;
 document.addEventListener("click",e=>{
  if(e.target.closest("#distancePrompt"))locate(apply);
+ /* The lake sheet's Map/Topo/Depth tabs. Delegated because detail() rebuilds
+    the sheet's HTML on every open, which would orphan a per-button handler. */
+ const db=e.target.closest(".detailBaseSwitch button");
+ if(db)setDetailBasemap(db.dataset.dbase);
+ /* The lake sheet's fullscreen button — same treatment as the main map's,
+    delegated for the same rebuild reason. The contours are the thing that
+    earns the whole screen, and they live here more than anywhere. */
+ const ex=e.target.closest(".detailMapExpand");
+ if(ex)setDetailFull(!ex.closest(".detailMapBlock").classList.contains("isFull"));
+});
+function setDetailFull(on){
+ const block=document.querySelector(".detailMapBlock"),
+       btn=document.querySelector(".detailMapExpand");
+ if(!block||!btn)return;
+ block.classList.toggle("isFull",on);
+ btn.innerHTML=on?COLLAPSE_ICON:EXPAND_ICON;
+ btn.setAttribute("aria-label",on?t("closeMap"):t("expandMap"));
+ if(detailMap)setTimeout(()=>{try{detailMap.invalidateSize()}catch(e){}},80);
+}
+document.addEventListener("keydown",e=>{
+ if(e.key!=="Escape")return;
+ const block=document.querySelector(".detailMapBlock.isFull");
+ if(block)setDetailFull(false);
 });
 document.querySelectorAll(".baseSwitch button").forEach(b=>b.onclick=()=>setBasemap(b.dataset.base));
 setBasemap(baseKey);

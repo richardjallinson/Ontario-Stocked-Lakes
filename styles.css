@@ -1109,7 +1109,24 @@ body.filtering .searchAlt{display:flex}
    it. 190px is enough to place a lake against its shoreline and neighbours
    without pushing the facts below the fold — the grid, the regulations link
    and the species chips are why people opened the sheet. */
-.detailMapWrap{margin:12px 0 4px}
+/* The lake sheet's own basemap tabs, riding above its mini map. Right-aligned
+   the way the main map's are; the wrap below loses its top margin so the two
+   read as one control-plus-map unit. */
+.detailMapHead{display:flex;justify-content:flex-end;margin:12px 0 8px}
+.detailMapHead+.detailMapWrap,.detailMapBlock .detailMapWrap{margin-top:0}
+.detailMapWrap{margin:12px 0 4px;position:relative}
+/* Full screen for the sheet map — same idea as .mapcard.isFull, one layer
+   higher so it clears the sheet itself (z-index 3000). The tabs come along:
+   flipping between Depth and Topo is most useful precisely when the map has
+   the whole screen. */
+.detailMapBlock.isFull{
+ position:fixed;inset:0;z-index:5000;margin:0;background:#fff;
+ display:flex;flex-direction:column;
+}
+.detailMapBlock.isFull .detailMapHead{
+ margin:0;padding:max(12px,env(safe-area-inset-top)) 12px 8px}
+.detailMapBlock.isFull .detailMapWrap{flex:1;min-height:0;margin:0}
+.detailMapBlock.isFull #detailMap{height:100%;border-radius:0}
 #detailMap{height:190px;border-radius:14px;background:#DCE5EC;overflow:hidden}
 #detailMap .leaflet-control-attribution{font-size:9px}
 @media(min-width:740px){#detailMap{height:240px}}
