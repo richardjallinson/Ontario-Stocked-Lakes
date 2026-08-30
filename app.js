@@ -576,7 +576,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v4t";
+const APP_VERSION="v4u";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -668,13 +668,32 @@ async function loadDetailContours(l){
  /* The user may have opened a different lake while the fetch was in flight. */
  if(token!==contourToken||!detailMap)return;
  if(!gj||!gj.features||!gj.features.length)return;
+ /* Labels, not just popups. A 1.2px line is close to untappable on a phone,
+    so the depth is printed on the line the way a paper chart does it, and the
+    line also carries a fat transparent twin underneath purely as a tap target
+    for the popup. Labels are thinned to one per distinct depth per lake:
+    a lake with forty 3 m segments should say "3 m" once, not forty times. */
+ const labelled=new Set();
  detailContours=L.geoJSON(gj,{
   style:()=>({color:"#1D5FA0",weight:1.2,opacity:.85}),
   onEachFeature:(f,ly)=>{
    const v=f.properties&&f.properties.DEPTH;
-   if(v!=null)ly.bindPopup(`${t("depth")}: ${v} m`);
+   if(v==null)return;
+   ly.bindPopup(`${t("depth")}: ${v} m`);
+   if(!labelled.has(v)){
+    labelled.add(v);
+    ly.bindTooltip(`${v} m`,{permanent:true,direction:"center",
+                             className:"depthLabel",opacity:1});
+   }
   }
  }).addTo(detailMap);
+ /* The transparent tap targets sit under the visible lines. */
+ L.geoJSON(gj,{style:()=>({color:"#1D5FA0",weight:14,opacity:0})})
+  .addTo(detailContours)
+  .eachLayer(ly=>{
+   const f=ly.feature,v=f&&f.properties&&f.properties.DEPTH;
+   if(v!=null)ly.bindPopup(`${t("depth")}: ${v} m`);
+  });
  try{detailMap.attributionControl.addAttribution(t("bathyNote"))}catch(e){}
 }
 function showDetailMap(l){

@@ -1215,3 +1215,13 @@ body.filtering .searchAlt{display:flex}
 .offlineNote{background:#13263C;border:1px solid #2C4A6E;color:#E8C77A;
  border-radius:14px;padding:14px 16px;margin:14px 0 4px;font-size:13px;
  line-height:1.55;font-weight:700;text-align:center}
+
+/* Depth contour labels. Printed straight onto the line like a paper chart —
+   no box, no arrow, just the number, so a lake full of contours still reads
+   as a map rather than a cluster of speech bubbles. */
+.leaflet-tooltip.depthLabel{
+ background:none;border:none;box-shadow:none;padding:0;
+ color:#1D5FA0;font-size:10px;font-weight:700;
+ text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;
+}
+.leaflet-tooltip.depthLabel::before{display:none}
