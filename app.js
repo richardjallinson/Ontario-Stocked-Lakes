@@ -637,7 +637,7 @@ const markerLayer=L.layerGroup().addTo(map);
 /* Location button — sits on the map, triggers locate() to fetch the user's
    position and center the map on it. A Leaflet control in the bottom-left
    next to the zoom buttons. */
-L.Control.extend({
+const LocationControl=L.Control.extend({
  onAdd:function(m){
   const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapLocationControl");
   const btn=L.DomUtil.create("a","",cn);
@@ -647,7 +647,8 @@ L.Control.extend({
   L.DomEvent.on(btn,"click",()=>locate(runSearch));
   return cn;
  }
-}).addTo(map);
+});
+new LocationControl().addTo(map);
 
 /* The lake sheet gets its own map.
 
