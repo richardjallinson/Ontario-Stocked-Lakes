@@ -255,6 +255,8 @@ const I18N={
   tilesSlow:"Topo and Depth pull live map imagery and can take a moment to load, especially the first time.",
   findMe:"Find me",
   goToMap:"Go To Map",
+  measure:"Ruler",
+  measureHint:"Tap the map to measure. Tap the ruler again to finish.",
   trailOn:"Trail: On",
   trailOff:"Trail: Off",
   clearTrail:"Clear trail",
@@ -536,6 +538,8 @@ const I18N={
   tilesSlow:"Topo et Profondeur chargent des images cartographiques en direct et peuvent prendre un moment, surtout la premi\u00e8re fois.",
   findMe:"Me trouver",
   goToMap:"Voir la carte",
+  measure:"R\u00e8gle",
+  measureHint:"Touchez la carte pour mesurer. Touchez la r\u00e8gle de nouveau pour terminer.",
   trailOn:"Trac\u00e9\u202f: activ\u00e9",
   trailOff:"Trac\u00e9\u202f: d\u00e9sactiv\u00e9",
   clearTrail:"Effacer le trac\u00e9",
@@ -610,7 +614,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v5n";
+const APP_VERSION="v5o";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -779,6 +783,65 @@ const TrailControl=L.Control.extend({
   return cn;
  }
 });
+/* ---- Ruler --------------------------------------------------------------
+   Tap the ruler, then tap points on the map; a dashed line connects them and
+   the running total shows on the button. Multi-point on purpose: a trolling
+   pass is rarely a straight line. Tap the ruler again to finish and clear.
+   Nothing is stored -- a measurement is a question, not a record. */
+let measureOn=false,measurePts=[];
+const measureLines={main:null,detail:null};
+const measureButtons=[];
+function drawMeasure(which,mapObj){
+ if(!mapObj)return;
+ if(measureLines[which]){try{mapObj.removeLayer(measureLines[which])}catch(e){}measureLines[which]=null}
+ if(measurePts.length<1)return;
+ const grp=L.layerGroup();
+ measurePts.forEach(p=>L.circleMarker(p,{radius:4,color:"#13263C",weight:2,fillColor:"#fff",fillOpacity:1,interactive:false}).addTo(grp));
+ if(measurePts.length>1)
+  L.polyline(measurePts,{color:"#13263C",weight:3,dashArray:"6 6",interactive:false}).addTo(grp);
+ grp.addTo(mapObj);
+ measureLines[which]=grp;
+}
+function measureTotalM(){
+ let m=0;for(let i=1;i<measurePts.length;i++)m+=metresBetween(measurePts[i-1],measurePts[i]);
+ return m;
+}
+function paintMeasureButtons(){
+ measureButtons.forEach(b=>{
+  b.classList.toggle("tracking",measureOn);
+  const lb=b.querySelector(".locLabel");
+  if(!lb)return;
+  if(!measureOn){lb.textContent=t("measure");return}
+  const m=measureTotalM();
+  lb.textContent=m<1?t("measure"):m<1000?Math.round(m)+" m":(m/1000).toFixed(2)+" km";
+ });
+}
+function redrawMeasure(){drawMeasure("main",map);drawMeasure("detail",detailMap);paintMeasureButtons()}
+function setMeasure(on){
+ measureOn=on;
+ if(!on)measurePts=[];
+ redrawMeasure();
+ mapNotice(on?t("measureHint"):"");
+}
+const MeasureControl=L.Control.extend({
+ options:{position:"bottomleft"},
+ onAdd:function(m){
+  const cn=L.DomUtil.create("div","leaflet-bar leaflet-control mapLocationControl");
+  const btn=L.DomUtil.create("a","",cn);
+  btn.href="#";btn.setAttribute("aria-label",t("measure"));
+  btn.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17L17 3l4 4L7 21zM7 13l2 2M10 10l2 2M13 7l2 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="locLabel"></span>';
+  measureButtons.push(btn);
+  L.DomEvent.on(btn,"click",L.DomEvent.preventDefault);
+  L.DomEvent.on(btn,"click",()=>setMeasure(!measureOn));
+  paintMeasureButtons();
+  return cn;
+ }
+});
+function measureMapClick(e){
+ if(!measureOn)return;
+ measurePts.push([e.latlng.lat,e.latlng.lng]);
+ redrawMeasure();
+}
 function dotIcon(){
  /* A divIcon rather than a circleMarker so CSS can animate it: solid blue
     centre, plus a ring that swells and fades on a loop. */
@@ -847,9 +910,11 @@ const LocationControl=L.Control.extend({
  }
 });
 new LocationControl().addTo(map);
+new MeasureControl().addTo(map);
 new TrailToggleControl().addTo(map);
 new TrailControl().addTo(map);
 drawTrail("main",map);
+map.on("click",measureMapClick);
 
 /* ---- Saving a lake for offline use -------------------------------------
    The tile cache already keeps whatever you have looked at, but it is capped
@@ -1084,13 +1149,15 @@ function showDetailMap(l){
    detailMap=null;detailMarker=null;detailBase=null;
    /* The old map took its dot with it; forget the stale reference or the
       next fix would try to move a marker that is no longer on any map. */
-   userDots.detail=null;trailLines.detail=null;
+   userDots.detail=null;trailLines.detail=null;measureLines.detail=null;
   }
   if(!detailMap){
    detailMap=L.map(host,{zoomControl:true,attributionControl:true,scrollWheelZoom:false});
    new LocationControl().addTo(detailMap);
+   new MeasureControl().addTo(detailMap);
    new TrailToggleControl().addTo(detailMap);
    new TrailControl().addTo(detailMap);
+   detailMap.on("click",measureMapClick);
   }
   /* The base layer is rebuilt on every open, not just when the map is first
      created -- it used to keep whatever layer it was born with for the rest
@@ -1104,6 +1171,7 @@ function showDetailMap(l){
      already in place rather than waiting for the next GPS fix. */
   if(userTracking&&lastFix)placeDot("detail",detailMap,lastFix.lat,lastFix.lon);
   drawTrail("detail",detailMap);
+  drawMeasure("detail",detailMap);
   if(detailMarker)detailMap.removeLayer(detailMarker);
   detailMarker=L.circleMarker([l.lat,l.lon],
    {radius:9,color:"#13263C",weight:2,fillColor:l.stocked?"#C4941F":"#8FB6D6",fillOpacity:.95})
