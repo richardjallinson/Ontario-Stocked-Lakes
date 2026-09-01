@@ -701,7 +701,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6x";
+const APP_VERSION="v6z";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -1800,7 +1800,13 @@ const HIDDEN_SPECIES=new Set([
  "Salmon and Trout subfamily","Grayling subfamily","Bowfins","Cods","Freshwater Eels",
  "Temperate Basses","Moxostoma sp.","Catostomus sp.","Lepomis sp.","Coregonus sp.",
  "Micropterus sp.","Sander sp.","Ictalurus sp.","Ameiurus sp.","Ictiobus sp.",
- "Rhinichthys sp.","Esox sp.","Salmo sp.","Pumpkinseed x Bluegill"
+ "Rhinichthys sp.","Esox sp.","Salmo sp.","Pumpkinseed x Bluegill",
+ // Deepwater forage — recorded by surveys, never angled for
+ "Kiyi","Bloater","Shortjaw Cisco","Nipigon Cisco","Pygmy Whitefish",
+ // Madtoms and other minnow-scale fish
+ "Brindled Madtom","Northern Madtom","Topminnows",
+ // Hybrid junk record
+ "Goldfish x Carp"
 ]);
 
 /* The list an angler sees. Everything downstream — chips, filter wheels, map
@@ -3038,7 +3044,7 @@ function fillSpecies(){
  const set=new Set(SPORT_SPECIES);
  rows.forEach(r=>{if(r.Species)set.add(r.Species)});
  lakes.forEach(l=>anglerSpecies(l.present).forEach(x=>set.add(x)));
- const all=[...set].sort((a,b)=>a.localeCompare(b));
+ const all=[...set].filter(v=>!HIDDEN_SPECIES.has(v)).sort((a,b)=>a.localeCompare(b));
  const opts=all.map(v=>`<option value="${esc(v)}">${esc(speciesLabel(v))}</option>`).join("");
  const sel=$("species");
  if(sel)sel.insertAdjacentHTML("beforeend",opts);
