@@ -308,6 +308,7 @@ const I18N={
   offlineSave:"Save for offline",
   shareLake:"Share this lake",
   reports:"Reports",
+  reportsIntro:"Every lake now has a Reports tab.",
   reportsTitle:"Lake report",
   reportsSub:"Built from Ontario stocking records and today's conditions. Recent angler reports open in your browser.",
   stockedRecent:"This year",
@@ -677,6 +678,7 @@ const I18N={
   offlineSave:"Enregistrer hors ligne",
   shareLake:"Partager ce lac",
   reports:"Rapports",
+  reportsIntro:"Chaque lac a maintenant un onglet Rapports.",
   reportsTitle:"Rapport du lac",
   reportsSub:"\u00c9tabli \u00e0 partir des registres d'ensemencement de l'Ontario et des conditions du jour. Les rapports r\u00e9cents des p\u00eacheurs s'ouvrent dans votre navigateur.",
   stockedRecent:"Cette ann\u00e9e",
@@ -787,7 +789,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v7d";
+const APP_VERSION="v7e";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -3108,6 +3110,21 @@ function updateDashboard(){
  $("statLatest").textContent=latestYear||"—";
  const age=$("dataAge");
  if(age)age.textContent=stockingBuilt?`${t("asOf")} ${stockingBuilt}.`:t("liveData");
+ showReportsIntro();
+}
+/* A new tab inside a sheet is invisible to anyone who does not already open
+   sheets and scroll them, so it gets said once -- five launches, then never
+   again. Not a banner, not a dot: one line under the data-age line, in the
+   same quiet type, that removes itself. */
+function showReportsIntro(){
+ const host=$("dataAge"); if(!host||!host.parentNode)return;
+ if(document.getElementById("reportsIntro"))return;
+ let n=0; try{ n=Number(localStorage.getItem("osl-reports-intro")||0); }catch(e){ return; }
+ if(n>=5)return;
+ try{ localStorage.setItem("osl-reports-intro",String(n+1)); }catch(e){}
+ const el=document.createElement("span");
+ el.id="reportsIntro"; el.className="reportsIntro"; el.textContent=" "+t("reportsIntro");
+ host.parentNode.appendChild(el);
 }
 function buildFilters(rebuild){
  const sel=$("species");
@@ -3259,7 +3276,13 @@ function render(){
   const headGap=l.stocked?"none":speciesGap(l.present);
   const head=listSpecies.length?esc(listSpecies.slice(0,3).map(speciesLabel).join(" • "))+(listSpecies.length>3?` <span class="more">+${listSpecies.length-3}</span>`:"")
    :`<span class="nospecies">${t(headGap==="forage"?"headForageOnly":headGap==="unidentified"?"headUnidentified":"noSpeciesRecorded")}</span>`;
-  const pill=l.stocked?`<span class="pill">${esc(l.latestYear||"—")}</span>`
+  /* The year pill was already the first thing the eye lands on, so it is the
+     honest place to put the way into the lake report rather than adding a
+     second badge to a card that is already dense. A lake stocked in the
+     current year gets the accent treatment; every stocked lake is tappable. */
+  const thisYear=l.stocked&&Number(l.latestYear)===new Date().getFullYear();
+  const pill=l.stocked?`<button type="button" class="pill pillReport${thisYear?" thisYear":""}" data-report="${esc(l.key)}"
+     aria-label="${esc(l.name)} \u2014 ${t("reportsTitle")}">${esc(l.latestYear||"\u2014")}</button>`
    :`<span class="pill wild">${t("notStocked")}</span>`;
   // Zone and distance come first: with three Rice Lakes on screen they
   // are the only things that tell them apart.
@@ -3287,7 +3310,13 @@ function render(){
   if(plate)$("results").insertAdjacentHTML("afterbegin",plate);
  }
  $("results").insertAdjacentHTML("afterbegin",locationPrompt());
- document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=e=>{if(e.target.closest(".star"))return;const l=shown[+el.dataset.i];map.setView([l.lat,l.lon],11);detail(l)});
+ document.querySelectorAll(".record[data-i]").forEach(el=>el.onclick=e=>{
+  if(e.target.closest(".star"))return;
+  const l=shown[+el.dataset.i];
+  const wantsReport=!!e.target.closest("[data-report]");
+  map.setView([l.lat,l.lon],11);detail(l);
+  if(wantsReport)openLakeSection("reports");
+ });
  document.querySelectorAll(".star").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFav(b.dataset.fav)});
  const dw=$("dropWheels");
  if(dw)dw.onclick=()=>{
@@ -3844,6 +3873,20 @@ ${presentBlock(l)}
   document.querySelectorAll("[data-laketab]").forEach(x=>x.classList.remove("active"));b.classList.add("active");
   const id=b.dataset.laketab, target=id==="trips"?st:$("lake-"+id);
   if(target)target.scrollIntoView({behavior:"smooth",block:"start"});
+ });
+}
+/* Open a sheet section by name. The sheet is written synchronously by
+   detail(), but the browser has not laid it out yet, so the scroll waits a
+   frame. Silent if the section is absent -- an unstocked lake has no
+   stocking tab, and a missing section should never throw. */
+function openLakeSection(id){
+ requestAnimationFrame(()=>{
+  const btn=document.querySelector(`[data-laketab="${id}"]`);
+  const target=$("lake-"+id);
+  if(!target)return;
+  document.querySelectorAll("[data-laketab]").forEach(x=>x.classList.remove("active"));
+  if(btn)btn.classList.add("active");
+  target.scrollIntoView({behavior:"smooth",block:"start"});
  });
 }
 function saveTrips(){localStorage.setItem("osl-trips",JSON.stringify(trips));persistDurable()}

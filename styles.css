@@ -1541,3 +1541,13 @@ body.spotCreating .leaflet-container{cursor:crosshair}
 @media (max-width:360px){.reportCta{grid-template-columns:1fr}}
 
 .weatherUnavailable{color:var(--muted);font-size:13px}
+
+/* ---- Reports discovery hooks (v7e) -------------------------------------- */
+/* The year pill is now a button. It has to keep looking exactly like the pill
+   it was -- a card full of buttons reads as clutter -- so only the cursor and
+   the current-year accent change. */
+button.pill.pillReport{border:0;font-family:inherit;cursor:pointer;-webkit-appearance:none;appearance:none}
+button.pill.pillReport.thisYear{background:var(--accent);color:var(--green)}
+button.pill.pillReport:active{filter:brightness(.94)}
+button.pill.pillReport:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.reportsIntro{color:var(--muted)}
