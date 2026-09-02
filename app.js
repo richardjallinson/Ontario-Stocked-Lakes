@@ -308,6 +308,11 @@ const I18N={
   offlineSave:"Save for offline",
   shareLake:"Share this lake",
   reports:"Reports",
+  helpReports:"Lake reports",
+  helpReportsText:"The Reports tab on each lake sums up that lake's stocking record, shows today's sunrise, sunset and moon phase, and checks Environment Canada for active weather alerts. It also gives you one-tap searches of Ontario fishing forums, Reddit and Google for recent posts about that lake. Sunrise, sunset and moon are worked out on your phone and need no signal; the alert check and the searches do. The app does not predict whether fish will bite, and the posts you find are written by other anglers, not by us. Nothing you do in the Reports tab is sent anywhere.",
+  helpTracking:"Location tracking",
+  helpTrackingText:"Track follows your position on the lake map, and Record draws a breadcrumb trail behind you that you can save and name. Both need the screen to stay on \u2014 iOS stops feeding position to the app once the phone locks, so a trail will have a gap if the screen sleeps. The map recentres on you while you are tracking, and stops auto-panning as soon as you drag it, so you can look around without losing the trail. Recording is off every time the app opens: continuous GPS is the fastest way to flatten a battery, and turning it on should always be your decision. Your position is never transmitted.",
+
   reportsIntro:"Every lake now has a Reports tab.",
   reportsTitle:"Lake report",
   reportsSub:"Built from Ontario stocking records and today's conditions. Recent angler reports open in your browser.",
@@ -678,6 +683,11 @@ const I18N={
   offlineSave:"Enregistrer hors ligne",
   shareLake:"Partager ce lac",
   reports:"Rapports",
+  helpReports:"Rapports de lac",
+  helpReportsText:"L'onglet Rapports de chaque lac r\u00e9sume son registre d'ensemencement, affiche le lever et le coucher du soleil ainsi que la phase de la lune du jour, et v\u00e9rifie les alertes m\u00e9t\u00e9o actives d'Environnement Canada. Il propose aussi des recherches en un geste dans les forums de p\u00eache de l'Ontario, sur Reddit et sur Google pour trouver des publications r\u00e9centes sur ce lac. Le soleil et la lune sont calcul\u00e9s sur votre appareil et ne demandent aucun signal; la v\u00e9rification des alertes et les recherches en exigent un. L'application ne pr\u00e9dit pas si le poisson mordra, et les publications trouv\u00e9es sont r\u00e9dig\u00e9es par d'autres p\u00eacheurs, non par nous. Rien de ce que vous faites dans l'onglet Rapports n'est transmis.",
+  helpTracking:"Suivi de position",
+  helpTrackingText:"Suivi affiche votre position sur la carte du lac, et Enregistrer trace derri\u00e8re vous un parcours que vous pouvez enregistrer et nommer. Les deux exigent que l'\u00e9cran reste allum\u00e9 : iOS cesse de transmettre la position \u00e0 l'application d\u00e8s que le t\u00e9l\u00e9phone se verrouille, et le trac\u00e9 pr\u00e9sentera alors une coupure. La carte se recentre sur vous pendant le suivi et cesse de le faire d\u00e8s que vous la d\u00e9placez, ce qui vous permet d'explorer sans perdre votre trac\u00e9. L'enregistrement est d\u00e9sactiv\u00e9 \u00e0 chaque ouverture : le GPS continu vide une batterie tr\u00e8s vite, et l'activer doit toujours \u00eatre votre choix. Votre position n'est jamais transmise.",
+
   reportsIntro:"Chaque lac a maintenant un onglet Rapports.",
   reportsTitle:"Rapport du lac",
   reportsSub:"\u00c9tabli \u00e0 partir des registres d'ensemencement de l'Ontario et des conditions du jour. Les rapports r\u00e9cents des p\u00eacheurs s'ouvrent dans votre navigateur.",
@@ -789,7 +799,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v7e";
+const APP_VERSION="v7f";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -4894,6 +4904,8 @@ function helpMarkup(){
   <section><h3>${t("helpRules")}</h3><p>${t("helpRulesText")}</p></section>
   <section><h3>${t("helpTrips")}</h3><p>${t("helpTripsText")}</p></section>
   <section><h3>${t("helpWeather")}</h3><p>${t("helpWeatherText")}</p></section>
+  <section><h3>${t("helpReports")}</h3><p>${t("helpReportsText")}</p></section>
+  <section><h3>${t("helpTracking")}</h3><p>${t("helpTrackingText")}</p></section>
   <section><h3>${t("privacy")}</h3><p>${t("privacyText")}</p></section>
  </div>
  <div class="aboutBlock"><h3>${t("dataSources")}</h3>
