@@ -787,7 +787,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v7c";
+const APP_VERSION="v7d";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -3412,6 +3412,36 @@ const ONTARIO_REGS_UPDATED="2026-08-04";
 const ECCC_ALERTS_API="https://api.weather.gc.ca/collections/weather-alerts/items";
 const ECCC_WEATHER_HOME="https://weather.gc.ca/";
 
+/* Environment Canada active alerts for the area around a lake.
+   This function was referenced by the weather card but never written, so the
+   alert box sat on "Checking Environment Canada alerts..." forever, and the
+   lake report could report "no alerts" for a lake it had never checked.
+   Saying there is no severe-weather alert when nothing was ever fetched is
+   the worst failure this app could have, so it throws on failure and the
+   callers distinguish "checked, nothing active" from "could not check".
+   A quarter-degree box is roughly 25-30 km around the lake: alerts are
+   issued by region, not by point, so a point query would miss most of them. */
+async function weatherAlertsForLake(l){
+ if(!l||!isFinite(l.lat)||!isFinite(l.lon))throw new Error("no coordinates");
+ const d=0.25;
+ const bbox=[(l.lon-d).toFixed(4),(l.lat-d).toFixed(4),
+             (l.lon+d).toFixed(4),(l.lat+d).toFixed(4)].join(",");
+ const url=`${ECCC_ALERTS_API}?bbox=${encodeURIComponent(bbox)}&f=json&limit=20`;
+ const ctl=(typeof AbortController!=="undefined")?new AbortController():null;
+ const timer=ctl?setTimeout(()=>ctl.abort(),8000):null;
+ try{
+  const r=await fetch(url,ctl?{signal:ctl.signal}:undefined);
+  if(!r.ok)throw new Error("alerts HTTP "+r.status);
+  const j=await r.json();
+  const feats=Array.isArray(j&&j.features)?j.features:[];
+  /* The collection carries ended and cancelled bulletins too. */
+  return feats.filter(f=>{
+   const st=String(((f||{}).properties||{}).status||"").toLowerCase();
+   return st!=="ended"&&st!=="cancelled"&&st!=="canceled";
+  });
+ } finally { if(timer)clearTimeout(timer); }
+}
+
 
 function officialRuleSource(l){
  return l&&l.fmz?`${REGS_BASE}${l.fmz}`:ONTARIO_REGS_SUMMARY_URL;
@@ -4288,9 +4318,14 @@ function fishingConditionsCard(l){
 async function wireWeather(l){
  const box=$("weatherAlertBox");if(!box)return;
  const load=async()=>{
-  box.innerHTML='<span class="weatherLoading">Checking Environment Canada alerts…</span>';
-  const alerts=await weatherAlertsForLake(l);
-  if(!alerts.length){box.innerHTML='<div class="weatherOK">✓ ${t("noAlert")}</div>';return}
+  box.innerHTML=`<span class="weatherLoading">${t("checkingAlerts")}</span>`;
+  /* No catch here meant a thrown fetch left the box on "Checking..."
+     for good. And the OK line was in single quotes, so the ${t(...)}
+     never interpolated -- it rendered the source text at the user. */
+  let alerts;
+  try{ alerts=await weatherAlertsForLake(l); }
+  catch(err){ box.innerHTML=`<div class="weatherUnavailable">${t("alertsUnavailable")}</div>`; return; }
+  if(!alerts.length){box.innerHTML=`<div class="weatherOK">✓ ${t("noAlert")}</div>`;return}
   box.innerHTML=alerts.slice(0,5).map(f=>{const p=f.properties||{};return `<div class="weatherAlert"><b>⚠ ${esc(p.alert_name_en||p.alert_short_name_en||t("weatherAlert"))}</b><span>${esc(p.feature_name_en||p.province||t("lakeArea"))}</span>${p.alert_type?`<span>${esc(p.alert_type)}</span>`:""}</div>`}).join("");
  };
  await load();const b=$("refreshAlerts");if(b)b.onclick=load;
@@ -4476,13 +4511,22 @@ async function wireReports(l){
  const tr=$("reportTrip");  if(tr)tr.onclick=()=>startTrip(l);
  const box=$("reportAlertBox"); if(!box)return;
  try{
-  if(_reportAlertKey!==l.key){_reportAlertKey=l.key;_reportAlertPromise=weatherAlertsForLake(l);}
+  /* Only a settled success is worth reusing. Caching the promise before the
+     call meant a failed first attempt was later awaited as undefined and
+     read as "no alerts" -- the app claiming a clear sky it never checked. */
+  if(_reportAlertKey!==l.key||!_reportAlertPromise){
+   _reportAlertPromise=weatherAlertsForLake(l);
+   _reportAlertKey=l.key;
+   _reportAlertPromise.catch(()=>{ if(_reportAlertKey===l.key){_reportAlertKey=null;_reportAlertPromise=null;} });
+  }
   const alerts=await _reportAlertPromise;
   if($("reportAlertBox")!==box)return;             /* sheet changed under us */
-  box.innerHTML=(!alerts||!alerts.length)
+  if(!Array.isArray(alerts))throw new Error("no alert data");
+  box.innerHTML=(alerts.length===0)
    ? `<span class="reportOK">\u2713 ${t("noAlert")}</span>`
    : `<span class="reportWarn">\u26A0 ${alerts.length===1?t("oneAlert"):t("someAlerts").replace("{n}",alerts.length)}</span>`;
  }catch(e){
+  if($("reportAlertBox")!==box)return;
   box.innerHTML=`<span class="reportMuted">${t("alertsUnavailable")}</span>`;
  }
 }

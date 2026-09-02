@@ -1521,7 +1521,9 @@ body.spotCreating .leaflet-container{cursor:crosshair}
 .reportCond small{display:block;color:var(--muted);font-size:10px;margin-bottom:2px;line-height:1.2}
 /* French moon names are long ("Gibb. decroissante") and were clipping at the
    tile edge. Let them wrap and shrink rather than truncate a fact. */
-.reportCond b{font-size:13px;line-height:1.25;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;hyphens:auto}
+/* hyphens:auto broke "Waning gibbous" as "Waning gib-bous". Wrap at the
+   space instead, and only break inside a word as a last resort. */
+.reportCond b{font-size:13px;line-height:1.25;font-variant-numeric:tabular-nums;overflow-wrap:break-word;hyphens:none}
 .reportCond .moonName{font-size:11px;display:block}
 .reportAlert{margin-top:8px;font-size:13px}
 .reportOK{color:#2C6B1F;font-weight:700}
@@ -1537,3 +1539,5 @@ body.spotCreating .leaflet-container{cursor:crosshair}
 .reportShare{background:var(--accent);color:var(--green)}
 .reportTrip{background:var(--green);color:#fff}
 @media (max-width:360px){.reportCta{grid-template-columns:1fr}}
+
+.weatherUnavailable{color:var(--muted);font-size:13px}
