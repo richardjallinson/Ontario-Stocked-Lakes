@@ -4,6 +4,41 @@ Bundles are named sequentially — v1a, v1b, v1c — matching the Estate File
 convention. `APP_VERSION` in `app.js` and `VERSION` in `sw.js` carry the same
 marker and must always match.
 
+## v6z — 2026-09-01
+
+Submitted to App Store Connect 2026-09-01.
+
+### Changed — nine more survey-only species hidden from lake sheets
+- `HIDDEN_SPECIES` in `app.js` gains nine names that the ARA survey records
+  but no angler targets, so they stop appearing as dead-end chips:
+  - Deepwater forage: Kiyi, Bloater, Shortjaw Cisco, Nipigon Cisco,
+    Pygmy Whitefish (29 lake records between them).
+  - Minnow-scale fish: Brindled Madtom, Northern Madtom, Topminnows.
+  - Hybrid junk record: Goldfish x Carp.
+- All nine spell exactly as they occur in `ontario-waterbodies.json`, so the
+  filter matches. None is a stocked species. The set now holds 135 names with
+  no duplicates; 75 species remain visible.
+- Display filter only, as before — nothing is removed from the data.
+
+### Known inconsistency — deferred
+- Blackfin Cisco, Deepwater Cisco and Shortnose Cisco remain visible even
+  though they are deepwater ciscoes in the same class as Shortjaw and
+  Nipigon. Hide all five or show all five in a future bundle; the current
+  split is not principled.
+
+### Verified
+- `web/` and `native/www/` byte-identical; the four GitHub files
+  (`app.js`, `index.html`, `styles.css`, `sw.js`) identical to `web/`.
+- `tests/test-appstore.js`: 28 of 28 pass.
+- Service-worker precache list matches the bundle.
+- `APP_VERSION` / `VERSION` → `v6z`.
+
+### Note on this changelog
+- No entries were written for v4q through v6y. Those bundles shipped without
+  changelog entries; this file resumes at v6z. If the intervening changes
+  matter, reconstruct them from the bundles themselves — do not infer them
+  from this file.
+
 ## v4p — 2026-08-27
 
 ### Fixed — after a plain Search, the way back was greyed out

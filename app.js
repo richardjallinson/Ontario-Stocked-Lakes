@@ -306,6 +306,10 @@ const I18N={
   noTrails:"No trails yet. Turn on Track and Trail, and your path will be recorded here.",
   trailsFull:"Trail list is full (30). Delete one to save another.",
   offlineSave:"Save for offline",
+  shareLake:"Share this lake",
+  stockedWord:"Stocked",
+  shareCopied:"Link copied \u2713",
+  shareFail:"Could not share \u2014 copy the link from the address bar",
   offlineSaved:"Saved \u2713",
   offlineWorking:"Saving\u2026",
   offlineUnavailable:"Offline saving needs the app to finish loading. Try again in a moment.",
@@ -632,6 +636,10 @@ const I18N={
   noTrails:"Aucun trac\u00e9 pour l'instant. Activez Suivi et Trac\u00e9, et votre chemin sera enregistr\u00e9 ici.",
   trailsFull:"La liste des trac\u00e9s est pleine (30). Supprimez-en un pour en enregistrer un autre.",
   offlineSave:"Enregistrer hors ligne",
+  shareLake:"Partager ce lac",
+  stockedWord:"Ensemenc\u00e9",
+  shareCopied:"Lien copi\u00e9 \u2713",
+  shareFail:"Partage impossible \u2014 copiez le lien depuis la barre d'adresse",
   offlineSaved:"Enregistr\u00e9 \u2713",
   offlineWorking:"Enregistrement\u2026",
   offlineUnavailable:"L'enregistrement hors ligne n\u00e9cessite que l'application ait fini de charger. R\u00e9essayez dans un instant.",
@@ -701,7 +709,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v6z";
+const APP_VERSION="v7a";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -2216,7 +2224,7 @@ function afterStockingLoaded(){
  if(!restoreLastSearch())apply();
  loadFMZ(false).then(()=>apply());
  loadObservedSpecies();loadFullRegulations();loadTripData();loadSpeciesArt();
-
+ openLakeFromHash();
 }
 
 async function load(){
@@ -3687,6 +3695,7 @@ function detail(l){
  ${regsStaleNote()}
 ${presentBlock(l)}
  <button class="tripStart" id="startTrip">Start a fishing trip</button>
+ <button class="shareLakeBtn" id="shareLakeBtn" type="button">${t("shareLake")}</button>
  <div id="lake-rules" class="tabAnchor"></div>${fullRegCard(l,l.species[0]||"Fish")}
  ${fishingConditionsCard(l)}
  <div id="lake-eating" class="tabAnchor"></div><div class="infoCard"><h3>🍽️ Eating Ontario Fish</h3><p>Ontario consumption advice depends on the exact waterbody, fish species and fish length.</p>${advisoryPanel(l)}</div>
@@ -3719,7 +3728,8 @@ ${presentBlock(l)}
    if(ok&&sheet&&!sheet.classList.contains("hidden")&&detailLakeKey===openFor)detail(l);
   });
  }
- const st=$("startTrip");if(st)st.onclick=()=>startTrip(l);wireAdvisory(l);wireWeather(l);
+ const st=$("startTrip");if(st)st.onclick=()=>startTrip(l);
+ const sh=$("shareLakeBtn");if(sh)sh.onclick=()=>shareLake(l);wireAdvisory(l);wireWeather(l);
  document.querySelectorAll("[data-laketab]").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("[data-laketab]").forEach(x=>x.classList.remove("active"));b.classList.add("active");
   const id=b.dataset.laketab, target=id==="trips"?st:$("lake-"+id);
@@ -4701,6 +4711,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  migrateTrips();
  setLanguage(appLang);wireShell();
  refreshLocationQuietly();
+ window.addEventListener("hashchange",openLakeFromHash);
 });
 
 /* ---- The master Spots screen -------------------------------------------
@@ -4712,6 +4723,58 @@ document.addEventListener("DOMContentLoaded",()=>{
    planning case, which is the common one. */
 let allSpotsFilter=null,allSpotsIconFilter=null,allSpotsQuery="",allSpotsEditing=null;
 let allSpotsCollapsed={};
+/* ---- Sharing a lake, and opening one from a link ------------------------
+   A shared lake has to land somewhere a person without the app can actually
+   look at, so the link points at the public web build, never at the
+   stockedlakes:// origin the wrapper uses internally.  The hash is read on
+   load but never written: writing it would put every opened lake into the
+   back stack and break the sheet's own close button. */
+const SHARE_BASE="https://richardjallinson.github.io/Ontario-Stocked-Lakes/";
+
+function lakeShareUrl(l){ return SHARE_BASE+"#lake="+encodeURIComponent(l.key); }
+
+function lakeShareText(l){
+ const lines=[];
+ const where=[l.township,l.county].filter(Boolean).join(", ");
+ lines.push(l.name+(where?" ("+where+")":"")+" \u2014 Ontario Stocked Lakes");
+ if(l.stocked&&l.records&&l.records.length){
+  const r=l.records[0];
+  const sp=r.Species?speciesLabel(r.Species):"";
+  const yr=r.Stocking_Year||l.latestYear||"";
+  if(sp||yr)lines.push([t("stockedWord"),sp,yr].filter(Boolean).join(" "));
+ }
+ const facts=[];
+ if(l.fmz)facts.push("FMZ "+l.fmz);
+ if(l.depthMax)facts.push(t("maxDepth")+" "+depthFt(l.depthMax)+" ft");
+ if(facts.length)lines.push(facts.join(" \u00b7 "));
+ lines.push(lakeShareUrl(l));
+ return lines.join("\n");
+}
+
+async function shareLake(l){
+ const text=lakeShareText(l), url=lakeShareUrl(l);
+ try{
+  if(navigator.share){ await navigator.share({title:l.name,text,url}); return; }
+ }catch(e){ if(e&&e.name==="AbortError")return; }
+ try{
+  await navigator.clipboard.writeText(text);
+  toast(t("shareCopied"));
+ }catch(e){ toast(t("shareFail")); }
+}
+
+/* Read #lake=KEY once the lake list exists.  Silent when the key is unknown:
+   a stale link should drop the person on the normal home screen, not an
+   error they cannot act on. */
+function openLakeFromHash(){
+ const m=/[#&]lake=([^&]+)/.exec(location.hash||"");
+ if(!m)return false;
+ let k; try{ k=decodeURIComponent(m[1]); }catch(e){ k=m[1]; }
+ const l=lakeByKey(k);
+ if(!l)return false;
+ detail(l);
+ return true;
+}
+
 function lakeByKey(k){
  return lakes.find(l=>String(l.key)===String(k))||
         lakes.find(l=>String(l.waterbodyId||"")===String(k))||null;

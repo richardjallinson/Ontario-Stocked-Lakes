@@ -92,10 +92,12 @@ The app calls these at runtime; nothing is proxied and no API keys are needed.
 - **Fishing access points** — Protected fishing access FeatureServer
 - **Fisheries Management Zones, lake surveys, bathymetry** — Ontario LIO Open Data services
 - **Weather alerts** — [Environment and Climate Change Canada GeoMet API](https://api.weather.gc.ca)
-- **Map tiles** — CARTO Voyager / Positron basemaps (OpenStreetMap data), plus Ontario's own LIO Topographic tile cache as the "Topo" option, under the Open Government Licence – Ontario. CARTO's free
-  basemap tier requires the "© OpenStreetMap contributors © CARTO" attribution
-  the app already displays; review https://carto.com/basemaps before heavy
-  commercial use
+- **Map tiles** — OpenStreetMap standard tiles for the "Map" and "Depth"
+  basemaps (© OpenStreetMap contributors, ODbL), and Natural Resources
+  Canada's Toporama WMS (`maps.geogratis.gc.ca/wms/toporama_en`) for "Topo",
+  under the Open Government Licence – Canada. No API keys. CARTO was dropped
+  in August 2026 when its basemaps began requiring a key; see the comment
+  above `BASEMAPS` in `app.js`
 
 ## Features
 
@@ -145,5 +147,5 @@ licences, above, and nothing here restricts your rights in that material.
 
 ---
 
-**Version v4p.** `APP_VERSION` in `app.js` and `VERSION` in `sw.js` both read
-`v4p` and must always match. See [CHANGELOG.md](CHANGELOG.md) for what changed.
+**Version v6z.** `APP_VERSION` in `app.js` and `VERSION` in `sw.js` both read
+`v6z` and must always match. See [CHANGELOG.md](CHANGELOG.md) for what changed.
