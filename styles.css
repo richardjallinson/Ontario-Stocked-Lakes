@@ -1517,16 +1517,20 @@ body.spotCreating .leaflet-container{cursor:crosshair}
 .reportWindow{margin:0;font-size:13px;line-height:1.45}
 .reportWindow em{font-style:normal;color:var(--muted)}
 .reportCond{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
-.reportCond div{background:#F2F6FA;border-radius:10px;padding:9px 8px;text-align:center;min-width:0}
-.reportCond small{display:block;color:var(--muted);font-size:10px;margin-bottom:2px}
-.reportCond b{font-size:13px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.reportCond div{background:#F2F6FA;border-radius:10px;padding:9px 6px;text-align:center;min-width:0;display:flex;flex-direction:column;justify-content:flex-start}
+.reportCond small{display:block;color:var(--muted);font-size:10px;margin-bottom:2px;line-height:1.2}
+/* French moon names are long ("Gibb. decroissante") and were clipping at the
+   tile edge. Let them wrap and shrink rather than truncate a fact. */
+.reportCond b{font-size:13px;line-height:1.25;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;hyphens:auto}
+.reportCond .moonName{font-size:11px;display:block}
 .reportAlert{margin-top:8px;font-size:13px}
 .reportOK{color:#2C6B1F;font-weight:700}
 .reportWarn{color:#8A4B00;font-weight:700}
 .reportMuted{color:var(--muted)}
 .reportSources{display:grid;gap:8px}
 .reportSrc{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 12px;font-size:13px;font-weight:700;color:var(--green);text-decoration:none}
-.reportSrc em{font-style:normal;color:var(--muted);font-weight:500;font-size:12px;white-space:nowrap}
+.reportSrc span{min-width:0}
+.reportSrc em{font-style:normal;color:var(--muted);font-weight:700;font-size:15px;white-space:nowrap;flex:none}
 .reportSrc:active{background:#f1f5f9}
 .reportCta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .reportCta button{border:0;padding:13px 8px;border-radius:12px;font-weight:800;font-size:14px}

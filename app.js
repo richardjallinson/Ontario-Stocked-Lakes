@@ -312,6 +312,10 @@ const I18N={
   reportsSub:"Built from Ontario stocking records and today's conditions. Recent angler reports open in your browser.",
   stockedRecent:"This year",
   stockReleased:"Released",
+  stageYearlings:"yearlings",
+  stageFingerlings:"fingerlings",
+  stageAdult:"adult",
+  stageFry:"fry",
   stockedLabel:"Stocked",
   stockedOf5:"{n} of the last 5 years",
   notStockedLine:"Not a stocked lake. Fish here are wild or from stocking too old to be on record.",
@@ -337,7 +341,7 @@ const I18N={
   checkingAlerts:"Checking Environment Canada alerts\u2026",
   oneAlert:"1 active weather alert \u2014 see the Weather section",
   someAlerts:"{n} active weather alerts \u2014 see the Weather section",
-  alertsUnavailable:"Weather alerts unavailable offline",
+  alertsUnavailable:"Weather alerts unavailable right now",
   findReports:"Find recent reports",
   searchThisLake:"search this lake",
   reportsNote:"Reports open in your browser and are written by other anglers, not by this app.",
@@ -677,6 +681,10 @@ const I18N={
   reportsSub:"\u00c9tabli \u00e0 partir des registres d'ensemencement de l'Ontario et des conditions du jour. Les rapports r\u00e9cents des p\u00eacheurs s'ouvrent dans votre navigateur.",
   stockedRecent:"Cette ann\u00e9e",
   stockReleased:"Rel\u00e2ch\u00e9s",
+  stageYearlings:"tacons d'un an",
+  stageFingerlings:"fretins",
+  stageAdult:"adultes",
+  stageFry:"alevins",
   stockedLabel:"Ensemenc\u00e9",
   stockedOf5:"{n} des 5 derni\u00e8res ann\u00e9es",
   notStockedLine:"Lac non ensemenc\u00e9. Les poissons pr\u00e9sents sont sauvages ou issus d'ensemencements trop anciens pour figurer au registre.",
@@ -694,15 +702,15 @@ const I18N={
   moonNew:"Nouvelle",
   moonWaxCres:"Premier croissant",
   moonFirst:"Premier quartier",
-  moonWaxGib:"Gibbeuse croissante",
+  moonWaxGib:"Gibb. croissante",
   moonFull:"Pleine",
-  moonWanGib:"Gibbeuse d\u00e9croissante",
+  moonWanGib:"Gibb. d\u00e9croissante",
   moonLast:"Dernier quartier",
   moonWanCres:"Dernier croissant",
   checkingAlerts:"V\u00e9rification des alertes d'Environnement Canada\u2026",
   oneAlert:"1 alerte m\u00e9t\u00e9o active \u2014 voir la section M\u00e9t\u00e9o",
   someAlerts:"{n} alertes m\u00e9t\u00e9o actives \u2014 voir la section M\u00e9t\u00e9o",
-  alertsUnavailable:"Alertes m\u00e9t\u00e9o indisponibles hors ligne",
+  alertsUnavailable:"Alertes m\u00e9t\u00e9o indisponibles pour le moment",
   findReports:"Trouver des rapports r\u00e9cents",
   searchThisLake:"chercher ce lac",
   reportsNote:"Les rapports s'ouvrent dans votre navigateur et sont r\u00e9dig\u00e9s par d'autres p\u00eacheurs, non par cette application.",
@@ -779,7 +787,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v7b";
+const APP_VERSION="v7c";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -4351,6 +4359,14 @@ const REPORT_WINDOW=[
  [/walleye|pickerel/i,"windowWalleye"],
  [/muskellunge|muskie/i,"windowMuskie"]
 ];
+/* Ontario writes the stage in English only, and there are just four values
+   in the whole file. Left untranslated, a French card read "6,000 Yearlings". */
+const STOCK_STAGE={Yearlings:"stageYearlings",Fingerlings:"stageFingerlings",
+                   Adult:"stageAdult",Fry:"stageFry"};
+function stageLabel(v){
+ const k=STOCK_STAGE[String(v||"").trim()];
+ return k?t(k):(v||"");
+}
 function reportWindowKey(species){
  for(const [re,key] of REPORT_WINDOW) if(re.test(species||"")) return key;
  return null;
@@ -4387,7 +4403,8 @@ function lakeReportsCard(l){
   const qty=Number(r.Number_of_Fish_Stocked)||0;
   const stage=r.Developmental_Stage||"";
   if(qty||stage)facts.push([t("stockReleased"),
-    [qty?qty.toLocaleString():"",stage].filter(Boolean).join(" ")]);
+    [qty?qty.toLocaleString(appLang==="fr"?"fr-CA":"en-CA"):"",
+     stage?stageLabel(stage):""].filter(Boolean).join(" ")]);
   const years=[];
   for(let y=now-4;y<=now;y++)
    years.push(l.records.some(x=>Number(x.Stocking_Year)===y));
@@ -4422,7 +4439,7 @@ function lakeReportsCard(l){
   <div class="reportCond">
    <div><small>${t("sunrise")}</small><b>${sun?hhmm(sun.rise):"\u2014"}</b></div>
    <div><small>${t("sunset")}</small><b>${sun?hhmm(sun.set):"\u2014"}</b></div>
-   <div><small>${t("moon")}</small><b>${mp.icon} ${t(mp.key)}</b></div>
+   <div><small>${t("moon")}</small><b>${mp.icon}<span class="moonName">${t(mp.key)}</span></b></div>
   </div>
   <div id="reportAlertBox" class="reportAlert"><span class="weatherLoading">${t("checkingAlerts")}</span></div>
  </div>`;
@@ -4431,8 +4448,9 @@ function lakeReportsCard(l){
  const find=`<div class="reportBlock">
   <h4>${t("findReports")}</h4>
   <div class="reportSources">
-   ${sources.map(s=>`<a class="reportSrc" target="_blank" rel="noopener" href="${s[1]}">
-     <span>${esc(s[0])}</span><em>${t("searchThisLake")}</em></a>`).join("")}
+   ${sources.map(s=>`<a class="reportSrc" target="_blank" rel="noopener" href="${s[1]}"
+      aria-label="${esc(s[0])} \u2014 ${t("searchThisLake")}">
+     <span>${esc(s[0])}</span><em aria-hidden="true">\u2197</em></a>`).join("")}
   </div>
   <p class="microcopy">${t("reportsNote")}</p>
  </div>`;
