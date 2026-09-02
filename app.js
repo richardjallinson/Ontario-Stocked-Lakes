@@ -307,6 +307,41 @@ const I18N={
   trailsFull:"Trail list is full (30). Delete one to save another.",
   offlineSave:"Save for offline",
   shareLake:"Share this lake",
+  reports:"Reports",
+  reportsTitle:"Lake report",
+  reportsSub:"Built from Ontario stocking records and today's conditions. Recent angler reports open in your browser.",
+  stockedRecent:"This year",
+  stockReleased:"Released",
+  stockedLabel:"Stocked",
+  stockedOf5:"{n} of the last 5 years",
+  notStockedLine:"Not a stocked lake. Fish here are wild or from stocking too old to be on record.",
+  bestWindow:"Best window",
+  generally:"Generally:",
+  windowTrout:"stocked trout are most catchable in the weeks after ice-out and again in the fall, and go deep once the surface warms in midsummer.",
+  windowLaker:"stocked lake trout take several seasons to reach size, so read the multi-year record above rather than the latest year alone.",
+  windowWalleye:"walleye stocked as fry or fingerlings take three to four years to reach size, so a recent stocking pays off in later seasons.",
+  windowMuskie:"muskellunge stocking is a long-term program. A recent entry is not a short-term signal.",
+  noBiteClaim:"General guidance only. This app does not predict whether fish will bite.",
+  conditionsToday:"Conditions today",
+  sunrise:"Sunrise",
+  sunset:"Sunset",
+  moon:"Moon",
+  moonNew:"New",
+  moonWaxCres:"Waxing crescent",
+  moonFirst:"First quarter",
+  moonWaxGib:"Waxing gibbous",
+  moonFull:"Full",
+  moonWanGib:"Waning gibbous",
+  moonLast:"Last quarter",
+  moonWanCres:"Waning crescent",
+  checkingAlerts:"Checking Environment Canada alerts\u2026",
+  oneAlert:"1 active weather alert \u2014 see the Weather section",
+  someAlerts:"{n} active weather alerts \u2014 see the Weather section",
+  alertsUnavailable:"Weather alerts unavailable offline",
+  findReports:"Find recent reports",
+  searchThisLake:"search this lake",
+  reportsNote:"Reports open in your browser and are written by other anglers, not by this app.",
+  logCatchHere:"Log a catch here",
   stockedWord:"Stocked",
   shareCopied:"Link copied \u2713",
   shareFail:"Could not share \u2014 copy the link from the address bar",
@@ -637,6 +672,41 @@ const I18N={
   trailsFull:"La liste des trac\u00e9s est pleine (30). Supprimez-en un pour en enregistrer un autre.",
   offlineSave:"Enregistrer hors ligne",
   shareLake:"Partager ce lac",
+  reports:"Rapports",
+  reportsTitle:"Rapport du lac",
+  reportsSub:"\u00c9tabli \u00e0 partir des registres d'ensemencement de l'Ontario et des conditions du jour. Les rapports r\u00e9cents des p\u00eacheurs s'ouvrent dans votre navigateur.",
+  stockedRecent:"Cette ann\u00e9e",
+  stockReleased:"Rel\u00e2ch\u00e9s",
+  stockedLabel:"Ensemenc\u00e9",
+  stockedOf5:"{n} des 5 derni\u00e8res ann\u00e9es",
+  notStockedLine:"Lac non ensemenc\u00e9. Les poissons pr\u00e9sents sont sauvages ou issus d'ensemencements trop anciens pour figurer au registre.",
+  bestWindow:"Meilleure p\u00e9riode",
+  generally:"En g\u00e9n\u00e9ral :",
+  windowTrout:"les truites ensemenc\u00e9es se p\u00eachent surtout dans les semaines suivant la d\u00e9b\u00e2cle et de nouveau \u00e0 l'automne; elles gagnent les profondeurs d\u00e8s que la surface se r\u00e9chauffe.",
+  windowLaker:"le touladi ensemenc\u00e9 met plusieurs saisons \u00e0 atteindre sa taille : lisez le registre pluriannuel ci-dessus plut\u00f4t que la derni\u00e8re ann\u00e9e seule.",
+  windowWalleye:"le dor\u00e9 ensemenc\u00e9 en alevins met trois \u00e0 quatre ans \u00e0 atteindre sa taille; un ensemencement r\u00e9cent portera ses fruits plus tard.",
+  windowMuskie:"l'ensemencement du maskinong\u00e9 est un programme \u00e0 long terme. Une entr\u00e9e r\u00e9cente n'est pas un signal \u00e0 court terme.",
+  noBiteClaim:"Indications g\u00e9n\u00e9rales seulement. Cette application ne pr\u00e9dit pas si le poisson mordra.",
+  conditionsToday:"Conditions du jour",
+  sunrise:"Lever du soleil",
+  sunset:"Coucher du soleil",
+  moon:"Lune",
+  moonNew:"Nouvelle",
+  moonWaxCres:"Premier croissant",
+  moonFirst:"Premier quartier",
+  moonWaxGib:"Gibbeuse croissante",
+  moonFull:"Pleine",
+  moonWanGib:"Gibbeuse d\u00e9croissante",
+  moonLast:"Dernier quartier",
+  moonWanCres:"Dernier croissant",
+  checkingAlerts:"V\u00e9rification des alertes d'Environnement Canada\u2026",
+  oneAlert:"1 alerte m\u00e9t\u00e9o active \u2014 voir la section M\u00e9t\u00e9o",
+  someAlerts:"{n} alertes m\u00e9t\u00e9o actives \u2014 voir la section M\u00e9t\u00e9o",
+  alertsUnavailable:"Alertes m\u00e9t\u00e9o indisponibles hors ligne",
+  findReports:"Trouver des rapports r\u00e9cents",
+  searchThisLake:"chercher ce lac",
+  reportsNote:"Les rapports s'ouvrent dans votre navigateur et sont r\u00e9dig\u00e9s par d'autres p\u00eacheurs, non par cette application.",
+  logCatchHere:"Consigner une prise ici",
   stockedWord:"Ensemenc\u00e9",
   shareCopied:"Lien copi\u00e9 \u2713",
   shareFail:"Partage impossible \u2014 copiez le lien depuis la barre d'adresse",
@@ -709,7 +779,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v7a";
+const APP_VERSION="v7b";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -3693,6 +3763,7 @@ function detail(l){
    regsStale()?t("checkRegsFor").replace("{zone}",l.fmz)
               :t("viewCurrentRegs").replace("{zone}",l.fmz)}</a>`:""}
  ${regsStaleNote()}
+${lakeReportsCard(l)}
 ${presentBlock(l)}
  <button class="tripStart" id="startTrip">Start a fishing trip</button>
  <button class="shareLakeBtn" id="shareLakeBtn" type="button">${t("shareLake")}</button>
@@ -3729,7 +3800,8 @@ ${presentBlock(l)}
   });
  }
  const st=$("startTrip");if(st)st.onclick=()=>startTrip(l);
- const sh=$("shareLakeBtn");if(sh)sh.onclick=()=>shareLake(l);wireAdvisory(l);wireWeather(l);
+ const sh=$("shareLakeBtn");if(sh)sh.onclick=()=>shareLake(l);
+ wireReports(l);wireAdvisory(l);wireWeather(l);
  document.querySelectorAll("[data-laketab]").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("[data-laketab]").forEach(x=>x.classList.remove("active"));b.classList.add("active");
   const id=b.dataset.laketab, target=id==="trips"?st:$("lake-"+id);
@@ -4216,9 +4288,190 @@ async function wireWeather(l){
  await load();const b=$("refreshAlerts");if(b)b.onclick=load;
 }
 
+/* ---- The lake report ----------------------------------------------------
+   The question after "where can I fish" and "what are the rules" is "how is
+   it fishing right now". This card answers as much of that as can be
+   answered honestly from data we already ship, and hands the rest to the
+   places Ontario anglers actually post: it never guesses at a bite.
+
+   One hard limit shapes the whole card: Ontario's stocking file carries a
+   YEAR and nothing finer. There is no month and no day, so "stocked in May"
+   and "released 3 weeks ago" are claims this data cannot support. The
+   headline therefore says the year, and the Recent badge means the current
+   calendar year -- nothing more precise is available, and inventing
+   precision here would be the one lie that discredits the rest. */
+
+/* Sunrise and sunset, NOAA solar position, computed locally so the card
+   still fills in with no signal. Returns local Date objects, or null above
+   the arctic circle where the sun may not rise or set at all. */
+function sunTimes(lat,lon,date){
+ const d=date||new Date();
+ const rad=Math.PI/180, deg=180/Math.PI;
+ /* Standard sunrise equation. n counts whole days since J2000, which is the
+    step an earlier draft got wrong by using day-of-year -- that put every
+    result half a day out. lw is west longitude, positive. */
+ const jd=d.getTime()/86400000+2440587.5;
+ const n=Math.round(jd-2451545.0+0.0008);
+ const Jstar=n-lon/360;   /* west of Greenwich, solar noon is later in UTC */
+ const M=(357.5291+0.98560028*Jstar)%360;
+ const C=1.9148*Math.sin(M*rad)+0.02*Math.sin(2*M*rad)+0.0003*Math.sin(3*M*rad);
+ const L=(M+C+180+102.9372)%360;
+ const transit=2451545.0+Jstar+0.0053*Math.sin(M*rad)-0.0069*Math.sin(2*L*rad);
+ const dec=Math.asin(Math.sin(L*rad)*Math.sin(23.44*rad))*deg;
+ const cosH=(Math.sin(-0.833*rad)-Math.sin(lat*rad)*Math.sin(dec*rad))/
+            (Math.cos(lat*rad)*Math.cos(dec*rad));
+ if(cosH>1||cosH<-1)return null;           /* no sunrise or no sunset today */
+ const H=Math.acos(cosH)*deg;
+ const toDate=j=>new Date((j-2440587.5)*86400000);
+ return {rise:toDate(transit-H/360),set:toDate(transit+H/360)};
+}
+
+/* Moon phase from the synodic month. Shown as a fact, with no claim attached
+   to it -- anglers who care will draw their own conclusions, and anglers who
+   do not can ignore a line of text. */
+function moonPhase(date){
+ const d=date||new Date();
+ const known=Date.UTC(2000,0,6,18,14);      /* a known new moon */
+ const syn=29.530588853*86400000;
+ let age=(((d.getTime()-known)%syn)+syn)%syn/syn;   /* 0..1 through the cycle */
+ const names=["moonNew","moonWaxCres","moonFirst","moonWaxGib",
+              "moonFull","moonWanGib","moonLast","moonWanCres"];
+ const icons=["\u{1F311}","\u{1F312}","\u{1F313}","\u{1F314}",
+              "\u{1F315}","\u{1F316}","\u{1F317}","\u{1F318}"];
+ const i=Math.floor(age*8+0.5)%8;
+ return {key:names[i],icon:icons[i],frac:age};
+}
+
+/* Species-keyed guidance. Deliberately general, and phrased as biology
+   rather than prediction. Without a stocking month we cannot say "two weeks
+   after release", so nothing here depends on one. */
+const REPORT_WINDOW=[
+ [/brook trout|speckled|rainbow trout|brown trout|splake/i,"windowTrout"],
+ [/lake trout/i,"windowLaker"],
+ [/walleye|pickerel/i,"windowWalleye"],
+ [/muskellunge|muskie/i,"windowMuskie"]
+];
+function reportWindowKey(species){
+ for(const [re,key] of REPORT_WINDOW) if(re.test(species||"")) return key;
+ return null;
+}
+
+/* The search string that finds this lake and not the forty others with the
+   same name. District first because it is the coarse filter Ontario anglers
+   themselves use; township second; bare name only as a last resort. */
+function reportQuery(l){
+ const qual=(l.district||l.MNRF_District||l.township||"")
+   .replace(/\s*District$/i,"").trim();
+ const word=appLang==="fr"?"p\u00eache":"fishing";
+ return `"${l.name}" ${qual} ${word}`.replace(/\s+/g," ").trim();
+}
+
+function lakeReportsCard(l){
+ const q=encodeURIComponent(reportQuery(l));
+ const sources=[
+  ["Ontario Fishing Forums","https://www.ontariofishingforums.com/search/?q="+q],
+  ["Ontario Fishing Community","https://ontariofishingcommunity.com/?s="+q],
+  ["Reddit","https://www.reddit.com/search/?q="+q],
+  ["Google","https://www.google.com/search?q="+q]
+ ];
+
+ /* --- stocking outlook ------------------------------------------------ */
+ let outlook;
+ if(l.stocked&&l.records&&l.records.length){
+  const r=l.records[0];
+  const yr=Number(r.Stocking_Year)||l.latestYear||0;
+  const sp=r.Species?speciesLabel(r.Species):"";
+  const now=new Date().getFullYear();
+  const recent=yr>=now;
+  const facts=[];
+  const qty=Number(r.Number_of_Fish_Stocked)||0;
+  const stage=r.Developmental_Stage||"";
+  if(qty||stage)facts.push([t("stockReleased"),
+    [qty?qty.toLocaleString():"",stage].filter(Boolean).join(" ")]);
+  const years=[];
+  for(let y=now-4;y<=now;y++)
+   years.push(l.records.some(x=>Number(x.Stocking_Year)===y));
+  const n=years.filter(Boolean).length;
+  facts.push([t("stockedLabel"),t("stockedOf5").replace("{n}",n)]);
+  outlook=`<div class="reportBlock">
+   <div class="reportHead"><strong>${esc([t("stockedWord"),sp].filter(Boolean).join(" "))}${yr?` \u2014 ${yr}`:""}</strong>
+   ${recent?`<span class="reportRecent">${t("stockedRecent")}</span>`:""}</div>
+   ${facts.map(f=>`<div class="reportFact"><span>${f[0]}</span><span>${esc(f[1])}</span></div>`).join("")}
+   <div class="reportYears" role="img" aria-label="${t("stockedOf5").replace("{n}",n)}">
+    ${years.map(on=>`<i class="${on?"on":""}"></i>`).join("")}</div>
+   <div class="reportYearLbl"><span>${now-4}</span><span>${now}</span></div>
+  </div>`;
+ }else{
+  outlook=`<div class="reportBlock"><p class="reportPlain">${t("notStockedLine")}</p></div>`;
+ }
+
+ /* --- best window ----------------------------------------------------- */
+ const wkey=l.records&&l.records.length?reportWindowKey(l.records[0].Species):null;
+ const windowBlock=wkey?`<div class="reportBlock">
+   <h4>${t("bestWindow")}</h4>
+   <p class="reportWindow"><em>${t("generally")}</em> ${t(wkey)}</p>
+   <p class="microcopy">${t("noBiteClaim")}</p></div>`:"";
+
+ /* --- conditions today ------------------------------------------------ */
+ const sun=sunTimes(l.lat,l.lon,new Date());
+ const mp=moonPhase(new Date());
+ const hhmm=d=>d?d.toLocaleTimeString(appLang==="fr"?"fr-CA":"en-CA",
+   {hour:"numeric",minute:"2-digit"}):"\u2014";
+ const conditions=`<div class="reportBlock">
+  <h4>${t("conditionsToday")}</h4>
+  <div class="reportCond">
+   <div><small>${t("sunrise")}</small><b>${sun?hhmm(sun.rise):"\u2014"}</b></div>
+   <div><small>${t("sunset")}</small><b>${sun?hhmm(sun.set):"\u2014"}</b></div>
+   <div><small>${t("moon")}</small><b>${mp.icon} ${t(mp.key)}</b></div>
+  </div>
+  <div id="reportAlertBox" class="reportAlert"><span class="weatherLoading">${t("checkingAlerts")}</span></div>
+ </div>`;
+
+ /* --- find recent reports --------------------------------------------- */
+ const find=`<div class="reportBlock">
+  <h4>${t("findReports")}</h4>
+  <div class="reportSources">
+   ${sources.map(s=>`<a class="reportSrc" target="_blank" rel="noopener" href="${s[1]}">
+     <span>${esc(s[0])}</span><em>${t("searchThisLake")}</em></a>`).join("")}
+  </div>
+  <p class="microcopy">${t("reportsNote")}</p>
+ </div>`;
+
+ return `<div id="lake-reports" class="tabAnchor"></div>
+ <div class="infoCard reportCard">
+  <h3>\u{1F4CB} ${t("reportsTitle")}</h3>
+  <p class="microcopy">${t("reportsSub")}</p>
+  ${outlook}${windowBlock}${conditions}${find}
+  <div class="reportCta">
+   <button type="button" id="reportShare" class="reportShare">${t("shareLake")}</button>
+   <button type="button" id="reportTrip" class="reportTrip">${t("logCatchHere")}</button>
+  </div>
+ </div>`;
+}
+
+/* The alert line is the same Environment Canada call the weather card makes.
+   Sharing one in-flight promise per lake stops opening a sheet from firing
+   the request twice. */
+let _reportAlertKey=null,_reportAlertPromise=null;
+async function wireReports(l){
+ const sh=$("reportShare"); if(sh)sh.onclick=()=>shareLake(l);
+ const tr=$("reportTrip");  if(tr)tr.onclick=()=>startTrip(l);
+ const box=$("reportAlertBox"); if(!box)return;
+ try{
+  if(_reportAlertKey!==l.key){_reportAlertKey=l.key;_reportAlertPromise=weatherAlertsForLake(l);}
+  const alerts=await _reportAlertPromise;
+  if($("reportAlertBox")!==box)return;             /* sheet changed under us */
+  box.innerHTML=(!alerts||!alerts.length)
+   ? `<span class="reportOK">\u2713 ${t("noAlert")}</span>`
+   : `<span class="reportWarn">\u26A0 ${alerts.length===1?t("oneAlert"):t("someAlerts").replace("{n}",alerts.length)}</span>`;
+ }catch(e){
+  box.innerHTML=`<span class="reportMuted">${t("alertsUnavailable")}</span>`;
+ }
+}
+
 function lakeOverviewTabs(l){
  const sections=[
-  ["overview",t("overview")],["weather",t("weather")],["stocking",t("stocking")],["rules",t("regulations")],["access",t("access")],
+  ["overview",t("overview")],["reports",t("reports")],["weather",t("weather")],["stocking",t("stocking")],["rules",t("regulations")],["access",t("access")],
   ["species",t("fishSpecies")],["depth",t("depth")],["eating",t("eatingAdvice")],["trips",t("trips")]
  ];
  return `<div class="lakeTabs">${sections.map((s,i)=>`<button class="${i===0?"active":""}" data-laketab="${s[0]}">${s[1]}</button>`).join("")}</div>`;

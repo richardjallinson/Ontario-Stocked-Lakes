@@ -1498,3 +1498,38 @@ body.spotCreating .leaflet-container{cursor:crosshair}
  background:#FFFFFFD9;border-radius:0 0 8px 8px;
  padding:3px 9px;font-size:10.5px;line-height:1.3;
  max-width:62vw;text-align:center;box-shadow:0 1px 3px #13263C1A}
+
+/* ---- Lake report card (v7b) --------------------------------------------
+   Quiet by default: one loud element only, the stocking headline, because
+   that is the fact nobody else shows. */
+.reportBlock{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0}
+.reportBlock h4{margin:0 0 8px;font-size:13px;font-weight:800;color:var(--green)}
+.reportHead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.reportHead strong{font-family:var(--display);font-size:17px;font-weight:600;line-height:1.2}
+.reportRecent{white-space:nowrap;background:var(--accent);color:var(--green);font-weight:900;font-size:11px;border-radius:20px;padding:5px 9px}
+.reportFact{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:6px 0;border-top:1px solid var(--line);margin-top:6px}
+.reportFact span:last-child{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.reportYears{display:flex;gap:4px;margin-top:10px}
+.reportYears i{flex:1;height:8px;border-radius:4px;background:#E2E9EF}
+.reportYears i.on{background:var(--accent-dark,#4F8A0F)}
+.reportYearLbl{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:3px}
+.reportPlain{margin:0;font-size:13px;line-height:1.45}
+.reportWindow{margin:0;font-size:13px;line-height:1.45}
+.reportWindow em{font-style:normal;color:var(--muted)}
+.reportCond{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.reportCond div{background:#F2F6FA;border-radius:10px;padding:9px 8px;text-align:center;min-width:0}
+.reportCond small{display:block;color:var(--muted);font-size:10px;margin-bottom:2px}
+.reportCond b{font-size:13px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.reportAlert{margin-top:8px;font-size:13px}
+.reportOK{color:#2C6B1F;font-weight:700}
+.reportWarn{color:#8A4B00;font-weight:700}
+.reportMuted{color:var(--muted)}
+.reportSources{display:grid;gap:8px}
+.reportSrc{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 12px;font-size:13px;font-weight:700;color:var(--green);text-decoration:none}
+.reportSrc em{font-style:normal;color:var(--muted);font-weight:500;font-size:12px;white-space:nowrap}
+.reportSrc:active{background:#f1f5f9}
+.reportCta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.reportCta button{border:0;padding:13px 8px;border-radius:12px;font-weight:800;font-size:14px}
+.reportShare{background:var(--accent);color:var(--green)}
+.reportTrip{background:var(--green);color:#fff}
+@media (max-width:360px){.reportCta{grid-template-columns:1fr}}
