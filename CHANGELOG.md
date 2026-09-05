@@ -4,6 +4,65 @@ Bundles are named sequentially — v1a, v1b, v1c — matching the Estate File
 convention. `APP_VERSION` in `app.js` and `VERSION` in `sw.js` carry the same
 marker and must always match.
 
+## v7k — 2026-09-04
+
+### Fixed — press-and-hold on the map did nothing on a phone
+- Reported on-device: holding a finger on a lake's own map never opened the
+  new-spot panel. The handler and `currentLakeForSpots` were both fine.
+- Cause: the vendored Leaflet is **1.1.1**, which predates the `TapHold`
+  handler added in Leaflet 1.8. On iOS a long press therefore never becomes
+  a `contextmenu` event, so `spotLongPress` was never called. The code
+  comment asserting Leaflet handles this was written against a newer
+  Leaflet than the one actually bundled. It worked on a desktop right-click,
+  which is presumably where it was tested.
+- Rather than move the whole app onto a new Leaflet mid-release, added
+  `attachTapHold()`: 550 ms, cancelled by a drag over 10px or a second
+  finger, swallows Safari's synthesised click, and gives a 10 ms haptic tick
+  on hold. Attached to both the main map and the lake-sheet map.
+- Tests added, including one that keeps the hand-rolled handler in place for
+  as long as the vendored Leaflet is older than 1.8. Suite: 108 → 113.
+
+## v7j — 2026-09-04
+
+### Fixed — the species wheel listed survey records, not sport fish
+- Seen on-device: the Explore species filter offered 60+ entries including
+  Blue Pike (extinct in Ontario since the 1980s), five kinds of Redhorse,
+  three buffalo, Mooneye, Goldeye and Warmouth. `HIDDEN_SPECIES` was being
+  applied correctly to the wheel — the names simply were not in it.
+- 29 names added: Blackfin/Deepwater/Shortnose Cisco, Blue Pike, Bigmouth
+  and Black Buffalo, Quillback, Lake Chubsucker, Northern Hog / Spotted /
+  Longnose Sucker, five Redhorse, Mooneye, Goldeye, Fallfish, Grass Carp,
+  Green / Northern / Orangespotted Sunfish, Warmouth, Spotted Gar,
+  Grass Pickerel, Pink and Sockeye Salmon.
+- Deliberately kept: Common Carp, Bowfin, Freshwater Drum, Longnose Gar,
+  White Sucker, White Perch, Channel Catfish, the bullheads, Burbot,
+  Round Whitefish, Cisco / Lake Herring, American Eel. Ontario anglers fish
+  for these.
+- Test added both ways: fails if a hidden name reappears, and fails if a
+  sport species is ever quietly hidden.
+
+### Fixed — privacy policy named CARTO
+- CARTO left the basemap list in August 2026. The English page still named
+  them; the French page already said OpenStreetMap. Both now read
+  "OpenStreetMap and Natural Resources Canada Toporama", matching what the
+  app actually requests.
+- Test added. Suite: 88 → 108.
+
+## v7i — 2026-09-04
+
+Not yet submitted. Folded into the next App Store build alongside the
+description/promo text refresh.
+
+### Fixed — Trevor Allinson missing from in-app copyright footer
+- Both `versionStamp` renders in `app.js` (Help section and Explore footer)
+  now read `© 2026 Richard J Allinson and Trevor Allinson`. The v7h handoff
+  claimed this was done; the shipped 1.1 build shows it was not. Caught by
+  Richard on-device, confirmed by grep on the v7h bundle.
+- `tests/test-appstore.js` gains a copyright check that fails if either stamp
+  omits Trevor, or if the two copies of `app.js` (web / native) diverge.
+  Suite: 84 → 88.
+- `APP_VERSION` and `sw.js` `VERSION` bumped to v7i.
+
 ## v6z — 2026-09-01
 
 Submitted to App Store Connect 2026-09-01.

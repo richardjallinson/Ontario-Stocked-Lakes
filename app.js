@@ -799,7 +799,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v7g";
+const APP_VERSION="v7k";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -1147,6 +1147,46 @@ function spotMarker(lat,lon,colorKey,iconKey,name){
 function drawSpots(which,mapObj){if(!mapObj||!currentLakeForSpots)return;Object.keys(spotLines[which]||{}).forEach(id=>{try{mapObj.removeLayer(spotLines[which][id])}catch(e){}});spotLines[which]={};const lk=lakeKeyForSpots(currentLakeForSpots);const shown=getShownSpots(lk);getSpots(lk).forEach(sp=>{if(shown.indexOf(sp.id)!==-1)spotLines[which][sp.id]=spotMarker(sp.lat,sp.lon,sp.color,sp.icon,sp.name).addTo(mapObj)})}
 function redrawSpots(){drawSpots("main",map);drawSpots("detail",detailMap)}
 function setSpotCreation(on){spotCreationMode=on;document.body.classList.toggle("spotCreating",on)}
+function attachTapHold(mapObj){
+ /* Leaflet 1.1.1 predates the TapHold handler (added in 1.8), so on iOS a
+    press-and-hold never becomes a contextmenu event and spotLongPress was
+    simply never called -- the feature worked on a desktop right-click and
+    nowhere else. Rather than move the whole app to a new Leaflet, this is
+    the one behaviour we actually need, hand-rolled: 550ms, cancelled by a
+    drag of more than 10px or by a second finger (pinch-zoom). */
+ const el=mapObj.getContainer();
+ let timer=null,startX=0,startY=0,fired=false;
+ const cancel=()=>{if(timer){clearTimeout(timer);timer=null}};
+ el.addEventListener("touchstart",function(ev){
+  fired=false;
+  if(!ev.touches||ev.touches.length!==1){cancel();return}
+  const t=ev.touches[0];startX=t.clientX;startY=t.clientY;
+  const pt=mapObj.mouseEventToContainerPoint(t);
+  cancel();
+  timer=setTimeout(function(){
+   timer=null;fired=true;
+   try{
+    const ll=mapObj.containerPointToLatLng(pt);
+    spotLongPress({latlng:ll,originalEvent:null});
+    if(navigator.vibrate)try{navigator.vibrate(10)}catch(_){}
+   }catch(_){}
+  },550);
+ },{passive:true});
+ el.addEventListener("touchmove",function(ev){
+  if(!timer)return;
+  if(!ev.touches||ev.touches.length!==1){cancel();return}
+  const t=ev.touches[0];
+  if(Math.abs(t.clientX-startX)>10||Math.abs(t.clientY-startY)>10)cancel();
+ },{passive:true});
+ el.addEventListener("touchend",function(ev){
+  cancel();
+  /* Swallow the click Safari synthesises after the hold, or the sheet we
+     just opened would immediately receive a stray tap. */
+  if(fired&&ev.cancelable)try{ev.preventDefault()}catch(_){}
+  fired=false;
+ },{passive:false});
+ el.addEventListener("touchcancel",cancel,{passive:true});
+}
 function spotLongPress(e){
  /* Press and hold anywhere on the map to drop a pin there -- tomorrow's
     spots, an access point across the bay. Leaflet turns an iOS long-press
@@ -1323,6 +1363,7 @@ drawSavedTrails("main",map);
 drawSpots("main",map);
 map.on("click",mapClickForSpot);
 map.on("contextmenu",spotLongPress);
+attachTapHold(map);
 
 /* ---- Saving a lake for offline use -------------------------------------
    The tile cache already keeps whatever you have looked at, but it is capped
@@ -1567,6 +1608,7 @@ function showDetailMap(l){
    new LocationControl().addTo(detailMap);
    detailMap.on("click",mapClickForSpot);
    detailMap.on("contextmenu",spotLongPress);
+   attachTapHold(detailMap);
   }
   /* The base layer is rebuilt on every open, not just when the map is first
      created -- it used to keep whatever layer it was born with for the rest
@@ -1903,6 +1945,15 @@ const HIDDEN_SPECIES=new Set([
  "Kiyi","Bloater","Shortjaw Cisco","Nipigon Cisco","Pygmy Whitefish",
  // Madtoms and other minnow-scale fish
  "Brindled Madtom","Northern Madtom","Topminnows",
+ // Survey-only, extinct or not angled in Ontario — added v7j after the species
+ // wheel was seen on-device listing 60+ entries where roughly 20 matter.
+ "Blackfin Cisco","Deepwater Cisco","Shortnose Cisco","Blue Pike",
+ "Bigmouth Buffalo","Black Buffalo","Quillback","Lake Chubsucker",
+ "Northern Hog Sucker","Spotted Sucker","Longnose Sucker",
+ "Black Redhorse","Golden Redhorse","Greater Redhorse","River Redhorse",
+ "Silver Redhorse","Shorthead Redhorse","Mooneye","Goldeye","Fallfish",
+ "Grass Carp","Green Sunfish","Northern Sunfish","Orangespotted Sunfish",
+ "Warmouth","Spotted Gar","Grass Pickerel","Pink Salmon","Sockeye Salmon",
  // Hybrid junk record
  "Goldfish x Carp"
 ]);
@@ -4276,12 +4327,33 @@ function addCatch(id){
   trip.catches.unshift({id:Date.now(),species,lenCm,wtKg,disposition,notes,
    time:new Date().toISOString(),location:loc});
   saveTrips();openTrip(id);
+  maybeAskForReview();
  };
  const gps=$("catchLocation");
  if(gps)try{localStorage.setItem("osl-catch-gps",gps.checked?"1":"0")}catch(_){}
  if(gps&&gps.checked&&navigator.geolocation)
   navigator.geolocation.getCurrentPosition(p=>finish({lat:p.coords.latitude,lon:p.coords.longitude}),()=>finish(null),{timeout:8000});
  else finish(null);
+}
+
+/* One review request, ever, and only after a third logged catch.
+   A third catch means the app has been carried to water and used, which is
+   the only point at which asking is fair. Asking on launch, or after a
+   search, would be asking someone who has not yet got anything out of it.
+   iOS caps the prompt independently, so this may show nothing at all --
+   nothing in the app depends on it appearing. */
+function maybeAskForReview(){
+ const bridge=nativeBridge("requestReview"); if(!bridge)return;
+ let asked=false,total=0;
+ try{
+  if(localStorage.getItem("osl-review-asked")==="1")return;
+  total=trips.reduce((n,tr)=>n+((tr.catches&&tr.catches.length)||0),0);
+ }catch(e){ return; }
+ if(total<3)return;
+ try{ localStorage.setItem("osl-review-asked","1"); }catch(e){}
+ /* Let the catch finish rendering first: the prompt should land on the
+    updated trip, not on top of a half-drawn sheet. */
+ setTimeout(()=>{ try{ bridge.postMessage({}); }catch(e){} },1200);
 }
 
 function renderTrips(){
@@ -4922,7 +4994,7 @@ function helpMarkup(){
    <label class="importBtn">${t("importData")}<input id="importData" type="file" accept="application/json,.json" hidden></label>
   </div>
  </div>
- <div class="versionStamp">Ontario Stocked Lakes • ${APP_VERSION}<span>© 2026 Richard J Allinson</span><span class="rightsNote">${t("rightsNote")}</span></div>`;
+ <div class="versionStamp">Ontario Stocked Lakes • ${APP_VERSION}<span>© 2026 Richard J Allinson and Trevor Allinson</span><span class="rightsNote">${t("rightsNote")}</span></div>`;
 }
 
 const TEXT_SIZES=["standard","large","larger"];
@@ -5005,7 +5077,7 @@ function settingsMarkup(){
   <button id="openHelpFromSettings" class="ghostbtn wide" type="button">${t("helpTitle")}</button>
  </section>
 
- <div class="versionStamp">Ontario Stocked Lakes • ${APP_VERSION}<span>© 2026 Richard J Allinson</span><span class="rightsNote">${t("rightsNote")}</span></div>`;
+ <div class="versionStamp">Ontario Stocked Lakes • ${APP_VERSION}<span>© 2026 Richard J Allinson and Trevor Allinson</span><span class="rightsNote">${t("rightsNote")}</span></div>`;
 }
 
 function openSettings(){
@@ -5123,6 +5195,11 @@ function lakeShareText(l){
 
 async function shareLake(l){
  const text=lakeShareText(l), url=lakeShareUrl(l);
+ /* Inside the wrapper, hand the text straight to UIActivityViewController.
+    navigator.share needs a user-gesture context that the bridge round trip
+    can lose, and a silent failure reads as a dead button. */
+ const native=nativeBridge("shareText");
+ if(native){ try{ native.postMessage({text}); return; }catch(e){} }
  try{
   if(navigator.share){ await navigator.share({title:l.name,text,url}); return; }
  }catch(e){ if(e&&e.name==="AbortError")return; }
