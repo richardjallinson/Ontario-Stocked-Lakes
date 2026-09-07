@@ -799,7 +799,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v7k";
+const APP_VERSION="v7m";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -1496,6 +1496,65 @@ function depthFt(m){
 }
 let detailContours=null,contourToken=0;
 const contourCache=new Map();
+/* ---------------------------------------------------------------------------
+   Shaded depth bands.
+
+   The contour service hands back LINES, and you cannot fill a line. But on
+   most inland lakes those lines are closed rings, nested one inside the next
+   toward the deep hole, and a closed ring IS a polygon. So every closed ring
+   is painted as a filled band in a colour for its depth, and the existing
+   contour lines and labels sit on top of the fills unchanged.
+
+   Z-order is the whole trick. Painting shallow-first fails on islands: the
+   rings around an island get SHALLOWER toward the middle, so shallow-first
+   would bury the island under the deep band around it. Painting largest-
+   first instead works for both cases at once, because a nested ring is
+   always smaller than the ring that contains it -- so each ring lands on
+   top of its container whether it is a basin deepening inward or an island
+   shallowing inward.
+
+   Rings clipped open by the query envelope (big lakes) are not filled at
+   all; a half ring would fill as a wedge, which is worse than lines alone.
+   Fills are non-interactive so taps still reach the line popups beneath.
+   ------------------------------------------------------------------------- */
+const DEPTH_FILL_MAX_FT=120, DEPTH_FILL_OPACITY=.72;
+function depthFillColor(ft){
+ /* sqrt so the shallow bands, where most fishing happens, get most of the
+    colour range instead of all looking the same pale blue. */
+ const f=Math.min(1,Math.sqrt(Math.max(0,ft)/DEPTH_FILL_MAX_FT));
+ const a=[0xCF,0xE6,0xF5],b=[0x0F,0x3F,0x78];
+ const c=a.map((x,i)=>Math.round(x+(b[i]-x)*f));
+ return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+function ringIsClosed(c){
+ if(!c||c.length<4)return false;
+ const p=c[0],q=c[c.length-1];
+ return Math.abs(p[0]-q[0])<1e-7&&Math.abs(p[1]-q[1])<1e-7;
+}
+function ringArea(c){
+ /* Shoelace on raw lon/lat. Not a real area, but ordering is all it is for. */
+ let a=0;for(let i=0,n=c.length;i<n;i++){const p=c[i],q=c[(i+1)%n];a+=p[0]*q[1]-q[0]*p[1]}
+ return Math.abs(a)/2;
+}
+function contourFillRings(gj){
+ const out=[];
+ for(const f of (gj&&gj.features)||[]){
+  const v=cleanContourDepth(f.properties&&f.properties.DEPTH);
+  if(v==null||!f.geometry)continue;
+  const g=f.geometry,
+  parts=g.type==="LineString"?[g.coordinates]:g.type==="MultiLineString"?g.coordinates:[];
+  for(const c of parts)if(ringIsClosed(c))out.push({ft:v,area:ringArea(c),latlngs:c.map(pt=>[pt[1],pt[0]])});
+ }
+ out.sort((x,y)=>y.area-x.area);
+ return out;
+}
+function buildDepthFills(gj){
+ const grp=L.layerGroup();
+ for(const r of contourFillRings(gj))
+  L.polygon(r.latlngs,{stroke:false,fillColor:depthFillColor(r.ft),fillOpacity:DEPTH_FILL_OPACITY,interactive:false}).addTo(grp);
+ return grp;
+}
+
 async function loadDetailContours(l){
  if(detailContours){try{detailMap.removeLayer(detailContours)}catch(e){}detailContours=null}
  const key=l.id||`${l.lat},${l.lon}`,token=++contourToken;
@@ -1534,7 +1593,12 @@ async function loadDetailContours(l){
  const cleanDepth=cleanContourDepth;
 
  const labelled=new Set();
- detailContours=L.geoJSON(gj,{
+ /* One group so a single removeLayer clears fills, lines and tap targets.
+    Fills go in first: SVG paints in insertion order, so they end up under
+    the lines rather than hiding them. */
+ detailContours=L.layerGroup().addTo(detailMap);
+ buildDepthFills(gj).addTo(detailContours);
+ L.geoJSON(gj,{
   style:()=>({color:"#1D5FA0",weight:1.2,opacity:.85}),
   onEachFeature:(f,ly)=>{
    const v=cleanDepth(f.properties&&f.properties.DEPTH);
@@ -1546,7 +1610,7 @@ async function loadDetailContours(l){
                              className:"depthLabel",opacity:1});
    }
   }
- }).addTo(detailMap);
+ }).addTo(detailContours);
  /* The transparent tap targets sit under the visible lines. */
  L.geoJSON(gj,{style:()=>({color:"#1D5FA0",weight:14,opacity:0})})
   .addTo(detailContours)
@@ -1747,7 +1811,9 @@ async function refreshMainContours(){
  clearMainContours();
  if(!gj||!gj.features||!gj.features.length)return;
  const labelled=new Set();
- mainContours=L.geoJSON(gj,{
+ mainContours=L.layerGroup().addTo(map);
+ buildDepthFills(gj).addTo(mainContours);
+ L.geoJSON(gj,{
   style:()=>({color:"#1D5FA0",weight:1.2,opacity:.85}),
   onEachFeature:(f,ly)=>{
    const v=cleanContourDepth(f.properties&&f.properties.DEPTH);
@@ -1759,7 +1825,7 @@ async function refreshMainContours(){
                               className:"depthLabel",opacity:1});
    }
   }
- }).addTo(map);
+ }).addTo(mainContours);
 }
 function setBasemap(key){
  if(!BASEMAPS[key])key="map";
@@ -3879,6 +3945,9 @@ function presentBlock(l){
 }
 
 function detail(l){
+ /* Re-renders of the same sheet (favouriting, advisories landing) must not
+    inflate the count, so only a genuine change of lake is an "open". */
+ if(l.key!==detailLakeKey)noteLakeSheetOpened();
  recentLakes=[l.key,...recentLakes.filter(k=>k!==l.key)].slice(0,10);localStorage.setItem("osl-recent",JSON.stringify(recentLakes));persistDurable();
  const fav=favoriteKeys.has(l.key),history=l.records.map(r=>`<div class="historyrow"><div><b>${esc(r.Stocking_Year||"—")}</b><span>${esc(r.Species?speciesLabel(r.Species):t("speciesUnavailable"))}</span></div><div class="historyright"><b>${num(r.Number_of_Fish_Stocked)}</b><span>${esc(r.Developmental_Stage?stageLabel(r.Developmental_Stage):"")}</span></div></div>`).join("");
  $("detail").innerHTML=`<div class="detailhead"><div><h2>${esc(l.name)}</h2><div class="species">${esc(displaySpecies(l).slice(0,6).map(speciesLabel).join(" • "))}${displaySpecies(l).length>6?` <span class="more">+${displaySpecies(l).length-6}</span>`:""}</div></div><button class="bigstar ${fav?"saved":""}" id="detailFav">${fav?"★":"☆"}</button></div>
@@ -4336,23 +4405,59 @@ function addCatch(id){
  else finish(null);
 }
 
-/* One review request, ever, and only after a third logged catch.
-   A third catch means the app has been carried to water and used, which is
-   the only point at which asking is fair. Asking on launch, or after a
-   search, would be asking someone who has not yet got anything out of it.
+/* One review request, ever, earned by either of two paths.
+
+   The original path is a third logged catch: the app has been carried to
+   water and used, which is a fair moment to ask. But most people never log
+   a catch at all -- they look a lake up, drive to it, and that is the whole
+   transaction. Asking only catch-loggers means almost nobody is ever asked.
+
+   So the second path is reading: eight lake sheets opened across three
+   SEPARATE days. Three days means they came back, which is the same honest
+   signal the catch rule was reaching for. Neither path asks on first launch.
+
    iOS caps the prompt independently, so this may show nothing at all --
    nothing in the app depends on it appearing. */
-function maybeAskForReview(){
- const bridge=nativeBridge("requestReview"); if(!bridge)return;
- let asked=false,total=0;
+const REVIEW_SHEETS_NEEDED=8, REVIEW_DAYS_NEEDED=3;
+
+/* Called on every genuine lake sheet open. Cheap, guarded, and silent once
+   the prompt has been spent. */
+function noteLakeSheetOpened(){
  try{
   if(localStorage.getItem("osl-review-asked")==="1")return;
-  total=trips.reduce((n,tr)=>n+((tr.catches&&tr.catches.length)||0),0);
+  const n=(parseInt(localStorage.getItem("osl-review-sheets"),10)||0)+1;
+  localStorage.setItem("osl-review-sheets",String(n));
+  const today=new Date().toISOString().slice(0,10);
+  let days=[];
+  try{days=JSON.parse(localStorage.getItem("osl-review-days")||"[]")}catch(e){days=[]}
+  if(!Array.isArray(days))days=[];
+  if(days.indexOf(today)<0){
+   days.push(today);
+   /* Only the count matters, so the list never needs to grow without limit. */
+   days=days.slice(-REVIEW_DAYS_NEEDED);
+   localStorage.setItem("osl-review-days",JSON.stringify(days));
+  }
+ }catch(e){}
+ maybeAskForReview();
+}
+
+function maybeAskForReview(){
+ const bridge=nativeBridge("requestReview"); if(!bridge)return;
+ let catches=0,sheets=0,days=0;
+ try{
+  if(localStorage.getItem("osl-review-asked")==="1")return;
+  catches=trips.reduce((n,tr)=>n+((tr.catches&&tr.catches.length)||0),0);
+  sheets=parseInt(localStorage.getItem("osl-review-sheets"),10)||0;
+  let d=[];
+  try{d=JSON.parse(localStorage.getItem("osl-review-days")||"[]")}catch(e){d=[]}
+  days=Array.isArray(d)?d.length:0;
  }catch(e){ return; }
- if(total<3)return;
+ const earnedByCatches=catches>=3;
+ const earnedByReading=sheets>=REVIEW_SHEETS_NEEDED&&days>=REVIEW_DAYS_NEEDED;
+ if(!earnedByCatches&&!earnedByReading)return;
  try{ localStorage.setItem("osl-review-asked","1"); }catch(e){}
- /* Let the catch finish rendering first: the prompt should land on the
-    updated trip, not on top of a half-drawn sheet. */
+ /* Let whatever triggered it finish rendering first: the prompt should land
+    on a settled screen, not on top of a half-drawn sheet. */
  setTimeout(()=>{ try{ bridge.postMessage({}); }catch(e){} },1200);
 }
 
@@ -4877,7 +4982,7 @@ const nativeBridge=k=>window.webkit&&window.webkit.messageHandlers&&window.webki
    Language, units and text size stay plain localStorage on purpose: losing
    them costs two taps, and rebuilding them here would be complexity spent on
    nothing. */
-const DURABLE_KEYS=["osl-trips","osl-favorites","osl-recent"];
+const DURABLE_KEYS=["osl-trips","osl-favorites","osl-recent","osl-review-asked"];
 const SAVED_AT_KEY="osl-saved-at";
 
 function persistDurable(){
