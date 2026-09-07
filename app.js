@@ -799,7 +799,7 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v7m";
+const APP_VERSION="v7n";
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -1625,6 +1625,63 @@ async function loadDetailContours(l){
    across lakes and launches. "Same three tabs as the main map" was a direct
    request -- Map and Topo without contours, Depth with them. */
 let detailLakeObj=null;
+/* ---------------------------------------------------------------------------
+   Toporama tiles need retrying; OSM's do not.
+
+   OSM serves pre-cut tiles from a CDN. Toporama RENDERS every tile on request,
+   with nothing in front of it, so a screenful of ~20 simultaneous requests is
+   enough to make it drop most of them. Leaflet asks once and never asks again,
+   so a dropped tile stays a grey hole until the user pans or zooms -- which is
+   why Topo has looked broken while Map beside it looked fine.
+
+   Two changes, both only for WMS layers:
+
+   1. Cap how many requests are in flight. Leaflet's own `keepBuffer`/loading
+      has no throttle, but `L.TileLayer.WMS` honours the browser's connection
+      limit only per-host, which is still far too many for this server. Six at
+      a time fills the screen progressively instead of all-or-nothing.
+   2. Retry a failed tile twice, backing off. Most tiles that fail in a busy
+      spell succeed on the second ask a second later.
+
+   Retries are per-tile and capped, so a genuinely dead server costs three
+   attempts per tile and then stops -- not an endless loop. An offline device
+   fails all three quickly and the existing "tiles offline" notice still fires.
+   ------------------------------------------------------------------------- */
+const WMS_MAX_INFLIGHT=6, WMS_RETRIES=2, WMS_RETRY_MS=900;
+function makeBaseLayer(b){
+ if(!b.wms)return L.tileLayer(b.url,b.opts);
+ const layer=L.tileLayer.wms(b.url,b.opts);
+ let inflight=0; const queue=[];
+ function pump(){while(inflight<WMS_MAX_INFLIGHT&&queue.length)queue.shift()()}
+ /* Replacing createTile outright rather than wrapping Leaflet's: Leaflet's
+    own version assigns img.src immediately, so anything that wraps it has
+    already lost the race and ends up asking for every tile twice. Owning the
+    element means the queue actually gates the request. Mirrors Leaflet's
+    createTile otherwise -- same alt, role and crossOrigin handling -- and
+    still calls done() exactly once, which its tile bookkeeping relies on. */
+ layer.createTile=function(coords,done){
+  const img=document.createElement("img");
+  const co=this.options.crossOrigin;
+  if(co||co==="")img.crossOrigin=co===true?"":co;
+  img.alt=""; img.setAttribute("role","presentation");
+  const url=this.getTileUrl(coords);
+  let tries=0, settled=false;
+  const settle=err=>{if(settled)return;settled=true;done(err,img)};
+  const ask=()=>{inflight++;img.src=url};
+  img.onload=()=>{inflight--;pump();settle(null)};
+  img.onerror=()=>{
+   inflight--;
+   /* Back off further each time: a server shedding load needs a moment, and
+      hammering it is what caused the drop in the first place. */
+   if(tries++<WMS_RETRIES)setTimeout(()=>{queue.push(ask);pump()},WMS_RETRY_MS*tries);
+   else settle(new Error("tile"));
+   pump();
+  };
+  queue.push(ask); pump();
+  return img;
+ };
+ return layer;
+}
 let detailBaseKey=localStorage.getItem("osl-sheet-basemap")||"depth";
 function applyDetailBase(){
  document.querySelectorAll(".detailBaseSwitch button").forEach(x=>x.classList.toggle("on",x.dataset.dbase===detailBaseKey));
@@ -1632,7 +1689,7 @@ function applyDetailBase(){
  if(detailBase){try{detailMap.removeLayer(detailBase)}catch(e){}detailBase=null}
  const b=BASEMAPS[detailBaseKey]||BASEMAPS.depth;
  if(b.url){
-  detailBase=b.wms?L.tileLayer.wms(b.url,b.opts):L.tileLayer(b.url,b.opts);
+  detailBase=makeBaseLayer(b);
   detailBase.addTo(detailMap);
   detailBase.bringToBack&&detailBase.bringToBack();
  }
@@ -1837,7 +1894,7 @@ function setBasemap(key){
  if(baseLayer){map.removeLayer(baseLayer);baseLayer=null}
  const b=BASEMAPS[key];
  if(b.url){
-  baseLayer=(b.wms?L.tileLayer.wms(b.url,b.opts):L.tileLayer(b.url,b.opts)).addTo(map);
+  baseLayer=makeBaseLayer(b).addTo(map);
   baseLayer.bringToBack&&baseLayer.bringToBack();
   /* Tiles that never arrive used to leave an unexplained grey rectangle —
      the commonest way this map looks broken when it is merely offline. Say
