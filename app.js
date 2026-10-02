@@ -799,7 +799,16 @@ function translateStaticUI(){
  const ox=$("onboardText");if(ox)ox.textContent=t("onboardText");
 }
 
-const APP_VERSION="v7n";
+const APP_VERSION="v7p";
+/* Offline map saving rides on the service worker, and the service worker
+   only registers over http(s). Inside the App Store wrapper the page loads
+   over stockedlakes://, WKWebView will not run a service worker on a custom
+   scheme, and so the save button has never been able to do anything there --
+   it just showed "try again in a moment" forever. Until tile caching moves
+   into native Swift, the honest thing is not to offer it at all in the app.
+   The web/PWA build keeps the button and it keeps working. Declared up here
+   so it is initialised before anything that renders a lake sheet. */
+const OFFLINE_SAVE_AVAILABLE="serviceWorker"in navigator&&location.protocol.startsWith("http");
 const API="https://services1.arcgis.com/TJH5KDher0W13Kgo/ArcGIS/rest/services/FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 const FMZ_API="https://ws.lioservices.lrc.gov.on.ca/arcgis2/rest/services/LIO_OPEN_DATA/LIO_Open07/MapServer/14/query";
 const REGS_BASE="https://www.ontario.ca/document/ontario-fishing-regulations-summary/fisheries-management-zone-";
@@ -2425,10 +2434,19 @@ async function loadLiveStocking(){
    the call, so a slow load is never made slower — the wait is only ever the
    remainder, and is zero when loading already took longer than the floor.
 
-   Five seconds, per Richard. Long for a splash by most standards, but this
-   one carries a warning worth reading, and the data genuinely is still
-   arriving behind it. */
-const SPLASH_MIN_MS=5000;
+   Five seconds on the FIRST launch, per Richard: the artwork carries a
+   "not for navigation" warning worth reading once. Every launch after that
+   is half as long -- the warning has been seen, the data is in well under a
+   second anyway, and nobody opens a fishing app to admire its splash.
+   "Seen" is a localStorage flag, so it survives updates (same origin) but
+   resets with a reinstall, which is exactly when the warning should show
+   again. The flag is set when the splash comes down, not when it goes up,
+   so a launch killed mid-splash still counts as a first launch. */
+const SPLASH_FIRST_MS=5000, SPLASH_RETURN_MS=2500;
+const SPLASH_SEEN_KEY="osl-splash-seen";
+let splashSeenBefore=false;
+try{splashSeenBefore=localStorage.getItem(SPLASH_SEEN_KEY)==="1"}catch(e){}
+const SPLASH_MIN_MS=splashSeenBefore?SPLASH_RETURN_MS:SPLASH_FIRST_MS;
 const splashShownAt=Date.now();
 /* A version stamp in the corner of the splash. It exists because "the old
    picture is still showing" and "it is still slow" are the same bug seen
@@ -2460,6 +2478,7 @@ function hideSplash(){
  const remaining=Math.max(0,SPLASH_MIN_MS-(Date.now()-splashShownAt));
  setTimeout(()=>{
   sp.classList.add("done");
+  try{localStorage.setItem(SPLASH_SEEN_KEY,"1")}catch(e){}
   setTimeout(()=>{try{sp.remove()}catch(e){}},600);
  },remaining);
 }
@@ -4009,7 +4028,7 @@ function detail(l){
  const fav=favoriteKeys.has(l.key),history=l.records.map(r=>`<div class="historyrow"><div><b>${esc(r.Stocking_Year||"—")}</b><span>${esc(r.Species?speciesLabel(r.Species):t("speciesUnavailable"))}</span></div><div class="historyright"><b>${num(r.Number_of_Fish_Stocked)}</b><span>${esc(r.Developmental_Stage?stageLabel(r.Developmental_Stage):"")}</span></div></div>`).join("");
  $("detail").innerHTML=`<div class="detailhead"><div><h2>${esc(l.name)}</h2><div class="species">${esc(displaySpecies(l).slice(0,6).map(speciesLabel).join(" • "))}${displaySpecies(l).length>6?` <span class="more">+${displaySpecies(l).length-6}</span>`:""}</div></div><button class="bigstar ${fav?"saved":""}" id="detailFav">${fav?"★":"☆"}</button></div>
  ${whereLine(l)}
- <div class="detailMapBlock"><div class="detailMapHead"><button type="button" id="offlineBtn" class="offlineBtn">${t("offlineSave")}</button><div class="baseSwitch detailBaseSwitch" role="group" aria-label="Basemap"><button type="button" data-dbase="map">${t("baseMap")}</button><button type="button" data-dbase="topo">${t("baseTopo")}</button><button type="button" data-dbase="depth">${t("baseDepth")}</button></div></div>
+ <div class="detailMapBlock"><div class="detailMapHead">${OFFLINE_SAVE_AVAILABLE?`<button type="button" id="offlineBtn" class="offlineBtn">${t("offlineSave")}</button>`:""}<div class="baseSwitch detailBaseSwitch" role="group" aria-label="Basemap"><button type="button" data-dbase="map">${t("baseMap")}</button><button type="button" data-dbase="topo">${t("baseTopo")}</button><button type="button" data-dbase="depth">${t("baseDepth")}</button></div></div>
  <div class="detailMapWrap"><div id="detailMap" role="img" aria-label="${t('lakeMapLabel')}"></div><button type="button" class="mapExpand detailMapExpand" aria-label="${t("expandMap")}">${EXPAND_ICON}</button></div></div>
  <div class="detailgrid">${l.stocked?`<div><small>Latest stocking</small><b>${esc(l.latestYear||"—")}</b></div><div><small>Stocking records</small><b>${l.records.length}</b></div>`:`<div><small>Stocking</small><b>Not stocked</b></div>`}${userLoc?`<div><small>Distance from you</small><b>${esc(distanceLabel(l))}</b></div>`:""}${l.district?`<div><small>MNRF district</small><b>${esc(l.district)}</b></div>`:""}
  <div><small>Fisheries Management Zone</small><b>${l.fmz?`FMZ ${l.fmz}`:"Loading / unavailable"}</b></div><div><small>Waterbody ID</small><b>${esc(l.waterbodyId||"—")}</b></div></div>
@@ -4996,7 +5015,7 @@ load();
    other. If the Documents copy was newer, whatever is on screen re-renders. */
 restoreDurable().then(changed=>{if(changed){renderTrips();apply()}});
 syncClearButton();   // a restored search should arrive with Clear already armed
-if("serviceWorker"in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
+if(OFFLINE_SAVE_AVAILABLE)navigator.serviceWorker.register("sw.js").catch(()=>{});
 
 
 
